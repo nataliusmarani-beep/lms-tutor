@@ -12,6 +12,7 @@ interface CourseModule {
   week_number: number | null;
   sort_order: number;
   course_id: string;
+  legacy_module_id: number | null;
 }
 
 interface EnrolledCourse {
@@ -106,9 +107,20 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
     itemsByModule[item.course_module_id].push(item);
   }
 
+  // Map UUID → legacy_module_id for backward-compat matching
+  const legacyIdByModuleId: Record<string, number | null> = {};
+  for (const course of enrolledCourses) {
+    for (const mod of course.modules) {
+      legacyIdByModuleId[mod.id] = mod.legacy_module_id ?? null;
+    }
+  }
+
   function moduleProgress(moduleId: string) {
     const items = itemsByModule[moduleId] ?? [];
-    const completed = checkList.filter((c) => c.course_module_id === moduleId).length;
+    const legacyId = legacyIdByModuleId[moduleId];
+    const completed = checkList.filter(
+      (c) => c.course_module_id === moduleId || (legacyId != null && c.module_id === legacyId)
+    ).length;
     const total = items.length;
     return { completed, total, pct: total > 0 ? Math.round((completed / total) * 100) : 0 };
   }

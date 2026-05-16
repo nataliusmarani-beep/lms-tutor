@@ -13,6 +13,7 @@ interface CourseModule {
   week_number: number | null;
   sort_order: number;
   course_id: string;
+  legacy_module_id: number | null;
 }
 
 interface EnrolledCourse {
@@ -132,11 +133,24 @@ export default async function ParentDashboard() {
     itemsByModule[item.course_module_id].push(item);
   }
 
+  // Build a map from UUID → legacy_module_id for session matching
+  const legacyIdByModuleId: Record<string, number | null> = {};
+  for (const course of enrolledCourses) {
+    for (const mod of course.modules) {
+      legacyIdByModuleId[mod.id] = mod.legacy_module_id ?? null;
+    }
+  }
+
   function moduleProgress(moduleId: string) {
     const items = itemsByModule[moduleId] ?? [];
     const studentItems = items.filter((i) => i.item_type === "student");
     const tutorItems = items.filter((i) => i.item_type === "teacher");
-    const completedAll = checkList.filter((c) => c.course_module_id === moduleId);
+    const legacyId = legacyIdByModuleId[moduleId];
+
+    // Match completions by UUID or legacy integer id
+    const completedAll = checkList.filter(
+      (c) => c.course_module_id === moduleId || (legacyId != null && c.module_id === legacyId)
+    );
     const studentDone = completedAll.filter((c) =>
       studentItems.some((i) => i.item_key === c.item_key)
     ).length;
@@ -145,6 +159,12 @@ export default async function ParentDashboard() {
     ).length;
     const total = items.length;
     const completed = completedAll.length;
+
+    // Match sessions by UUID or legacy integer id
+    const sessionCount = sessionList.filter(
+      (s) => s.course_module_id === moduleId || (legacyId != null && s.module_id === legacyId)
+    ).length;
+
     return {
       completed,
       total,
@@ -153,7 +173,7 @@ export default async function ParentDashboard() {
       tutorDone,
       tutorTotal: tutorItems.length,
       pct: total > 0 ? Math.round((completed / total) * 100) : 0,
-      sessionCount: sessionList.filter((s) => s.course_module_id === moduleId).length,
+      sessionCount,
     };
   }
 
