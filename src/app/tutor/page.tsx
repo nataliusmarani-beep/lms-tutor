@@ -13,6 +13,8 @@ interface CourseRow {
 }
 
 const WEEKLY_TARGET_MINUTES = 270;
+const MINUTES_PER_SESSION = 90;
+const WEEKLY_TARGET_SESSIONS = WEEKLY_TARGET_MINUTES / MINUTES_PER_SESSION; // 3
 
 function getWeekStart(): string {
   const now = new Date();
@@ -48,13 +50,11 @@ async function getStudentProgress(
       0
     ) ?? 0;
 
-  // This week's minutes
-  const weekMinutes =
-    sessions
-      ?.filter((s: { date: string }) => s.date >= weekStart)
-      .reduce((a: number, s: { duration_minutes: number }) => a + s.duration_minutes, 0) ?? 0;
-
-  const weekPct = Math.min(100, Math.round((weekMinutes / WEEKLY_TARGET_MINUTES) * 100));
+  // This week's sessions — each counts as 90 min toward the 270-min goal
+  const weekSessions = sessions?.filter((s: { date: string }) => s.date >= weekStart) ?? [];
+  const weekSessionCount = weekSessions.length;
+  const weekMinutes = weekSessionCount * MINUTES_PER_SESSION;
+  const weekPct = Math.min(100, Math.round((weekSessionCount / WEEKLY_TARGET_SESSIONS) * 100));
 
   // Count unique modules started
   const modulesStarted = new Set(
@@ -70,6 +70,7 @@ async function getStudentProgress(
     modulesStarted,
     sessionsCount: sessions?.length ?? 0,
     weekMinutes,
+    weekSessionCount,
     weekPct,
   };
 }
@@ -230,7 +231,7 @@ export default async function TutorDashboard() {
             <div className="space-y-3">
               {studentList.map((student) => {
                 const p = progressMap[student.id];
-                const minutesLeft = Math.max(0, WEEKLY_TARGET_MINUTES - p.weekMinutes);
+                const sessionsLeft = Math.max(0, WEEKLY_TARGET_SESSIONS - Math.round(p.weekMinutes / MINUTES_PER_SESSION));
                 return (
                   <Link
                     key={student.id}
@@ -253,7 +254,7 @@ export default async function TutorDashboard() {
                             p.weekPct >= 100 ? "text-green-600" : p.weekPct >= 50 ? "text-blue-600" : "text-slate-400"
                           }`}>
                             {p.weekMinutes} / {WEEKLY_TARGET_MINUTES} min
-                            {p.weekPct >= 100 ? " ✓" : ` · ${minutesLeft} left`}
+                            {p.weekPct >= 100 ? " ✓" : ` · ${sessionsLeft} session${sessionsLeft !== 1 ? "s" : ""} left`}
                           </span>
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-1.5">
