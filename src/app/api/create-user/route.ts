@@ -15,10 +15,17 @@ export async function POST(req: Request) {
   const body = await req.json();
   const { name, email, password, role, parentEmail } = body;
 
-  const adminSupabase = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceKey) {
+    return NextResponse.json(
+      { error: `Missing env vars: URL=${!!supabaseUrl}, SERVICE_KEY=${!!serviceKey}` },
+      { status: 500 }
+    );
+  }
+
+  const adminSupabase = createAdminClient(supabaseUrl, serviceKey);
 
   const { data: newUser, error: createError } = await adminSupabase.auth.admin.createUser({
     email,
