@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/Navbar";
 import ResourcePanel from "@/components/ResourcePanel";
 import { format } from "date-fns";
+import { getLang, t } from "@/lib/i18n";
 
 interface PageParams {
   courseId: string;
@@ -72,6 +73,8 @@ export default async function ParentModulePage({ params }: { params: PageParams 
       .order("sort_order"),
   ]);
 
+  const lang = getLang();
+
   const allItems = (checklistItems ?? []) as ChecklistItem[];
   const allChecks = checks ?? [];
   const studentItems = allItems.filter((i) => i.item_type === "student");
@@ -102,7 +105,7 @@ export default async function ParentModulePage({ params }: { params: PageParams 
 
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-slate-400 flex-wrap">
-          <Link href="/parent" className="hover:text-slate-600">Dashboard</Link>
+          <Link href="/parent" className="hover:text-slate-600">{t(lang, "dashboard").replace("← ", "")}</Link>
           <span>›</span>
           <span className="text-slate-500">{course.icon} {course.title}</span>
           <span>›</span>
@@ -115,7 +118,7 @@ export default async function ParentModulePage({ params }: { params: PageParams 
             <span className="text-3xl">{mod.icon}</span>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
-                {mod.week_number && <span className="badge-blue">Week {mod.week_number}</span>}
+                {mod.week_number && <span className="badge-blue">{t(lang, "week")} {mod.week_number}</span>}
                 <span className="badge-gray">{course.icon} {course.title}</span>
               </div>
               <h1 className="text-xl font-bold text-slate-800">{mod.title}</h1>
@@ -123,7 +126,7 @@ export default async function ParentModulePage({ params }: { params: PageParams 
             </div>
             <div className="text-right shrink-0">
               <div className={`text-2xl font-bold ${pct >= 100 ? "text-green-600" : "text-blue-600"}`}>{pct}%</div>
-              <div className="text-xs text-slate-400">complete</div>
+              <div className="text-xs text-slate-400">{t(lang, "complete")}</div>
             </div>
           </div>
           <div className="mt-3">
@@ -138,9 +141,9 @@ export default async function ParentModulePage({ params }: { params: PageParams 
 
         {/* Sessions */}
         <div>
-          <h2 className="font-semibold text-slate-700 mb-3">Sessions ({sessions?.length ?? 0})</h2>
+          <h2 className="font-semibold text-slate-700 mb-3">{t(lang, "sessionsLabel")} ({sessions?.length ?? 0})</h2>
           {!sessions || sessions.length === 0 ? (
-            <p className="text-sm text-slate-400 italic">No sessions logged for this module yet.</p>
+            <p className="text-sm text-slate-400 italic">{t(lang, "noSessionsModule")}</p>
           ) : (
             <div className="space-y-2">
               {sessions.map((s: { id: string; date: string; duration_minutes: number; tutor_notes: string | null }) => (
@@ -164,12 +167,12 @@ export default async function ParentModulePage({ params }: { params: PageParams 
 
         {/* Checklist — read-only view */}
         <div>
-          <h2 className="font-semibold text-slate-700 mb-3">Checklist Progress</h2>
+          <h2 className="font-semibold text-slate-700 mb-3">{t(lang, "checklistProgress")}</h2>
           <div className="space-y-4">
             {/* Student items */}
             {studentItems.length > 0 && (
               <div className="card">
-                <h3 className="text-sm font-semibold text-slate-600 mb-3">Student Checklist</h3>
+                <h3 className="text-sm font-semibold text-slate-600 mb-3">{t(lang, "studentChecklist")}</h3>
                 <div className="space-y-2">
                   {studentItems.map((item) => {
                     const completed = allChecks.some((c: { item_key: string }) => c.item_key === item.item_key);
@@ -196,7 +199,7 @@ export default async function ParentModulePage({ params }: { params: PageParams 
             {/* Teacher items */}
             {teacherItems.length > 0 && (
               <div className="card">
-                <h3 className="text-sm font-semibold text-slate-600 mb-3">Tutor Checklist</h3>
+                <h3 className="text-sm font-semibold text-slate-600 mb-3">{t(lang, "tutorChecklist")}</h3>
                 <div className="space-y-2">
                   {teacherItems.map((item) => {
                     const completed = allChecks.some((c: { item_key: string }) => c.item_key === item.item_key);
@@ -221,7 +224,7 @@ export default async function ParentModulePage({ params }: { params: PageParams 
             )}
 
             {allItems.length === 0 && (
-              <p className="text-sm text-slate-400 italic">No checklist items for this module yet.</p>
+              <p className="text-sm text-slate-400 italic">{t(lang, "noChecklistItems")}</p>
             )}
           </div>
         </div>
@@ -232,7 +235,7 @@ export default async function ParentModulePage({ params }: { params: PageParams 
         {/* Quizzes — read-only score summary */}
         {quizzes && quizzes.length > 0 && (
           <div>
-            <h2 className="font-semibold text-slate-700 mb-3">Quizzes</h2>
+            <h2 className="font-semibold text-slate-700 mb-3">{t(lang, "quizzes")}</h2>
             <div className="space-y-3">
               {quizzes.map((quiz: { id: string; title: string; description: string | null }) => {
                 const best = bestAttempt(quiz.id);
@@ -255,7 +258,7 @@ export default async function ParentModulePage({ params }: { params: PageParams 
                           <div className="text-xs text-slate-400">{scorePct}%</div>
                         </>
                       ) : (
-                        <span className="badge-gray text-xs">Not attempted</span>
+                        <span className="badge-gray text-xs">{t(lang, "notAttempted")}</span>
                       )}
                     </div>
                   </div>

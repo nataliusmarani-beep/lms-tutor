@@ -1,4 +1,5 @@
 "use client";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
@@ -8,10 +9,9 @@ interface NavbarProps {
   role: string;
 }
 
-const roleLabel: Record<string, string> = {
-  tutor: "Tutor",
-  student: "Student",
-  parent: "Parent",
+const roleLabel: Record<string, Record<string, string>> = {
+  en: { tutor: "Tutor", student: "Student", parent: "Parent" },
+  id: { tutor: "Tutor", student: "Siswa", parent: "Orang Tua" },
 };
 
 const roleBadgeClass: Record<string, string> = {
@@ -20,24 +20,37 @@ const roleBadgeClass: Record<string, string> = {
   parent: "badge-yellow",
 };
 
+function getCookieLang(): "en" | "id" {
+  if (typeof document === "undefined") return "en";
+  const m = document.cookie.match(/(?:^|;\s*)lang=([^;]*)/);
+  return m?.[1] === "id" ? "id" : "en";
+}
+
 export default function Navbar({ name, role }: NavbarProps) {
   const router = useRouter();
+  const [lang, setLang] = useState<"en" | "id">("en");
+
+  useEffect(() => {
+    setLang(getCookieLang());
+  }, []);
 
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    toast.success("Logged out");
+    toast.success(lang === "id" ? "Berhasil keluar" : "Logged out");
     router.push("/login");
     router.refresh();
   }
 
+  function toggleLang() {
+    const next = lang === "en" ? "id" : "en";
+    document.cookie = `lang=${next}; path=/; max-age=31536000`;
+    setLang(next);
+    router.refresh();
+  }
+
   const initials = name
-    ? name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase()
+    ? name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
     : "?";
 
   return (
@@ -55,17 +68,27 @@ export default function Navbar({ name, role }: NavbarProps) {
 
         {/* Right side */}
         <div className="flex items-center gap-3">
-          {/* Role badge — hidden on very small screens */}
+          {/* Language toggle */}
+          <button
+            onClick={toggleLang}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+            title={lang === "en" ? "Switch to Bahasa Indonesia" : "Switch to English"}
+          >
+            <span>{lang === "en" ? "🇺🇸" : "🇮🇩"}</span>
+            <span>{lang === "en" ? "EN" : "ID"}</span>
+          </button>
+
+          {/* Role badge */}
           <span className={`hidden sm:inline-flex ${roleBadgeClass[role] ?? "badge-gray"}`}>
-            {roleLabel[role] ?? role}
+            {roleLabel[lang][role] ?? role}
           </span>
 
-          {/* Name — hidden on very small screens */}
+          {/* Name */}
           <span className="hidden sm:block text-sm font-medium text-slate-700 truncate max-w-[120px]">
             {name}
           </span>
 
-          {/* Avatar circle */}
+          {/* Avatar */}
           <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold shrink-0">
             {initials}
           </div>
@@ -75,7 +98,7 @@ export default function Navbar({ name, role }: NavbarProps) {
             onClick={handleLogout}
             className="text-sm text-slate-400 hover:text-red-500 transition-colors"
           >
-            Sign out
+            {lang === "en" ? "Sign out" : "Keluar"}
           </button>
         </div>
       </div>

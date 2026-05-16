@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/Navbar";
 import ProgressRing from "@/components/ProgressRing";
 import { format } from "date-fns";
+import { getLang, t } from "@/lib/i18n";
 
 interface CourseModule {
   id: string;
@@ -53,6 +54,8 @@ export default async function ParentDashboard() {
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
   if (!profile || profile.role !== "parent") redirect("/login");
 
+  const lang = getLang();
+
   const { data: links } = await supabase
     .from("parent_student")
     .select("student_id")
@@ -75,8 +78,8 @@ export default async function ParentDashboard() {
         <Navbar name={profile.name} role="parent" />
         <div className="max-w-xl mx-auto px-4 py-16 text-center">
           <div className="text-5xl mb-4">👤</div>
-          <h1 className="text-xl font-bold text-slate-700">No student linked yet</h1>
-          <p className="text-slate-400 mt-2">Ask your tutor to link your account to your child&apos;s profile.</p>
+          <h1 className="text-xl font-bold text-slate-700">{t(lang, "noStudentLinked")}</h1>
+          <p className="text-slate-400 mt-2">{t(lang, "noStudentLinkedDesc")}</p>
         </div>
       </div>
     );
@@ -204,7 +207,7 @@ export default async function ParentDashboard() {
           <div className="flex items-center gap-4">
             <ProgressRing percent={overallPct} size={80} strokeWidth={8} />
             <div className="flex-1">
-              <p className="text-slate-500 text-sm">Progress Report for</p>
+              <p className="text-slate-500 text-sm">{t(lang, "progressReport")}</p>
               <h1 className="text-2xl font-bold text-slate-800">{student.name}</h1>
               {enrolledCourses.length > 0 && (
                 <p className="text-slate-500 text-sm mt-1">
@@ -219,19 +222,19 @@ export default async function ParentDashboard() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="card text-center">
             <div className="text-2xl font-bold text-blue-600">{sessionList.length}</div>
-            <div className="text-sm text-slate-500">Sessions</div>
+            <div className="text-sm text-slate-500">{t(lang, "sessions")}</div>
           </div>
           <div className="card text-center">
             <div className="text-2xl font-bold text-blue-600">{totalHours}h</div>
-            <div className="text-sm text-slate-500">Learning time</div>
+            <div className="text-sm text-slate-500">{t(lang, "learningTime")}</div>
           </div>
           <div className="card text-center">
             <div className="text-2xl font-bold text-blue-600">{completedModules}/{totalModules}</div>
-            <div className="text-sm text-slate-500">Modules done</div>
+            <div className="text-sm text-slate-500">{t(lang, "modulesDone")}</div>
           </div>
           <div className="card text-center">
             <div className="text-2xl font-bold text-blue-600">{overallPct}%</div>
-            <div className="text-sm text-slate-500">Overall</div>
+            <div className="text-sm text-slate-500">{t(lang, "overall")}</div>
           </div>
         </div>
 
@@ -263,7 +266,7 @@ export default async function ParentDashboard() {
                         <span className="text-2xl mt-0.5">{mod.icon}</span>
                         <div className="flex-1 min-w-0">
                           {mod.week_number && (
-                            <span className="badge-gray text-xs">Week {mod.week_number}</span>
+                            <span className="badge-gray text-xs">{t(lang, "week")} {mod.week_number}</span>
                           )}
                           <div className="font-medium text-slate-800 text-sm leading-tight mt-0.5">
                             {mod.title}
@@ -277,7 +280,7 @@ export default async function ParentDashboard() {
                           </div>
                           <div className="mt-1">
                             <div className="flex items-center justify-between mb-0.5">
-                              <span className="text-xs text-slate-400">{mp.sessionCount} session{mp.sessionCount !== 1 ? "s" : ""}</span>
+                              <span className="text-xs text-slate-400">{mp.sessionCount} {t(lang, "sessions").toLowerCase()}</span>
                               <span className={`text-xs font-semibold ${
                                 mp.pct >= 100 ? "text-green-600" : mp.pct > 0 ? "text-blue-600" : "text-slate-400"
                               }`}>{mp.pct}%</span>
@@ -302,10 +305,10 @@ export default async function ParentDashboard() {
 
         {/* Recent Sessions */}
         <div>
-          <h2 className="text-lg font-semibold text-slate-700 mb-4">Recent Sessions</h2>
+          <h2 className="text-lg font-semibold text-slate-700 mb-4">{t(lang, "recentSessions")}</h2>
           {sessionList.length === 0 ? (
             <div className="card text-center py-8">
-              <p className="text-slate-400">No sessions recorded yet.</p>
+              <p className="text-slate-400">{t(lang, "noSessionsYet")}</p>
             </div>
           ) : (
             <div className="space-y-2">

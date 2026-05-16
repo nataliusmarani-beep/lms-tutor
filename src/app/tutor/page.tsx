@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/Navbar";
 import ProgressRing from "@/components/ProgressRing";
 import type { Profile } from "@/types";
+import { getLang, t } from "@/lib/i18n";
 
 interface CourseRow {
   id: string;
@@ -87,6 +88,8 @@ export default async function TutorDashboard() {
     .single();
   if (!profile || profile.role !== "tutor") redirect("/login");
 
+  const lang = getLang();
+
   const [{ data: students }, { data: courses }] = await Promise.all([
     supabase.from("profiles").select("*").eq("role", "student").order("name"),
     supabase.from("courses").select("*").order("created_at"),
@@ -138,9 +141,9 @@ export default async function TutorDashboard() {
 
         {/* Welcome banner */}
         <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white shadow-md">
-          <h1 className="text-2xl font-bold">Welcome back, {profile.name.split(" ")[0]}! 👋</h1>
+          <h1 className="text-2xl font-bold">{t(lang, "welcomeBack")}, {profile.name.split(" ")[0]}! 👋</h1>
           <p className="mt-1 text-indigo-200 text-sm">
-            {courseList.length} course{courseList.length !== 1 ? "s" : ""} · {studentList.length} student{studentList.length !== 1 ? "s" : ""} · Ready to teach?
+            {courseList.length} {t(lang, "courses").toLowerCase()} · {studentList.length} {t(lang, "students").toLowerCase()} · {t(lang, "readyToTeach")}
           </p>
         </div>
 
@@ -149,32 +152,32 @@ export default async function TutorDashboard() {
           <div className="card text-center">
             <div className="text-3xl mb-1">🎓</div>
             <div className="text-3xl font-bold text-indigo-600">{studentList.length}</div>
-            <div className="text-sm text-slate-500 mt-1">Students</div>
+            <div className="text-sm text-slate-500 mt-1">{t(lang, "students")}</div>
           </div>
           <div className="card text-center">
             <div className="text-3xl mb-1">📚</div>
             <div className="text-3xl font-bold text-indigo-600">{courseList.length}</div>
-            <div className="text-sm text-slate-500 mt-1">Courses</div>
+            <div className="text-sm text-slate-500 mt-1">{t(lang, "courses")}</div>
           </div>
           <div className="card text-center">
             <div className="text-3xl mb-1">🗂️</div>
             <div className="text-3xl font-bold text-indigo-600">
               {enrichedCourses.reduce((a, c) => a + c.moduleCount, 0)}
             </div>
-            <div className="text-sm text-slate-500 mt-1">Modules</div>
+            <div className="text-sm text-slate-500 mt-1">{t(lang, "modules")}</div>
           </div>
           <div className="card text-center">
             <div className="text-3xl mb-1">🎯</div>
             <div className="text-3xl font-bold text-indigo-600">270</div>
-            <div className="text-sm text-slate-500 mt-1">Min/week goal</div>
+            <div className="text-sm text-slate-500 mt-1">{t(lang, "minWeekGoal")}</div>
           </div>
         </div>
 
         {/* Courses Section */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-700">Courses</h2>
-            <Link href="/tutor/courses" className="btn-secondary text-sm py-1.5">View All</Link>
+            <h2 className="text-lg font-semibold text-slate-700">{t(lang, "courses")}</h2>
+            <Link href="/tutor/courses" className="btn-secondary text-sm py-1.5">{t(lang, "viewAll")}</Link>
           </div>
           {enrichedCourses.length === 0 ? (
             <div className="card text-center py-10">
@@ -215,8 +218,8 @@ export default async function TutorDashboard() {
         {/* Students Section */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-700">Students</h2>
-            <Link href="/tutor/students/new" className="btn-primary text-sm py-1.5">+ Add Student</Link>
+            <h2 className="text-lg font-semibold text-slate-700">{t(lang, "students")}</h2>
+            <Link href="/tutor/students/new" className="btn-primary text-sm py-1.5">{t(lang, "addStudent")}</Link>
           </div>
 
           {studentList.length === 0 ? (
@@ -244,17 +247,17 @@ export default async function TutorDashboard() {
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-slate-800">{student.name}</h3>
                       <p className="text-sm text-slate-500">
-                        {p.sessionsCount} sessions · {p.totalHours}h total
+                        {p.sessionsCount} {t(lang, "sessions").toLowerCase()} · {p.totalHours}h {t(lang, "totalTimeLabel")}
                       </p>
                       {/* Weekly bar */}
                       <div className="mt-1.5">
                         <div className="flex items-center justify-between mb-0.5">
-                          <span className="text-xs text-slate-400">This week</span>
+                          <span className="text-xs text-slate-400">{t(lang, "thisWeek")}</span>
                           <span className={`text-xs font-semibold ${
                             p.weekPct >= 100 ? "text-green-600" : p.weekPct >= 50 ? "text-blue-600" : "text-slate-400"
                           }`}>
-                            {p.weekMinutes} / {WEEKLY_TARGET_MINUTES} min
-                            {p.weekPct >= 100 ? " ✓" : ` · ${sessionsLeft} session${sessionsLeft !== 1 ? "s" : ""} left`}
+                            {p.weekMinutes} / {WEEKLY_TARGET_MINUTES} {t(lang, "min")}
+                            {p.weekPct >= 100 ? " ✓" : ` · ${sessionsLeft} ${sessionsLeft !== 1 ? t(lang, "sessionsLeft") : t(lang, "sessionLeft")}`}
                           </span>
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-1.5">
@@ -281,12 +284,12 @@ export default async function TutorDashboard() {
                         }`}
                       >
                         {p.weekPct >= 100
-                          ? "Goal met 🎉"
+                          ? t(lang, "goalMet")
                           : p.weekPct >= 50
-                          ? "On track"
+                          ? t(lang, "onTrack")
                           : p.sessionsCount > 0
-                          ? "Behind"
-                          : "No sessions"}
+                          ? t(lang, "behind")
+                          : t(lang, "noSessions")}
                       </span>
                     </div>
                     <span className="text-slate-300">›</span>
@@ -299,7 +302,7 @@ export default async function TutorDashboard() {
 
         {/* Quick Actions */}
         <div>
-          <h2 className="text-lg font-semibold text-slate-700 mb-4">Quick Actions</h2>
+          <h2 className="text-lg font-semibold text-slate-700 mb-4">{t(lang, "quickActions")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <Link
               href="/tutor/sessions/new"
@@ -307,8 +310,8 @@ export default async function TutorDashboard() {
             >
               <span className="text-2xl">⏱️</span>
               <div>
-                <div className="font-medium text-slate-800">Log a Session</div>
-                <div className="text-sm text-slate-500">Record a learning session</div>
+                <div className="font-medium text-slate-800">{t(lang, "logSession")}</div>
+                <div className="text-sm text-slate-500">{t(lang, "logSessionDesc")}</div>
               </div>
             </Link>
             <Link
@@ -317,8 +320,8 @@ export default async function TutorDashboard() {
             >
               <span className="text-2xl">👤</span>
               <div>
-                <div className="font-medium text-slate-800">Add Student</div>
-                <div className="text-sm text-slate-500">Create student account</div>
+                <div className="font-medium text-slate-800">{t(lang, "students")}</div>
+                <div className="text-sm text-slate-500">{t(lang, "addStudentDesc")}</div>
               </div>
             </Link>
             <Link
@@ -327,8 +330,8 @@ export default async function TutorDashboard() {
             >
               <span className="text-2xl">📚</span>
               <div>
-                <div className="font-medium text-slate-800">Courses</div>
-                <div className="text-sm text-slate-500">Manage course catalogue</div>
+                <div className="font-medium text-slate-800">{t(lang, "courses")}</div>
+                <div className="text-sm text-slate-500">{t(lang, "coursesDesc")}</div>
               </div>
             </Link>
             <Link
@@ -337,8 +340,8 @@ export default async function TutorDashboard() {
             >
               <span className="text-2xl">⚙️</span>
               <div>
-                <div className="font-medium text-slate-800">Manage Accounts</div>
-                <div className="text-sm text-slate-500">Students &amp; parents</div>
+                <div className="font-medium text-slate-800">{t(lang, "manageAccounts")}</div>
+                <div className="text-sm text-slate-500">{t(lang, "manageAccountsDesc")}</div>
               </div>
             </Link>
           </div>

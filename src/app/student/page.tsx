@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/Navbar";
 import ProgressRing from "@/components/ProgressRing";
 import { format } from "date-fns";
+import { getLang, t } from "@/lib/i18n";
 
 interface CourseModule {
   id: string;
@@ -51,6 +52,8 @@ export default async function StudentDashboard() {
 
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
   if (!profile || profile.role !== "student") redirect("/login");
+
+  const lang = getLang();
 
   // Fetch enrollments with course data
   const { data: enrollments } = await supabase
@@ -157,9 +160,9 @@ export default async function StudentDashboard() {
         {/* Welcome banner */}
         <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white shadow-md flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Hi, {profile.name.split(" ")[0]}! 👋</h1>
+            <h1 className="text-2xl font-bold">{t(lang, "hiGreeting")}, {profile.name.split(" ")[0]}! 👋</h1>
             <p className="mt-1 text-indigo-200 text-sm">
-              {enrolledCourses.length} course{enrolledCourses.length !== 1 ? "s" : ""} enrolled · Keep it up!
+              {enrolledCourses.length} {t(lang, "coursesEnrolled")}
             </p>
           </div>
           <ProgressRing percent={overallPct} size={72} strokeWidth={7} label="Overall" />
@@ -170,17 +173,17 @@ export default async function StudentDashboard() {
           <div className="card text-center">
             <div className="text-2xl mb-1">📅</div>
             <div className="text-2xl font-bold text-indigo-600">{totalSessions}</div>
-            <div className="text-sm text-slate-500">Sessions</div>
+            <div className="text-sm text-slate-500">{t(lang, "sessions")}</div>
           </div>
           <div className="card text-center">
             <div className="text-2xl mb-1">⏱️</div>
             <div className="text-2xl font-bold text-indigo-600">{totalHours}h</div>
-            <div className="text-sm text-slate-500">Learning time</div>
+            <div className="text-sm text-slate-500">{t(lang, "learningTime")}</div>
           </div>
           <div className="card text-center">
             <div className="text-2xl mb-1">✅</div>
             <div className="text-2xl font-bold text-indigo-600">{completedModules}</div>
-            <div className="text-sm text-slate-500">Modules done</div>
+            <div className="text-sm text-slate-500">{t(lang, "modulesDone")}</div>
           </div>
         </div>
 
@@ -188,8 +191,8 @@ export default async function StudentDashboard() {
         {enrolledCourses.length === 0 ? (
           <div className="card text-center py-16">
             <div className="text-5xl mb-4">📚</div>
-            <p className="text-slate-500">You haven&apos;t been enrolled in any courses yet.</p>
-            <p className="text-slate-400 text-sm mt-2">Ask your tutor to enroll you in a course.</p>
+            <p className="text-slate-500">{t(lang, "noCoursesYet")}</p>
+            <p className="text-slate-400 text-sm mt-2">{t(lang, "askTutorEnroll")}</p>
           </div>
         ) : (
           enrolledCourses.map((course, courseIdx) => {
@@ -215,11 +218,11 @@ export default async function StudentDashboard() {
                       <p className="text-sm text-slate-500">{course.description}</p>
                     )}
                   </div>
-                  <span className="badge-blue">{coursePct}% complete</span>
+                  <span className="badge-blue">{coursePct}{t(lang, "percentComplete")}</span>
                 </div>
 
                 {course.modules.length === 0 ? (
-                  <p className="text-sm text-slate-400 italic ml-10">No modules added yet.</p>
+                  <p className="text-sm text-slate-400 italic ml-10">{t(lang, "noModulesYet")}</p>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 ml-0">
                     {course.modules.map((mod) => {
@@ -237,7 +240,7 @@ export default async function StudentDashboard() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                                 {mod.week_number && (
-                                  <span className="badge-gray text-xs">Week {mod.week_number}</span>
+                                  <span className="badge-gray text-xs">{t(lang, "week")} {mod.week_number}</span>
                                 )}
                               </div>
                               <div className="font-medium text-slate-800 text-sm leading-tight">
@@ -249,7 +252,7 @@ export default async function StudentDashboard() {
                               <div className="mt-2">
                                 <div className="flex items-center justify-between mb-1">
                                   <span className="text-xs text-slate-400">
-                                    {mp.completed}/{mp.total} items
+                                    {mp.completed}/{mp.total} {t(lang, "items")}
                                   </span>
                                   <span
                                     className={`text-xs font-semibold ${
@@ -286,10 +289,10 @@ export default async function StudentDashboard() {
 
         {/* Recent Sessions */}
         <div>
-          <h2 className="text-lg font-semibold text-slate-700 mb-4">Recent Sessions</h2>
+          <h2 className="text-lg font-semibold text-slate-700 mb-4">{t(lang, "recentSessions")}</h2>
           {recentSessions.length === 0 ? (
             <div className="card text-center py-8">
-              <p className="text-slate-400">No sessions yet. Your tutor will log sessions after each lesson.</p>
+              <p className="text-slate-400">{t(lang, "noSessionsYet")}</p>
             </div>
           ) : (
             <div className="space-y-2">
