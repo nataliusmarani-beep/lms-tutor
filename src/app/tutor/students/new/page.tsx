@@ -73,7 +73,7 @@ export default function NewStudentPage() {
               <label className="label">Email *</label>
               <input type="email" className="input" required value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="student@email.com" />
+                placeholder={form.role === "parent" ? "parent@email.com" : "student@email.com"} />
             </div>
             <div>
               <label className="label">Password *</label>
