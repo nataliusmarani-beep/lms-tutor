@@ -34,6 +34,7 @@ interface SessionRow {
 interface CompletionRow {
   item_key: string;
   course_module_id: string | null;
+  module_id: number | null;
 }
 
 interface ChecklistItemRow {
@@ -76,16 +77,15 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
     })
   );
 
-  // Sessions and completions — select only safe columns that always exist
   const [{ data: sessions }, { data: checks }] = await Promise.all([
     supabase
       .from("learning_sessions")
-      .select("id, date, duration_minutes, tutor_notes, module_id")
+      .select("id, date, duration_minutes, tutor_notes, course_module_id, module_id")
       .eq("student_id", params.id)
       .order("date", { ascending: false }),
     supabase
       .from("checklist_completions")
-      .select("item_key, module_id")
+      .select("item_key, course_module_id, module_id")
       .eq("student_id", params.id),
   ]);
 
