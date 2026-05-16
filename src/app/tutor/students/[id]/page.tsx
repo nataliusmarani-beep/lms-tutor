@@ -2,6 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/Navbar";
+import SessionActions from "@/components/SessionActions";
 import { format } from "date-fns";
 
 interface CourseModule {
@@ -282,19 +283,19 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
                 const mod = s.course_module_id ? moduleMap[s.course_module_id] : null;
                 return (
                   <div key={s.id} className="card flex items-center gap-3 py-3">
-                    <span className="text-xl">{mod?.icon ?? "📅"}</span>
-                    <div className="flex-1">
+                    <span className="text-xl shrink-0">{mod?.icon ?? "📅"}</span>
+                    <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-slate-700">
                         {mod ? mod.title : s.module_id ? `Module ${s.module_id}` : "Session"}
                       </div>
                       {s.tutor_notes && (
                         <div className="text-xs text-slate-500 mt-0.5 line-clamp-1">{s.tutor_notes}</div>
                       )}
+                      <div className="text-xs text-slate-400 mt-0.5">
+                        {s.duration_minutes} min · {format(new Date(s.date), "MMM d, yyyy")}
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium text-slate-700">{s.duration_minutes} min</div>
-                      <div className="text-xs text-slate-400">{format(new Date(s.date), "MMM d, yyyy")}</div>
-                    </div>
+                    <SessionActions sessionId={s.id} />
                   </div>
                 );
               })}
