@@ -12,18 +12,32 @@ interface CourseRow {
   icon: string;
 }
 
+const WEEKLY_TARGET_MINUTES = 270;
+
+function getWeekStart(): string {
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun … 6=Sat
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diffToMonday);
+  monday.setHours(0, 0, 0, 0);
+  return monday.toISOString();
+}
+
 async function getStudentProgress(
   supabase: ReturnType<typeof createClient>,
   studentId: string
 ) {
+  const weekStart = getWeekStart();
+
   const [{ data: sessions }, { data: checks }] = await Promise.all([
     supabase
       .from("learning_sessions")
-      .select("course_module_id, module_id, duration_minutes")
+      .select("module_id, duration_minutes, date")
       .eq("student_id", studentId),
     supabase
       .from("checklist_completions")
-      .select("item_key, course_module_id, module_id")
+      .select("item_key, module_id")
       .eq("student_id", studentId),
   ]);
 
@@ -34,15 +48,20 @@ async function getStudentProgress(
       0
     ) ?? 0;
 
-  // Count unique modules started (by course_module_id or module_id)
-  const modulesStarted = new Set([
-    ...(sessions
-      ?.filter((s: { course_module_id: string | null }) => s.course_module_id)
-      .map((s: { course_module_id: string | null }) => `cm:${s.course_module_id}`) ?? []),
-    ...(sessions
+  // This week's minutes
+  const weekMinutes =
+    sessions
+      ?.filter((s: { date: string }) => s.date >= weekStart)
+      .reduce((a: number, s: { duration_minutes: number }) => a + s.duration_minutes, 0) ?? 0;
+
+  const weekPct = Math.min(100, Math.round((weekMinutes / WEEKLY_TARGET_MINUTES) * 100));
+
+  // Count unique modules started
+  const modulesStarted = new Set(
+    sessions
       ?.filter((s: { module_id: number | null }) => s.module_id)
-      .map((s: { module_id: number | null }) => `m:${s.module_id}`) ?? []),
-  ]).size;
+      .map((s: { module_id: number | null }) => s.module_id) ?? []
+  ).size;
 
   return {
     totalChecks: completedChecks,
@@ -50,6 +69,8 @@ async function getStudentProgress(
     totalHours: Math.round((totalMinutes / 60) * 10) / 10,
     modulesStarted,
     sessionsCount: sessions?.length ?? 0,
+    weekMinutes,
+    weekPct,
   };
 }
 
@@ -142,9 +163,9 @@ export default async function TutorDashboard() {
             <div className="text-sm text-slate-500 mt-1">Modules</div>
           </div>
           <div className="card text-center">
-            <div className="text-3xl mb-1">⏱️</div>
-            <div className="text-3xl font-bold text-indigo-600">60–90</div>
-            <div className="text-sm text-slate-500 mt-1">Min/session</div>
+            <div className="text-3xl mb-1">🎯</div>
+            <div className="text-3xl font-bold text-indigo-600">270</div>
+            <div className="text-sm text-slate-500 mt-1">Min/week goal</div>
           </div>
         </div>
 
@@ -209,36 +230,62 @@ export default async function TutorDashboard() {
             <div className="space-y-3">
               {studentList.map((student) => {
                 const p = progressMap[student.id];
-                const maxChecks = 100; // relative — we no longer know total from static data
-                const pct = p.totalChecks > 0 ? Math.min(100, Math.round((p.totalChecks / maxChecks) * 100)) : 0;
+                const minutesLeft = Math.max(0, WEEKLY_TARGET_MINUTES - p.weekMinutes);
                 return (
                   <Link
                     key={student.id}
                     href={`/tutor/students/${student.id}`}
                     className="card flex items-center gap-4 hover:shadow-md transition-shadow"
                   >
-                    <ProgressRing percent={pct} size={60} strokeWidth={6} />
-                    <div className="flex-1">
+                    {/* Weekly ring */}
+                    <ProgressRing percent={p.weekPct} size={60} strokeWidth={6} />
+
+                    <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-slate-800">{student.name}</h3>
                       <p className="text-sm text-slate-500">
-                        {p.sessionsCount} sessions · {p.totalHours}h · {p.modulesStarted} modules started
+                        {p.sessionsCount} sessions · {p.totalHours}h total
                       </p>
+                      {/* Weekly bar */}
+                      <div className="mt-1.5">
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className="text-xs text-slate-400">This week</span>
+                          <span className={`text-xs font-semibold ${
+                            p.weekPct >= 100 ? "text-green-600" : p.weekPct >= 50 ? "text-blue-600" : "text-slate-400"
+                          }`}>
+                            {p.weekMinutes} / {WEEKLY_TARGET_MINUTES} min
+                            {p.weekPct >= 100 ? " ✓" : ` · ${minutesLeft} left`}
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-1.5">
+                          <div
+                            className={`h-1.5 rounded-full transition-all ${
+                              p.weekPct >= 100 ? "bg-green-500" : p.weekPct >= 50 ? "bg-blue-500" : "bg-amber-400"
+                            }`}
+                            style={{ width: `${p.weekPct}%` }}
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-right">
+
+                    <div className="text-right shrink-0">
                       <span
                         className={`badge ${
-                          p.sessionsCount >= 6
+                          p.weekPct >= 100
                             ? "badge-green"
-                            : p.sessionsCount >= 2
+                            : p.weekPct >= 50
                             ? "badge-blue"
+                            : p.sessionsCount > 0
+                            ? "badge-yellow"
                             : "badge-gray"
                         }`}
                       >
-                        {p.sessionsCount >= 6
-                          ? "Active"
-                          : p.sessionsCount >= 2
-                          ? "In Progress"
-                          : "Just Started"}
+                        {p.weekPct >= 100
+                          ? "Goal met 🎉"
+                          : p.weekPct >= 50
+                          ? "On track"
+                          : p.sessionsCount > 0
+                          ? "Behind"
+                          : "No sessions"}
                       </span>
                     </div>
                     <span className="text-slate-300">›</span>
