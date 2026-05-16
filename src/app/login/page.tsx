@@ -30,7 +30,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="text-5xl mb-3">📘</div>
-          <h1 className="text-2xl font-bold text-slate-800">Microsoft App Tutor</h1>
+          <h1 className="text-2xl font-bold text-slate-800">Computer Tutor with Mr. Teis</h1>
           <p className="text-slate-500 mt-1">Learning Management System</p>
         </div>
 
