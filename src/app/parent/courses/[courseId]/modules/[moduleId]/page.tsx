@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import ResourcePanel from "@/components/ResourcePanel";
 import { format } from "date-fns";
 import { getLang, t } from "@/lib/i18n";
+import CurriculumAccordion from "@/components/CurriculumAccordion";
 
 interface PageParams {
   courseId: string;
@@ -55,6 +56,22 @@ export default async function ParentModulePage({ params }: { params: PageParams 
     .select("id, title, focus, icon, week_number, sort_order")
     .eq("course_id", params.courseId)
     .order("sort_order");
+
+  // Checklist items for ALL modules (for accordion expand)
+  const allModIds = (allCourseModules ?? []).map((m: { id: string }) => m.id);
+  const { data: allModuleItems } = allModIds.length > 0
+    ? await supabase
+        .from("module_checklist_items")
+        .select("course_module_id, item_key, label, item_type, sort_order")
+        .in("course_module_id", allModIds)
+        .order("sort_order")
+    : { data: [] };
+
+  // Completions for all modules (to show tick status across curriculum)
+  const { data: allCompletions } = await supabase
+    .from("checklist_completions")
+    .select("item_key, course_module_id, module_id")
+    .eq("student_id", studentId);
 
   const legacyModuleId: number | null = mod.legacy_module_id ?? null;
 
@@ -157,57 +174,16 @@ export default async function ParentModulePage({ params }: { params: PageParams 
           </div>
         </div>
 
-        {/* Course Curriculum */}
+        {/* Course Curriculum Accordion */}
         {allCourseModules && allCourseModules.length > 0 && (
-          <div className="card">
-            <h2 className="font-semibold text-slate-700 mb-4 flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <span>📚</span>
-                {lang === "id" ? "Kurikulum Kursus" : "Course Curriculum"}
-              </span>
-              <span className="badge-gray text-xs">{allCourseModules.length} {lang === "id" ? "modul" : "modules"}</span>
-            </h2>
-            <div className="space-y-2">
-              {allCourseModules.map((m: { id: string; title: string; focus: string | null; icon: string; week_number: number | null }) => {
-                const isCurrent = m.id === params.moduleId;
-                return (
-                  <Link
-                    key={m.id}
-                    href={`/parent/courses/${params.courseId}/modules/${m.id}`}
-                    className={`flex items-start gap-3 rounded-xl p-3 transition-colors ${
-                      isCurrent
-                        ? "bg-indigo-50 border border-indigo-200"
-                        : "hover:bg-slate-50 border border-transparent"
-                    }`}
-                  >
-                    <span className="text-xl shrink-0 mt-0.5">{m.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {m.week_number && (
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                            isCurrent ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-500"
-                          }`}>
-                            {lang === "id" ? "Minggu" : "Week"} {m.week_number}
-                          </span>
-                        )}
-                        {isCurrent && (
-                          <span className="text-xs font-semibold text-indigo-600">
-                            ← {lang === "id" ? "Sedang dibuka" : "Current"}
-                          </span>
-                        )}
-                      </div>
-                      <div className={`text-sm font-medium mt-0.5 ${isCurrent ? "text-indigo-800" : "text-slate-700"}`}>
-                        {m.title}
-                      </div>
-                      {m.focus && (
-                        <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{m.focus}</p>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
+          <CurriculumAccordion
+            courseId={params.courseId}
+            currentModuleId={params.moduleId}
+            modules={allCourseModules as { id: string; title: string; focus: string | null; icon: string; week_number: number | null }[]}
+            allItems={(allModuleItems ?? []) as { course_module_id: string; item_key: string; label: string; item_type: string }[]}
+            completions={(allCompletions ?? []) as { item_key: string; course_module_id: string | null; module_id: number | null }[]}
+            lang={lang}
+          />
         )}
 
         {/* Module Overview */}
