@@ -68,15 +68,31 @@ export default function Navbar({ name, role }: NavbarProps) {
 
         {/* Right side */}
         <div className="flex items-center gap-3">
-          {/* Language toggle */}
-          <button
-            onClick={toggleLang}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
-            title={lang === "en" ? "Switch to Bahasa Indonesia" : "Switch to English"}
-          >
-            <span>{lang === "en" ? "🇺🇸" : "🇮🇩"}</span>
-            <span>{lang === "en" ? "EN" : "ID"}</span>
-          </button>
+          {/* Language toggle — sliding pill */}
+          <div className="flex items-center bg-slate-100 rounded-full p-0.5 gap-0.5">
+            <button
+              onClick={() => { if (lang !== "en") toggleLang(); }}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 ${
+                lang === "en"
+                  ? "bg-white shadow text-slate-800"
+                  : "text-slate-400 hover:text-slate-600"
+              }`}
+            >
+              <span>🇬🇧</span>
+              <span>EN</span>
+            </button>
+            <button
+              onClick={() => { if (lang !== "id") toggleLang(); }}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 ${
+                lang === "id"
+                  ? "bg-white shadow text-slate-800"
+                  : "text-slate-400 hover:text-slate-600"
+              }`}
+            >
+              <span>🇮🇩</span>
+              <span>ID</span>
+            </button>
+          </div>
 
           {/* Role badge */}
           <span className={`hidden sm:inline-flex ${roleBadgeClass[role] ?? "badge-gray"}`}>
