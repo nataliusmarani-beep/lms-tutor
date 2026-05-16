@@ -150,6 +150,66 @@ export default async function ParentModulePage({ params }: { params: PageParams 
           </div>
         </div>
 
+        {/* Topics Covered */}
+        {allItems.length > 0 && (
+          <div className="card">
+            <h2 className="font-semibold text-slate-700 mb-4 flex items-center gap-2">
+              <span>🎯</span>
+              {lang === "id" ? "Materi yang Dipelajari" : "Topics Covered"}
+            </h2>
+            <div className="space-y-4">
+              {studentItems.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
+                    {lang === "id" ? "Aktivitas Siswa" : "Student Activities"}
+                  </p>
+                  <ul className="space-y-1.5">
+                    {studentItems.map((item) => {
+                      const done = allChecks.some((c: { item_key: string }) => c.item_key === item.item_key);
+                      return (
+                        <li key={item.id} className="flex items-start gap-2">
+                          <span className={`mt-0.5 shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-xs ${
+                            done ? "bg-green-500 text-white" : "bg-slate-100 text-slate-300"
+                          }`}>
+                            {done ? "✓" : "○"}
+                          </span>
+                          <span className={`text-sm ${done ? "text-slate-500 line-through" : "text-slate-700"}`}>
+                            {item.label}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+              {teacherItems.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
+                    {lang === "id" ? "Materi Tutor" : "Tutor-Led Topics"}
+                  </p>
+                  <ul className="space-y-1.5">
+                    {teacherItems.map((item) => {
+                      const done = allChecks.some((c: { item_key: string }) => c.item_key === item.item_key);
+                      return (
+                        <li key={item.id} className="flex items-start gap-2">
+                          <span className={`mt-0.5 shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-xs ${
+                            done ? "bg-indigo-500 text-white" : "bg-slate-100 text-slate-300"
+                          }`}>
+                            {done ? "✓" : "○"}
+                          </span>
+                          <span className={`text-sm ${done ? "text-slate-500 line-through" : "text-slate-700"}`}>
+                            {item.label}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Module Overview */}
         <div className="card bg-indigo-50 border-indigo-100">
           <h2 className="font-semibold text-indigo-800 mb-3 flex items-center gap-2">
