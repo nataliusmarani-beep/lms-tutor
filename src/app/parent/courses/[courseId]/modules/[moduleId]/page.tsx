@@ -49,18 +49,29 @@ export default async function ParentModulePage({ params }: { params: PageParams 
     .single();
   if (!mod) notFound();
 
+  const legacyModuleId: number | null = mod.legacy_module_id ?? null;
+
+  // Build OR filter to match both UUID and legacy integer module_id
+  const sessionFilter = legacyModuleId != null
+    ? `course_module_id.eq.${params.moduleId},module_id.eq.${legacyModuleId}`
+    : `course_module_id.eq.${params.moduleId}`;
+
+  const completionFilter = legacyModuleId != null
+    ? `course_module_id.eq.${params.moduleId},module_id.eq.${legacyModuleId}`
+    : `course_module_id.eq.${params.moduleId}`;
+
   const [{ data: sessions }, { data: checks }, { data: checklistItems }, { data: quizzes }] = await Promise.all([
     supabase
       .from("learning_sessions")
-      .select("id, date, duration_minutes, tutor_notes")
+      .select("id, date, duration_minutes, tutor_notes, student_notes")
       .eq("student_id", studentId)
-      .eq("course_module_id", params.moduleId)
+      .or(sessionFilter)
       .order("date", { ascending: false }),
     supabase
       .from("checklist_completions")
       .select("item_key, item_type")
       .eq("student_id", studentId)
-      .eq("course_module_id", params.moduleId),
+      .or(completionFilter),
     supabase
       .from("module_checklist_items")
       .select("id, item_key, label, item_type, sort_order")
@@ -139,24 +150,65 @@ export default async function ParentModulePage({ params }: { params: PageParams 
           </div>
         </div>
 
+        {/* Module Overview */}
+        <div className="card bg-indigo-50 border-indigo-100">
+          <h2 className="font-semibold text-indigo-800 mb-3 flex items-center gap-2">
+            <span>📋</span>
+            {lang === "id" ? "Gambaran Umum Modul" : "Module Overview"}
+          </h2>
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="bg-white rounded-xl p-3">
+              <div className="text-xs text-slate-400 mb-1">{lang === "id" ? "Total Sesi" : "Total Sessions"}</div>
+              <div className="text-2xl font-bold text-indigo-600">{sessions?.length ?? 0}</div>
+            </div>
+            <div className="bg-white rounded-xl p-3">
+              <div className="text-xs text-slate-400 mb-1">{lang === "id" ? "Waktu Belajar" : "Learning Time"}</div>
+              <div className="text-2xl font-bold text-indigo-600">
+                {Math.round(((sessions ?? []).reduce((a: number, s: { duration_minutes: number }) => a + s.duration_minutes, 0) / 60) * 10) / 10}h
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-white rounded-xl p-3">
+              <div className="text-xs text-slate-400 mb-1">{lang === "id" ? "Checklist Siswa" : "Student Checklist"}</div>
+              <div className="text-lg font-bold text-indigo-600">
+                {studentItems.filter((i) => allChecks.some((c: { item_key: string }) => c.item_key === i.item_key)).length}/{studentItems.length}
+              </div>
+            </div>
+            <div className="bg-white rounded-xl p-3">
+              <div className="text-xs text-slate-400 mb-1">{lang === "id" ? "Checklist Tutor" : "Tutor Checklist"}</div>
+              <div className="text-lg font-bold text-indigo-600">
+                {teacherItems.filter((i) => allChecks.some((c: { item_key: string }) => c.item_key === i.item_key)).length}/{teacherItems.length}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Sessions */}
         <div>
-          <h2 className="font-semibold text-slate-700 mb-3">{t(lang, "sessionsLabel")} ({sessions?.length ?? 0})</h2>
+          <h2 className="font-semibold text-slate-700 mb-3">
+            {t(lang, "sessionsLabel")} ({sessions?.length ?? 0})
+          </h2>
           {!sessions || sessions.length === 0 ? (
             <p className="text-sm text-slate-400 italic">{t(lang, "noSessionsModule")}</p>
           ) : (
             <div className="space-y-2">
-              {sessions.map((s: { id: string; date: string; duration_minutes: number; tutor_notes: string | null }) => (
+              {sessions.map((s: { id: string; date: string; duration_minutes: number; tutor_notes: string | null; student_notes?: string | null }) => (
                 <div key={s.id} className="card py-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-slate-700">
                       {format(new Date(s.date), "EEEE, MMMM d, yyyy")}
                     </span>
-                    <span className="badge-blue">{s.duration_minutes} min</span>
+                    <span className="badge-blue">{s.duration_minutes} {t(lang, "min")}</span>
                   </div>
                   {s.tutor_notes && (
                     <p className="text-xs text-slate-600 mt-1">
-                      <span className="text-slate-400">Tutor notes: </span>{s.tutor_notes}
+                      <span className="text-slate-400">{lang === "id" ? "Catatan tutor: " : "Tutor notes: "}</span>{s.tutor_notes}
+                    </p>
+                  )}
+                  {s.student_notes && (
+                    <p className="text-xs text-slate-600 mt-0.5">
+                      <span className="text-slate-400">{lang === "id" ? "Catatan siswa: " : "Student notes: "}</span>{s.student_notes}
                     </p>
                   )}
                 </div>
