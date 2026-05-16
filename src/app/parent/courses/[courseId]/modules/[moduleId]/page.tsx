@@ -49,6 +49,13 @@ export default async function ParentModulePage({ params }: { params: PageParams 
     .single();
   if (!mod) notFound();
 
+  // All modules in this course for curriculum overview
+  const { data: allCourseModules } = await supabase
+    .from("course_modules")
+    .select("id, title, focus, icon, week_number, sort_order")
+    .eq("course_id", params.courseId)
+    .order("sort_order");
+
   const legacyModuleId: number | null = mod.legacy_module_id ?? null;
 
   // Build OR filter to match both UUID and legacy integer module_id
@@ -150,62 +157,55 @@ export default async function ParentModulePage({ params }: { params: PageParams 
           </div>
         </div>
 
-        {/* Topics Covered */}
-        {allItems.length > 0 && (
+        {/* Course Curriculum */}
+        {allCourseModules && allCourseModules.length > 0 && (
           <div className="card">
-            <h2 className="font-semibold text-slate-700 mb-4 flex items-center gap-2">
-              <span>🎯</span>
-              {lang === "id" ? "Materi yang Dipelajari" : "Topics Covered"}
+            <h2 className="font-semibold text-slate-700 mb-4 flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <span>📚</span>
+                {lang === "id" ? "Kurikulum Kursus" : "Course Curriculum"}
+              </span>
+              <span className="badge-gray text-xs">{allCourseModules.length} {lang === "id" ? "modul" : "modules"}</span>
             </h2>
-            <div className="space-y-4">
-              {studentItems.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
-                    {lang === "id" ? "Aktivitas Siswa" : "Student Activities"}
-                  </p>
-                  <ul className="space-y-1.5">
-                    {studentItems.map((item) => {
-                      const done = allChecks.some((c: { item_key: string }) => c.item_key === item.item_key);
-                      return (
-                        <li key={item.id} className="flex items-start gap-2">
-                          <span className={`mt-0.5 shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-xs ${
-                            done ? "bg-green-500 text-white" : "bg-slate-100 text-slate-300"
+            <div className="space-y-2">
+              {allCourseModules.map((m: { id: string; title: string; focus: string | null; icon: string; week_number: number | null }) => {
+                const isCurrent = m.id === params.moduleId;
+                return (
+                  <Link
+                    key={m.id}
+                    href={`/parent/courses/${params.courseId}/modules/${m.id}`}
+                    className={`flex items-start gap-3 rounded-xl p-3 transition-colors ${
+                      isCurrent
+                        ? "bg-indigo-50 border border-indigo-200"
+                        : "hover:bg-slate-50 border border-transparent"
+                    }`}
+                  >
+                    <span className="text-xl shrink-0 mt-0.5">{m.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {m.week_number && (
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                            isCurrent ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-500"
                           }`}>
-                            {done ? "✓" : "○"}
+                            {lang === "id" ? "Minggu" : "Week"} {m.week_number}
                           </span>
-                          <span className={`text-sm ${done ? "text-slate-500 line-through" : "text-slate-700"}`}>
-                            {item.label}
+                        )}
+                        {isCurrent && (
+                          <span className="text-xs font-semibold text-indigo-600">
+                            ← {lang === "id" ? "Sedang dibuka" : "Current"}
                           </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              )}
-              {teacherItems.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
-                    {lang === "id" ? "Materi Tutor" : "Tutor-Led Topics"}
-                  </p>
-                  <ul className="space-y-1.5">
-                    {teacherItems.map((item) => {
-                      const done = allChecks.some((c: { item_key: string }) => c.item_key === item.item_key);
-                      return (
-                        <li key={item.id} className="flex items-start gap-2">
-                          <span className={`mt-0.5 shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-xs ${
-                            done ? "bg-indigo-500 text-white" : "bg-slate-100 text-slate-300"
-                          }`}>
-                            {done ? "✓" : "○"}
-                          </span>
-                          <span className={`text-sm ${done ? "text-slate-500 line-through" : "text-slate-700"}`}>
-                            {item.label}
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              )}
+                        )}
+                      </div>
+                      <div className={`text-sm font-medium mt-0.5 ${isCurrent ? "text-indigo-800" : "text-slate-700"}`}>
+                        {m.title}
+                      </div>
+                      {m.focus && (
+                        <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{m.focus}</p>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}
