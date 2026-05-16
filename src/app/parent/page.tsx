@@ -2,10 +2,46 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/Navbar";
 import ProgressRing from "@/components/ProgressRing";
-import ModuleCard from "@/components/ModuleCard";
-import { COURSE_MODULES } from "@/lib/course-data";
-import type { ModuleProgress } from "@/types";
 import { format } from "date-fns";
+
+interface CourseModule {
+  id: string;
+  title: string;
+  focus: string | null;
+  icon: string;
+  week_number: number | null;
+  sort_order: number;
+  course_id: string;
+}
+
+interface EnrolledCourse {
+  id: string;
+  title: string;
+  icon: string;
+  description: string | null;
+  modules: CourseModule[];
+}
+
+interface SessionRow {
+  id: string;
+  date: string;
+  duration_minutes: number;
+  tutor_notes: string | null;
+  course_module_id: string | null;
+  module_id: number | null;
+}
+
+interface CompletionRow {
+  item_key: string;
+  course_module_id: string | null;
+  module_id: number | null;
+}
+
+interface ChecklistItemRow {
+  course_module_id: string;
+  item_key: string;
+  item_type: string;
+}
 
 export default async function ParentDashboard() {
   const supabase = createClient();
@@ -28,7 +64,8 @@ export default async function ParentDashboard() {
     .in("id", studentIds.length > 0 ? studentIds : ["none"]);
 
   const studentList = students ?? [];
-  const studentId = studentList[0]?.id;
+  const student = studentList[0];
+  const studentId = student?.id;
 
   if (!studentId) {
     return (
@@ -37,68 +74,130 @@ export default async function ParentDashboard() {
         <div className="max-w-xl mx-auto px-4 py-16 text-center">
           <div className="text-5xl mb-4">👤</div>
           <h1 className="text-xl font-bold text-slate-700">No student linked yet</h1>
-          <p className="text-slate-400 mt-2">Ask your tutor to link your account to your child's profile.</p>
+          <p className="text-slate-400 mt-2">Ask your tutor to link your account to your child&apos;s profile.</p>
         </div>
       </div>
     );
   }
 
-  const [{ data: sessions }, { data: checks }, { data: submissions }] = await Promise.all([
-    supabase.from("learning_sessions").select("*").eq("student_id", studentId).order("date", { ascending: false }),
-    supabase.from("checklist_completions").select("*").eq("student_id", studentId),
-    supabase.from("submissions").select("*, assignments(title, module_id, grade, feedback, graded_at)").eq("student_id", studentId),
+  // Enrolled courses
+  const { data: enrollments } = await supabase
+    .from("course_enrollments")
+    .select("course_id, courses(id, title, icon, description)")
+    .eq("student_id", studentId);
+
+  const rawCourses = (enrollments ?? []).map((e: { course_id: string; courses: unknown }) => e.courses) as Array<{
+    id: string; title: string; icon: string; description: string | null;
+  }>;
+
+  const enrolledCourses: EnrolledCourse[] = await Promise.all(
+    rawCourses.map(async (course) => {
+      const { data: modules } = await supabase
+        .from("course_modules")
+        .select("*")
+        .eq("course_id", course.id)
+        .order("sort_order");
+      return { ...course, modules: (modules ?? []) as CourseModule[] };
+    })
+  );
+
+  // Sessions & completions
+  const [{ data: sessions }, { data: checks }] = await Promise.all([
+    supabase
+      .from("learning_sessions")
+      .select("id, date, duration_minutes, tutor_notes, course_module_id, module_id")
+      .eq("student_id", studentId)
+      .order("date", { ascending: false }),
+    supabase
+      .from("checklist_completions")
+      .select("item_key, course_module_id, module_id, item_type")
+      .eq("student_id", studentId),
   ]);
 
-  const moduleProgress: Record<number, ModuleProgress> = {};
-  for (const mod of COURSE_MODULES) {
-    const modSessions = sessions?.filter((s: { module_id: number }) => s.module_id === mod.id) ?? [];
-    const modChecks = checks?.filter((c: { module_id: number }) => c.module_id === mod.id) ?? [];
-    const studentChecksCompleted = mod.studentChecklist.filter((i) => modChecks.some((c: { item_key: string }) => c.item_key === i.key)).length;
-    const teacherChecksCompleted = mod.teacherChecklist.filter((i) => modChecks.some((c: { item_key: string }) => c.item_key === i.key)).length;
-    const totalChecks = mod.studentChecklist.length + mod.teacherChecklist.length;
+  const sessionList = (sessions ?? []) as SessionRow[];
+  const checkList = (checks ?? []) as CompletionRow[];
 
-    moduleProgress[mod.id] = {
-      moduleId: mod.id,
-      sessionsCount: modSessions.length,
-      totalMinutes: modSessions.reduce((a: number, s: { duration_minutes: number }) => a + s.duration_minutes, 0),
-      studentChecksCompleted,
-      studentChecksTotal: mod.studentChecklist.length,
-      teacherChecksCompleted,
-      teacherChecksTotal: mod.teacherChecklist.length,
-      percentComplete: totalChecks > 0 ? Math.round(((studentChecksCompleted + teacherChecksCompleted) / totalChecks) * 100) : 0,
+  // Checklist items per module
+  const allModuleIds = enrolledCourses.flatMap((c) => c.modules.map((m) => m.id));
+  const { data: itemCounts } = await supabase
+    .from("module_checklist_items")
+    .select("course_module_id, item_key, item_type")
+    .in("course_module_id", allModuleIds.length > 0 ? allModuleIds : ["__none__"]);
+
+  const itemsByModule: Record<string, ChecklistItemRow[]> = {};
+  for (const item of (itemCounts ?? []) as ChecklistItemRow[]) {
+    if (!item.course_module_id) continue;
+    if (!itemsByModule[item.course_module_id]) itemsByModule[item.course_module_id] = [];
+    itemsByModule[item.course_module_id].push(item);
+  }
+
+  function moduleProgress(moduleId: string) {
+    const items = itemsByModule[moduleId] ?? [];
+    const studentItems = items.filter((i) => i.item_type === "student");
+    const tutorItems = items.filter((i) => i.item_type === "teacher");
+    const completedAll = checkList.filter((c) => c.course_module_id === moduleId);
+    const studentDone = completedAll.filter((c) =>
+      studentItems.some((i) => i.item_key === c.item_key)
+    ).length;
+    const tutorDone = completedAll.filter((c) =>
+      tutorItems.some((i) => i.item_key === c.item_key)
+    ).length;
+    const total = items.length;
+    const completed = completedAll.length;
+    return {
+      completed,
+      total,
+      studentDone,
+      studentTotal: studentItems.length,
+      tutorDone,
+      tutorTotal: tutorItems.length,
+      pct: total > 0 ? Math.round((completed / total) * 100) : 0,
+      sessionCount: sessionList.filter((s) => s.course_module_id === moduleId).length,
     };
   }
 
-  const overallPct = Math.round(
-    Object.values(moduleProgress).reduce((a, m) => a + m.percentComplete, 0) / COURSE_MODULES.length
-  );
+  // Overall stats
+  const totalMinutes = sessionList.reduce((a, s) => a + s.duration_minutes, 0);
+  const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
 
-  const totalHours = Math.round(
-    (sessions?.reduce((a: number, s: { duration_minutes: number }) => a + s.duration_minutes, 0) ?? 0) / 60 * 10
-  ) / 10;
+  const allPcts = enrolledCourses.flatMap((c) => c.modules.map((m) => moduleProgress(m.id).pct));
+  const overallPct = allPcts.length > 0
+    ? Math.round(allPcts.reduce((a, b) => a + b, 0) / allPcts.length)
+    : 0;
+  const completedModules = allPcts.filter((p) => p === 100).length;
+  const totalModules = allPcts.length;
 
-  const student = studentList[0];
-  const gradedSubmissions = submissions?.filter((s: { grade: string | null }) => s.grade) ?? [];
+  // Module map for session display
+  const moduleMap: Record<string, CourseModule> = {};
+  for (const course of enrolledCourses) {
+    for (const mod of course.modules) moduleMap[mod.id] = mod;
+  }
 
   return (
     <div className="min-h-screen">
       <Navbar name={profile.name} role="parent" />
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
 
+        {/* Header card */}
         <div className="card bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
           <div className="flex items-center gap-4">
             <ProgressRing percent={overallPct} size={80} strokeWidth={8} />
             <div className="flex-1">
               <p className="text-slate-500 text-sm">Progress Report for</p>
               <h1 className="text-2xl font-bold text-slate-800">{student.name}</h1>
-              <p className="text-slate-500 text-sm mt-1">Microsoft App College Prep Course</p>
+              {enrolledCourses.length > 0 && (
+                <p className="text-slate-500 text-sm mt-1">
+                  {enrolledCourses.map((c) => c.title).join(" · ")}
+                </p>
+              )}
             </div>
           </div>
         </div>
 
+        {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="card text-center">
-            <div className="text-2xl font-bold text-blue-600">{sessions?.length ?? 0}</div>
+            <div className="text-2xl font-bold text-blue-600">{sessionList.length}</div>
             <div className="text-sm text-slate-500">Sessions</div>
           </div>
           <div className="card text-center">
@@ -106,82 +205,96 @@ export default async function ParentDashboard() {
             <div className="text-sm text-slate-500">Learning time</div>
           </div>
           <div className="card text-center">
-            <div className="text-2xl font-bold text-blue-600">
-              {Object.values(moduleProgress).filter((m) => m.percentComplete === 100).length}/8
-            </div>
+            <div className="text-2xl font-bold text-blue-600">{completedModules}/{totalModules}</div>
             <div className="text-sm text-slate-500">Modules done</div>
           </div>
           <div className="card text-center">
-            <div className="text-2xl font-bold text-blue-600">{submissions?.length ?? 0}</div>
-            <div className="text-sm text-slate-500">Submitted tasks</div>
+            <div className="text-2xl font-bold text-blue-600">{overallPct}%</div>
+            <div className="text-sm text-slate-500">Overall</div>
           </div>
         </div>
 
-        <div>
-          <h2 className="text-lg font-semibold text-slate-700 mb-4">Module Progress</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {COURSE_MODULES.map((mod) => (
-              <ModuleCard
-                key={mod.id}
-                module={mod}
-                progress={moduleProgress[mod.id]}
-                href="#"
-              />
-            ))}
+        {/* Module Progress */}
+        {enrolledCourses.length === 0 ? (
+          <div className="card text-center py-10">
+            <div className="text-4xl mb-3">📚</div>
+            <p className="text-slate-500">Not enrolled in any courses yet.</p>
           </div>
-        </div>
-
-        {gradedSubmissions.length > 0 && (
-          <div>
-            <h2 className="text-lg font-semibold text-slate-700 mb-4">Graded Assignments</h2>
-            <div className="space-y-2">
-              {gradedSubmissions.map((s: {
-                id: string;
-                assignments: { title: string; module_id: number } | null;
-                grade: string;
-                feedback: string | null;
-                graded_at: string | null;
-              }) => (
-                <div key={s.id} className="card flex items-center gap-3 py-3">
-                  <span className="text-xl">
-                    {COURSE_MODULES.find((m) => m.id === s.assignments?.module_id)?.icon}
-                  </span>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-slate-700">{s.assignments?.title}</div>
-                    {s.feedback && <p className="text-xs text-slate-500 mt-0.5">{s.feedback}</p>}
-                  </div>
-                  <div className="text-right">
-                    <span className="badge-green font-bold">{s.grade}</span>
-                    {s.graded_at && (
-                      <div className="text-xs text-slate-400 mt-1">{format(new Date(s.graded_at), "MMM d")}</div>
-                    )}
-                  </div>
+        ) : (
+          enrolledCourses.map((course) => (
+            <div key={course.id}>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-2xl">{course.icon}</span>
+                <h2 className="text-lg font-semibold text-slate-700">{course.title}</h2>
+              </div>
+              {course.modules.length === 0 ? (
+                <p className="text-sm text-slate-400 italic ml-10">No modules yet.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                  {course.modules.map((mod) => {
+                    const mp = moduleProgress(mod.id);
+                    return (
+                      <div key={mod.id} className="card flex items-start gap-3">
+                        <span className="text-2xl mt-0.5">{mod.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          {mod.week_number && (
+                            <span className="badge-gray text-xs">Week {mod.week_number}</span>
+                          )}
+                          <div className="font-medium text-slate-800 text-sm leading-tight mt-0.5">
+                            {mod.title}
+                          </div>
+                          {mod.focus && (
+                            <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{mod.focus}</p>
+                          )}
+                          <div className="mt-2 flex justify-between text-xs text-slate-400">
+                            <span>Student: {mp.studentDone}/{mp.studentTotal}</span>
+                            <span>Tutor: {mp.tutorDone}/{mp.tutorTotal}</span>
+                          </div>
+                          <div className="mt-1">
+                            <div className="flex items-center justify-between mb-0.5">
+                              <span className="text-xs text-slate-400">{mp.sessionCount} session{mp.sessionCount !== 1 ? "s" : ""}</span>
+                              <span className={`text-xs font-semibold ${
+                                mp.pct >= 100 ? "text-green-600" : mp.pct > 0 ? "text-blue-600" : "text-slate-400"
+                              }`}>{mp.pct}%</span>
+                            </div>
+                            <div className="w-full bg-slate-200 rounded-full h-1.5">
+                              <div
+                                className={`h-1.5 rounded-full ${mp.pct >= 100 ? "bg-green-500" : "bg-blue-500"}`}
+                                style={{ width: `${mp.pct}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
+              )}
             </div>
-          </div>
+          ))
         )}
 
+        {/* Recent Sessions */}
         <div>
           <h2 className="text-lg font-semibold text-slate-700 mb-4">Recent Sessions</h2>
-          {!sessions || sessions.length === 0 ? (
+          {sessionList.length === 0 ? (
             <div className="card text-center py-8">
               <p className="text-slate-400">No sessions recorded yet.</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {sessions.slice(0, 8).map((s: {
-                id: string; date: string; module_id: number; duration_minutes: number; tutor_notes: string | null
-              }) => {
-                const mod = COURSE_MODULES.find((m) => m.id === s.module_id);
+              {sessionList.slice(0, 8).map((s) => {
+                const mod = s.course_module_id ? moduleMap[s.course_module_id] : null;
                 return (
                   <div key={s.id} className="card flex items-center gap-3 py-3">
-                    <span className="text-xl">{mod?.icon}</span>
+                    <span className="text-xl">{mod?.icon ?? "📅"}</span>
                     <div className="flex-1">
                       <div className="text-sm font-medium text-slate-700">
-                        Module {s.module_id}: {mod?.title}
+                        {mod ? mod.title : s.module_id ? `Module ${s.module_id}` : "Session"}
                       </div>
-                      {s.tutor_notes && <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{s.tutor_notes}</p>}
+                      {s.tutor_notes && (
+                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{s.tutor_notes}</p>
+                      )}
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-medium text-slate-700">{s.duration_minutes} min</div>
@@ -193,6 +306,7 @@ export default async function ParentDashboard() {
             </div>
           )}
         </div>
+
       </div>
     </div>
   );
