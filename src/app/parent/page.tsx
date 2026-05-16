@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/Navbar";
 import ProgressRing from "@/components/ProgressRing";
@@ -234,7 +235,11 @@ export default async function ParentDashboard() {
                   {course.modules.map((mod) => {
                     const mp = moduleProgress(mod.id);
                     return (
-                      <div key={mod.id} className="card flex items-start gap-3">
+                      <Link
+                        key={mod.id}
+                        href={`/parent/courses/${course.id}/modules/${mod.id}`}
+                        className="card hover:shadow-md transition-shadow flex items-start gap-3"
+                      >
                         <span className="text-2xl mt-0.5">{mod.icon}</span>
                         <div className="flex-1 min-w-0">
                           {mod.week_number && (
@@ -265,7 +270,8 @@ export default async function ParentDashboard() {
                             </div>
                           </div>
                         </div>
-                      </div>
+                        <span className="text-slate-300 shrink-0">›</span>
+                      </Link>
                     );
                   })}
                 </div>
