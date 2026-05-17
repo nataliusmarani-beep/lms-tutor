@@ -3,8 +3,8 @@ import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Microsoft App Tutor – LMS",
-  description: "Learning Management System for Microsoft App College Prep Course",
+  title: "Tutor With Mr. Teis",
+  description: "Learning Management System by Mr. Teis",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
