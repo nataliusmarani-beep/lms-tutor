@@ -2,19 +2,25 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { COURSE_MODULES } from "@/lib/course-data";
 import toast from "react-hot-toast";
 
-interface SessionFormProps {
+interface Props {
   studentId: string;
-  preselectedModuleId?: number;
+  preselectedCourseModuleId?: string;
+  modules: {
+    id: string;
+    title: string;
+    icon: string;
+    week_number: number | null;
+    legacy_module_id: number | null;
+  }[];
 }
 
-export default function SessionForm({ studentId, preselectedModuleId }: SessionFormProps) {
+export default function SessionForm({ studentId, preselectedCourseModuleId, modules }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
-    module_id: preselectedModuleId?.toString() ?? "1",
+    course_module_id: preselectedCourseModuleId ?? modules[0]?.id ?? "",
     date: new Date().toISOString().split("T")[0],
     duration_minutes: "75",
     tutor_notes: "",
@@ -26,9 +32,11 @@ export default function SessionForm({ studentId, preselectedModuleId }: SessionF
     setLoading(true);
     const supabase = createClient();
 
+    const selectedModule = modules.find((m) => m.id === form.course_module_id);
     const { error } = await supabase.from("learning_sessions").insert({
       student_id: studentId,
-      module_id: parseInt(form.module_id),
+      course_module_id: form.course_module_id || null,
+      module_id: selectedModule?.legacy_module_id ?? null,
       date: form.date,
       duration_minutes: parseInt(form.duration_minutes),
       tutor_notes: form.tutor_notes || null,
@@ -44,20 +52,23 @@ export default function SessionForm({ studentId, preselectedModuleId }: SessionF
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="label">Module</label>
+        <select
+          className="input"
+          value={form.course_module_id}
+          onChange={(e) => setForm({ ...form, course_module_id: e.target.value })}
+        >
+          <option value="">— No module —</option>
+          {modules.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.icon} {m.week_number ? `Week ${m.week_number} – ` : ""}{m.title}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="label">Module</label>
-          <select
-            className="input"
-            value={form.module_id}
-            onChange={(e) => setForm({ ...form, module_id: e.target.value })}
-            required
-          >
-            {COURSE_MODULES.map((m) => (
-              <option key={m.id} value={m.id}>{m.icon} Module {m.id} – {m.title}</option>
-            ))}
-          </select>
-        </div>
         <div>
           <label className="label">Date</label>
           <input
@@ -66,24 +77,21 @@ export default function SessionForm({ studentId, preselectedModuleId }: SessionF
             onChange={(e) => setForm({ ...form, date: e.target.value })}
           />
         </div>
-      </div>
-
-      <div>
-        <label className="label">Duration (minutes)</label>
-        <input
-          type="number" className="input" min="10" max="180" required
-          value={form.duration_minutes}
-          onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })}
-          placeholder="60–90 minutes"
-        />
-        <p className="text-xs text-slate-400 mt-1">Standard session: 60–90 minutes</p>
+        <div>
+          <label className="label">Duration (minutes)</label>
+          <input
+            type="number" className="input" min="10" max="180" required
+            value={form.duration_minutes}
+            onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })}
+            placeholder="60–90 minutes"
+          />
+        </div>
       </div>
 
       <div>
         <label className="label">Tutor Notes (optional)</label>
         <textarea
-          className="input resize-none"
-          rows={2}
+          className="input resize-none" rows={2}
           value={form.tutor_notes}
           onChange={(e) => setForm({ ...form, tutor_notes: e.target.value })}
           placeholder="What was covered, how the student performed..."
@@ -93,8 +101,7 @@ export default function SessionForm({ studentId, preselectedModuleId }: SessionF
       <div>
         <label className="label">Student Notes (optional)</label>
         <textarea
-          className="input resize-none"
-          rows={2}
+          className="input resize-none" rows={2}
           value={form.student_notes}
           onChange={(e) => setForm({ ...form, student_notes: e.target.value })}
           placeholder="What I learned today, questions I have..."

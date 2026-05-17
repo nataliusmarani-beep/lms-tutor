@@ -7,7 +7,7 @@ import SessionForm from "@/components/SessionForm";
 export default async function NewSessionPage({
   searchParams,
 }: {
-  searchParams: { student?: string; module?: string };
+  searchParams: { student?: string; courseModule?: string };
 }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -23,7 +23,23 @@ export default async function NewSessionPage({
     .order("name");
 
   const selectedStudent = searchParams.student ?? students?.[0]?.id ?? "";
-  const selectedModule = searchParams.module ? parseInt(searchParams.module) : undefined;
+
+  // Fetch enrolled courses + modules for this student
+  const { data: enrollments } = selectedStudent
+    ? await supabase
+        .from("course_enrollments")
+        .select("course_id")
+        .eq("student_id", selectedStudent)
+    : { data: [] };
+
+  const courseIds = (enrollments ?? []).map((e: { course_id: string }) => e.course_id);
+  const { data: modules } = courseIds.length > 0
+    ? await supabase
+        .from("course_modules")
+        .select("id, title, icon, week_number, course_id, legacy_module_id")
+        .in("course_id", courseIds)
+        .order("sort_order")
+    : { data: [] };
 
   return (
     <div className="min-h-screen">
@@ -55,7 +71,11 @@ export default async function NewSessionPage({
           {selectedStudent ? (
             <SessionForm
               studentId={selectedStudent}
-              preselectedModuleId={selectedModule}
+              preselectedCourseModuleId={searchParams.courseModule ?? ""}
+              modules={(modules ?? []) as {
+                id: string; title: string; icon: string;
+                week_number: number | null; legacy_module_id: number | null;
+              }[]}
             />
           ) : (
             <p className="text-sm text-slate-400 italic">No students found. Add a student first.</p>
