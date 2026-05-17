@@ -97,7 +97,7 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
   ]);
 
   const sessionList = (sessions ?? []) as SessionRow[];
-  const checkList = (checks ?? []) as CompletionRow[];
+  const checkList = (checks ?? []) as unknown as CompletionRow[];
 
   // Checklist items per module
   const allModuleIds = enrolledCourses.flatMap((c) => c.modules.map((m) => m.id));
