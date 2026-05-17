@@ -122,15 +122,16 @@ export default async function StudentCoursesPage() {
 
           return (
             <div key={course.id}>
-              <div className="flex items-center gap-3 mb-3">
+              <Link href={`/student/courses/${course.id}`} className="flex items-center gap-3 mb-3 group">
                 <div className={`w-1 h-8 rounded-full bg-gradient-to-b ${theme.bar}`} />
                 <span className="text-2xl">{course.icon}</span>
-                <div className="flex-1">
-                  <h2 className="text-lg font-semibold text-slate-700">{course.title}</h2>
-                  {course.description && <p className="text-sm text-slate-500">{course.description}</p>}
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-lg font-semibold text-slate-700 group-hover:text-teal-600 transition-colors">{course.title}</h2>
+                  {course.description && <p className="text-sm text-slate-500 truncate">{course.description}</p>}
                 </div>
-                <span className="badge-blue">{coursePct}%</span>
-              </div>
+                <span className="badge-blue shrink-0">{coursePct}%</span>
+                <span className="text-slate-300 shrink-0 group-hover:text-teal-400 transition-colors">›</span>
+              </Link>
 
               {course.modules.length === 0 ? (
                 <p className="text-sm text-slate-400 italic ml-10">{t(lang, "noModulesYet")}</p>
@@ -142,7 +143,7 @@ export default async function StudentCoursesPage() {
                       <Link
                         key={mod.id}
                         href={`/student/courses/${course.id}/modules/${mod.id}`}
-                        className={`${theme.bg} rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex items-stretch gap-0 overflow-hidden p-0`}
+                        className={`${theme.bg} block rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex items-stretch gap-0 overflow-hidden p-0`}
                       >
                         <div className={`w-1 rounded-l-2xl bg-gradient-to-b ${theme.bar} shrink-0`} />
                         <div className="flex items-start gap-3 p-4 flex-1 min-w-0">
