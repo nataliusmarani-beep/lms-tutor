@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/Navbar";
 import SessionActions from "@/components/SessionActions";
+import AvatarUpload from "@/components/AvatarUpload";
 import { format } from "date-fns";
 import { getLang } from "@/lib/getLang";
 
@@ -158,9 +159,11 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
 
         {/* Student card */}
         <div className="card flex items-center gap-5">
-          <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-2xl font-bold text-blue-700">
-            {student.name[0]?.toUpperCase()}
-          </div>
+          <AvatarUpload
+            studentId={student.id}
+            currentUrl={student.avatar_url ?? null}
+            studentName={student.name}
+          />
           <div className="flex-1">
             <h1 className="text-xl font-bold text-slate-800">{student.name}</h1>
             <p className="text-slate-500 text-sm">{student.id}</p>

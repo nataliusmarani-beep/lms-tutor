@@ -242,6 +242,14 @@ export default async function TutorDashboard() {
                     href={`/tutor/students/${student.id}`}
                     className="card flex items-center gap-4 hover:shadow-md transition-shadow"
                   >
+                    {/* Avatar */}
+                    <div className="w-12 h-12 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center shrink-0">
+                      {student.avatar_url ? (
+                        <img src={student.avatar_url} alt={student.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xl font-bold text-blue-700">{student.name[0]?.toUpperCase()}</span>
+                      )}
+                    </div>
                     {/* Weekly ring */}
                     <ProgressRing percent={p.weekPct} size={60} strokeWidth={6} />
 
