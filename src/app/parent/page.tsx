@@ -208,7 +208,7 @@ export default async function ParentDashboard() {
           style={{ background: "linear-gradient(135deg, #0f1f3d 0%, #1e3a6e 60%, #2563eb 100%)" }}
         >
           <div className="flex items-center gap-4">
-            <ProgressRing percent={overallPct} size={80} strokeWidth={8} />
+            <ProgressRing percent={overallPct} size={80} strokeWidth={8} variant="dark" />
             <div className="flex-1">
               <p className="text-blue-200 text-sm">{t(lang, "progressReport")}</p>
               <h1 className="text-2xl font-bold text-white">{student.name}</h1>
