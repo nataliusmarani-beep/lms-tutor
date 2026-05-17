@@ -32,6 +32,7 @@ interface SessionRow {
   date: string;
   duration_minutes: number;
   tutor_notes: string | null;
+  photo_url: string | null;
   course_module_id: string | null;
   module_id: number | null;
 }
@@ -109,7 +110,7 @@ export default async function ParentDashboard() {
   const [{ data: sessions }, { data: checks }] = await Promise.all([
     supabase
       .from("learning_sessions")
-      .select("id, date, duration_minutes, tutor_notes, course_module_id, module_id")
+      .select("id, date, duration_minutes, tutor_notes, course_module_id, module_id, photo_url")
       .eq("student_id", studentId)
       .order("date", { ascending: false }),
     supabase

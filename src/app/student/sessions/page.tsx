@@ -9,6 +9,7 @@ interface SessionRow {
   date: string;
   duration_minutes: number;
   tutor_notes: string | null;
+  photo_url: string | null;
   student_notes: string | null;
   course_module_id: string | null;
   module_id: number | null;
@@ -116,6 +117,11 @@ export default async function StudentSessionsPage() {
                         <p className="text-xs text-teal-600 mt-0.5 line-clamp-1">{s.student_notes}</p>
                       )}
                     </div>
+                    {s.photo_url && (
+                      <a href={s.photo_url} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                        <img src={s.photo_url} alt="doc" className="w-14 h-10 object-cover rounded-lg border border-slate-200 hover:opacity-80 transition-opacity" />
+                      </a>
+                    )}
                     <div className="text-right shrink-0">
                       <div className="text-sm font-semibold text-slate-700">{s.duration_minutes} min</div>
                       <div className="text-xs text-slate-400">{format(new Date(s.date), "MMM d, yyyy")}</div>

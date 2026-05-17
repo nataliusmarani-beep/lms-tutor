@@ -29,6 +29,7 @@ interface SessionRow {
   date: string;
   duration_minutes: number;
   tutor_notes: string | null;
+  photo_url: string | null;
   student_notes: string | null;
   course_module_id: string | null;
   module_id: number | null;
