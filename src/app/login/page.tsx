@@ -36,7 +36,7 @@ export default function LoginPage() {
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: "url('/tutor-bg.jpg')",
-          opacity: 0.18,
+          opacity: 0.10,
           mixBlendMode: "luminosity",
         }}
       />
@@ -45,7 +45,7 @@ export default function LoginPage() {
 
       <div className="w-full max-w-sm relative z-10">
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">📘</div>
+          <div className="text-5xl mb-3">💻</div>
           <h1 className="text-2xl font-bold text-white">Computer Tutor with Mr. Teis</h1>
           <p className="text-white/50 mt-1">Learning Management System</p>
         </div>
