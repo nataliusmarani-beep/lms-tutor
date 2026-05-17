@@ -36,12 +36,12 @@ export default async function StudentCoursesPage() {
 
   const { data: enrollments } = await supabase
     .from("course_enrollments")
-    .select("course_id, courses(id, title, icon, icon_url, description)")
+    .select("course_id, courses(id, title, icon, icon_url, description, created_by)")
     .eq("student_id", user.id);
 
   const rawCourses = (enrollments ?? []).map(
     (e: { course_id: string; courses: unknown }) => e.courses
-  ) as Array<{ id: string; title: string; icon: string; icon_url?: string | null; description: string | null }>;
+  ) as Array<{ id: string; title: string; icon: string; icon_url?: string | null; description: string | null; created_by?: string | null }>;
 
   // Fetch module ids per course
   const courseWithModules = await Promise.all(
@@ -53,6 +53,16 @@ export default async function StudentCoursesPage() {
       return { ...course, moduleIds: (modules ?? []).map((m: { id: string }) => m.id) };
     })
   );
+
+  // Fetch tutor profiles
+  const tutorIds = Array.from(new Set(courseWithModules.map((c) => c.created_by).filter(Boolean))) as string[];
+  const { data: tutorProfiles } = tutorIds.length > 0
+    ? await supabase.from("profiles").select("id, name, avatar_url").in("id", tutorIds)
+    : { data: [] };
+  const tutorMap: Record<string, { name: string; avatar_url: string | null }> = {};
+  for (const tp of (tutorProfiles ?? []) as { id: string; name: string; avatar_url: string | null }[]) {
+    tutorMap[tp.id] = { name: tp.name, avatar_url: tp.avatar_url };
+  }
 
   const allModuleIds = courseWithModules.flatMap((c) => c.moduleIds);
 
@@ -126,10 +136,24 @@ export default async function StudentCoursesPage() {
                     {course.description && (
                       <p className="text-white/70 text-sm mt-0.5 line-clamp-1">{course.description}</p>
                     )}
-                    <div className="mt-2">
+                    <div className="mt-2 flex items-center gap-2 flex-wrap">
                       <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">
                         {course.moduleIds.length} {t(lang, "modules")}
                       </span>
+                      {course.created_by && tutorMap[course.created_by] && (
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full overflow-hidden bg-white/30 flex items-center justify-center shrink-0">
+                            {tutorMap[course.created_by].avatar_url ? (
+                              <img src={tutorMap[course.created_by].avatar_url!} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-[10px] text-white font-bold">
+                                {tutorMap[course.created_by].name.charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                          </span>
+                          <span className="text-xs text-white/80">{tutorMap[course.created_by].name}</span>
+                        </span>
+                      )}
                     </div>
                   </div>
 
