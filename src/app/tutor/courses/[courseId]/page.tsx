@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -31,6 +31,7 @@ interface Course {
   title: string;
   description: string | null;
   icon: string;
+  icon_url?: string | null;
 }
 
 export default function CourseDetailPage() {
@@ -46,10 +47,14 @@ export default function CourseDetailPage() {
   const [loading, setLoading] = useState(true);
 
   // Course edit state
-  const [courseTitle, setCourseTitle] = useState("");
-  const [courseDesc, setCourseDesc] = useState("");
-  const [courseIcon, setCourseIcon] = useState("");
-  const [savingCourse, setSavingCourse] = useState(false);
+  const [courseTitle,    setCourseTitle]    = useState("");
+  const [courseDesc,     setCourseDesc]     = useState("");
+  const [courseIcon,     setCourseIcon]     = useState("");
+  const [courseIconUrl,  setCourseIconUrl]  = useState<string | null>(null);
+  const [iconFile,       setIconFile]       = useState<File | null>(null);
+  const [iconPreview,    setIconPreview]    = useState<string | null>(null);
+  const [savingCourse,   setSavingCourse]   = useState(false);
+  const iconFileRef = useRef<HTMLInputElement>(null);
 
   // New module state
   const [newModIcon, setNewModIcon] = useState("📚");
@@ -78,6 +83,7 @@ export default function CourseDetailPage() {
       setCourseTitle(courseData.title);
       setCourseDesc(courseData.description ?? "");
       setCourseIcon(courseData.icon);
+      setCourseIconUrl(courseData.icon_url ?? null);
     }
     setModules((moduleData ?? []) as CourseModule[]);
     setEnrolled((enrollData ?? []) as unknown as EnrolledStudent[]);
@@ -87,18 +93,56 @@ export default function CourseDetailPage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  function handleIconFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { toast.error("Image must be under 2 MB"); return; }
+    if (iconPreview) URL.revokeObjectURL(iconPreview);
+    setIconFile(file);
+    setIconPreview(URL.createObjectURL(file));
+  }
+
+  function removeIconImage() {
+    setIconFile(null);
+    if (iconPreview) URL.revokeObjectURL(iconPreview);
+    setIconPreview(null);
+    setCourseIconUrl(null);
+    if (iconFileRef.current) iconFileRef.current.value = "";
+  }
+
   async function handleSaveCourse(e: React.FormEvent) {
     e.preventDefault();
     setSavingCourse(true);
-    const { error } = await supabase.from("courses").update({
+
+    let newIconUrl: string | null | undefined = undefined;
+
+    if (iconFile) {
+      const ext  = iconFile.name.split(".").pop();
+      const path = `${courseId}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("course-icons").upload(path, iconFile, { upsert: true });
+      if (upErr) { toast.error("Image upload failed: " + upErr.message); setSavingCourse(false); return; }
+      const { data: urlData } = supabase.storage.from("course-icons").getPublicUrl(path);
+      newIconUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+      setIconPreview(null);
+      setIconFile(null);
+      setCourseIconUrl(newIconUrl);
+    } else if (!iconPreview && !courseIconUrl) {
+      newIconUrl = null;
+    }
+
+    const updatePayload: Record<string, unknown> = {
       title: courseTitle.trim(),
       description: courseDesc.trim() || null,
       icon: courseIcon.trim() || "📚",
-    }).eq("id", courseId);
+    };
+    if (newIconUrl !== undefined) updatePayload.icon_url = newIconUrl;
+
+    const { error } = await supabase.from("courses").update(updatePayload).eq("id", courseId);
     setSavingCourse(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Course saved!");
-    setCourse((prev) => prev ? { ...prev, title: courseTitle, description: courseDesc || null, icon: courseIcon } : prev);
+    setCourse((prev) => prev ? { ...prev, title: courseTitle, description: courseDesc || null, icon: courseIcon, icon_url: newIconUrl ?? prev.icon_url } : prev);
   }
 
   async function handleAddModule(e: React.FormEvent) {
@@ -171,7 +215,7 @@ export default function CourseDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <p className="text-slate-400">Loading...</p>
       </div>
     );
@@ -179,20 +223,14 @@ export default function CourseDetailPage() {
 
   if (!course) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <p className="text-slate-500">Course not found.</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="bg-white border-b border-slate-100 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-3">
-          <span className="text-xl font-bold text-blue-600">📘 LMS Tutor</span>
-        </div>
-      </nav>
-
+    <div className="min-h-screen">
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm text-slate-400">
@@ -213,25 +251,39 @@ export default function CourseDetailPage() {
         {/* Course Info */}
         <form onSubmit={handleSaveCourse} className="card space-y-4">
           <h2 className="font-semibold text-slate-700">Course Information</h2>
-          <div className="flex gap-3">
-            <div className="w-24">
-              <label className="label">Icon</label>
-              <input
-                className="input text-2xl text-center"
-                value={courseIcon}
-                onChange={(e) => setCourseIcon(e.target.value)}
-                maxLength={8}
-              />
+
+          {/* Icon */}
+          <div>
+            <label className="label">Course Icon</label>
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200">
+                {iconPreview ? (
+                  <img src={iconPreview} alt="icon" className="w-full h-full object-cover" />
+                ) : courseIconUrl ? (
+                  <img src={courseIconUrl} alt="icon" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-3xl">{courseIcon || "📚"}</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <input className="input w-20 text-2xl" value={iconPreview || courseIconUrl ? "" : courseIcon}
+                  onChange={(e) => setCourseIcon(e.target.value)} maxLength={8}
+                  disabled={!!(iconPreview || courseIconUrl)} placeholder="📚" />
+                <span className="text-xs text-slate-400">or</span>
+                <button type="button" onClick={() => iconFileRef.current?.click()} className="btn-secondary text-xs py-1.5 px-3">
+                  {iconPreview || courseIconUrl ? "Replace Image" : "Upload Image"}
+                </button>
+                {(iconPreview || courseIconUrl) && (
+                  <button type="button" onClick={removeIconImage} className="text-xs text-red-500 hover:text-red-700">Remove</button>
+                )}
+              </div>
             </div>
-            <div className="flex-1">
-              <label className="label">Title *</label>
-              <input
-                className="input"
-                value={courseTitle}
-                onChange={(e) => setCourseTitle(e.target.value)}
-                required
-              />
-            </div>
+            <input ref={iconFileRef} type="file" accept="image/*" className="hidden" onChange={handleIconFileChange} />
+          </div>
+
+          <div>
+            <label className="label">Title *</label>
+            <input className="input" value={courseTitle} onChange={(e) => setCourseTitle(e.target.value)} required />
           </div>
           <div>
             <label className="label">Description</label>
