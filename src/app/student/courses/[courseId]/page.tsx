@@ -47,7 +47,7 @@ export default async function StudentCoursePage({ params }: { params: { courseId
 
   const { data: allSessions } = await supabase
     .from("learning_sessions")
-    .select("id, date, duration_minutes, tutor_notes, tutor_notes_id, student_notes, student_notes_id, course_module_id, module_id")
+    .select("id, date, duration_minutes, tutor_notes, tutor_notes_id, student_notes, student_notes_id, course_module_id, module_id, photo_url")
     .eq("student_id", user.id)
     .order("date", { ascending: false });
 

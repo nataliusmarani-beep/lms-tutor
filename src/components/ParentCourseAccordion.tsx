@@ -23,6 +23,7 @@ interface Session {
   tutor_notes_id?: string | null;
   student_notes?: string | null;
   student_notes_id?: string | null;
+  photo_url?: string | null;
 }
 
 interface QuizAttempt {
@@ -229,26 +230,39 @@ function ModulePanel({ mod, lang, defaultOpen }: { mod: ModuleData; lang: Lang; 
               ) : (
                 mod.sessions.map((s) => (
                   <div key={s.id} className="bg-slate-50 rounded-xl px-4 py-3 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-slate-700">
-                        {format(new Date(s.date), "EEEE, MMMM d, yyyy")}
-                      </span>
-                      <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                        {s.duration_minutes} {t(lang, "min")}
-                      </span>
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-semibold text-slate-700">
+                            {format(new Date(s.date), "EEEE, MMMM d, yyyy")}
+                          </span>
+                          <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full shrink-0">
+                            {s.duration_minutes} {t(lang, "min")}
+                          </span>
+                        </div>
+                        {(s.tutor_notes || s.tutor_notes_id) && (
+                          <p className="text-xs text-slate-600">
+                            <span className="text-slate-400 font-medium">{t(lang, "tutorNotes")} </span>
+                            {(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
+                          </p>
+                        )}
+                        {(s.student_notes || s.student_notes_id) && (
+                          <p className="text-xs text-slate-600">
+                            <span className="text-slate-400 font-medium">{t(lang, "studentNotes")} </span>
+                            {(lang === "id" && s.student_notes_id) ? s.student_notes_id : s.student_notes}
+                          </p>
+                        )}
+                      </div>
+                      {s.photo_url && (
+                        <a href={s.photo_url} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                          <img
+                            src={s.photo_url}
+                            alt="session"
+                            className="w-16 h-12 object-cover rounded-lg border border-slate-200 hover:opacity-80 transition-opacity"
+                          />
+                        </a>
+                      )}
                     </div>
-                    {(s.tutor_notes || s.tutor_notes_id) && (
-                      <p className="text-xs text-slate-600">
-                        <span className="text-slate-400 font-medium">{t(lang, "tutorNotes")} </span>
-                        {(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
-                      </p>
-                    )}
-                    {(s.student_notes || s.student_notes_id) && (
-                      <p className="text-xs text-slate-600">
-                        <span className="text-slate-400 font-medium">{t(lang, "studentNotes")} </span>
-                        {(lang === "id" && s.student_notes_id) ? s.student_notes_id : s.student_notes}
-                      </p>
-                    )}
                   </div>
                 ))
               )
