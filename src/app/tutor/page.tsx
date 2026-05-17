@@ -141,11 +141,20 @@ export default async function TutorDashboard() {
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
 
         {/* Welcome banner */}
-        <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white shadow-md">
-          <h1 className="text-2xl font-bold">{t(lang, "welcomeBack")}, {profile.name.split(" ")[0]}! 👋</h1>
-          <p className="mt-1 text-indigo-200 text-sm">
-            {courseList.length} {t(lang, "courses").toLowerCase()} · {studentList.length} {t(lang, "students").toLowerCase()} · {t(lang, "readyToTeach")}
-          </p>
+        <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white shadow-md flex items-center gap-4">
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold">{t(lang, "welcomeBack")}, {profile.name.split(" ")[0]}! 👋</h1>
+            <p className="mt-1 text-indigo-200 text-sm">
+              {courseList.length} {t(lang, "courses").toLowerCase()} · {studentList.length} {t(lang, "students").toLowerCase()} · {t(lang, "readyToTeach")}
+            </p>
+          </div>
+          <div className="w-16 h-16 rounded-full overflow-hidden bg-indigo-400 flex items-center justify-center shrink-0 ring-2 ring-white/40">
+            {profile.avatar_url ? (
+              <img src={profile.avatar_url} alt={profile.name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-2xl font-bold text-white">{profile.name[0]?.toUpperCase()}</span>
+            )}
+          </div>
         </div>
 
         {/* Stat cards */}
