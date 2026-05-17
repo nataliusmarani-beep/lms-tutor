@@ -250,33 +250,52 @@ export default async function TutorDashboard() {
                   <Link
                     key={student.id}
                     href={`/tutor/students/${student.id}`}
-                    className="card flex items-center gap-4 hover:shadow-md transition-shadow"
+                    className="card hover:shadow-md transition-shadow"
                   >
-                    {/* Avatar */}
-                    <div className="w-12 h-12 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center shrink-0">
-                      {student.avatar_url ? (
-                        <img src={student.avatar_url} alt={student.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-xl font-bold text-blue-700">{student.name[0]?.toUpperCase()}</span>
-                      )}
+                    {/* Row 1: avatar + name + badge + arrow */}
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center shrink-0">
+                        {student.avatar_url ? (
+                          <img src={student.avatar_url} alt={student.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-base font-bold text-blue-700">{student.name[0]?.toUpperCase()}</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-slate-800 truncate">{student.name}</h3>
+                        <p className="text-xs text-slate-500">
+                          {p.sessionsCount} {t(lang, "sessions").toLowerCase()} · {p.totalHours}h {t(lang, "totalTimeLabel")}
+                        </p>
+                      </div>
+                      <span
+                        className={`badge shrink-0 ${
+                          p.weekPct >= 100 ? "badge-green"
+                          : p.weekPct >= 50 ? "badge-blue"
+                          : p.sessionsCount > 0 ? "badge-yellow"
+                          : "badge-gray"
+                        }`}
+                      >
+                        {p.weekPct >= 100 ? t(lang, "goalMet")
+                          : p.weekPct >= 50 ? t(lang, "onTrack")
+                          : p.sessionsCount > 0 ? t(lang, "behind")
+                          : t(lang, "noSessions")}
+                      </span>
+                      <span className="text-slate-300 shrink-0">›</span>
                     </div>
-                    {/* Weekly ring */}
-                    <ProgressRing percent={p.weekPct} size={60} strokeWidth={6} />
 
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-slate-800">{student.name}</h3>
-                      <p className="text-sm text-slate-500">
-                        {p.sessionsCount} {t(lang, "sessions").toLowerCase()} · {p.totalHours}h {t(lang, "totalTimeLabel")}
-                      </p>
-                      {/* Weekly bar */}
-                      <div className="mt-1.5">
-                        <div className="flex items-center justify-between mb-0.5">
+                    {/* Row 2: ring + weekly bar */}
+                    <div className="flex items-center gap-3 mt-3">
+                      <ProgressRing percent={p.weekPct} size={52} strokeWidth={5} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
                           <span className="text-xs text-slate-400">{t(lang, "thisWeek")}</span>
                           <span className={`text-xs font-semibold ${
                             p.weekPct >= 100 ? "text-green-600" : p.weekPct >= 50 ? "text-teal-600" : "text-slate-400"
                           }`}>
                             {p.weekMinutes} / {WEEKLY_TARGET_MINUTES} {t(lang, "min")}
-                            {p.weekPct >= 100 ? " ✓" : ` · ${sessionsLeft} ${sessionsLeft !== 1 ? t(lang, "sessionsLeft") : t(lang, "sessionLeft")}`}
+                            {p.weekPct >= 100
+                              ? " ✓"
+                              : ` · ${sessionsLeft} ${sessionsLeft !== 1 ? t(lang, "sessionsLeft") : t(lang, "sessionLeft")}`}
                           </span>
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-1.5">
@@ -289,29 +308,6 @@ export default async function TutorDashboard() {
                         </div>
                       </div>
                     </div>
-
-                    <div className="text-right shrink-0">
-                      <span
-                        className={`badge ${
-                          p.weekPct >= 100
-                            ? "badge-green"
-                            : p.weekPct >= 50
-                            ? "badge-blue"
-                            : p.sessionsCount > 0
-                            ? "badge-yellow"
-                            : "badge-gray"
-                        }`}
-                      >
-                        {p.weekPct >= 100
-                          ? t(lang, "goalMet")
-                          : p.weekPct >= 50
-                          ? t(lang, "onTrack")
-                          : p.sessionsCount > 0
-                          ? t(lang, "behind")
-                          : t(lang, "noSessions")}
-                      </span>
-                    </div>
-                    <span className="text-slate-300">›</span>
                   </Link>
                 );
               })}
