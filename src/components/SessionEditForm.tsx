@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
@@ -15,6 +15,7 @@ interface Props {
     tutor_notes: string;
     tutor_notes_id: string;
     student_notes: string;
+    photo_url: string | null;
   };
   modules: {
     id: string;
@@ -25,36 +26,114 @@ interface Props {
   }[];
 }
 
+async function compressToThumbnail(file: File): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 480;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w >= h) { h = Math.round((h * MAX) / w); w = MAX; }
+        else        { w = Math.round((w * MAX) / h); h = MAX; }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(objectUrl);
+      let quality = 0.85;
+      function attempt() {
+        canvas.toBlob((blob) => {
+          if (!blob) { reject(new Error("Compression failed")); return; }
+          if (blob.size <= 100 * 1024 || quality <= 0.05) resolve(blob);
+          else { quality = Math.max(0.05, quality - 0.1); attempt(); }
+        }, "image/jpeg", quality);
+      }
+      attempt();
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("Image load failed")); };
+    img.src = objectUrl;
+  });
+}
+
 export default function SessionEditForm({ sessionId, studentId, initialData, modules }: Props) {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const router  = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const [loading,     setLoading]     = useState(false);
+  const [compressing, setCompressing] = useState(false);
+  const [photoFile,   setPhotoFile]   = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(initialData.photo_url);
+  const [isExisting,  setIsExisting]  = useState(true); // true = unchanged existing photo
+
   const [form, setForm] = useState({
     course_module_id: initialData.course_module_id,
-    date: initialData.date,
+    date:             initialData.date,
     duration_minutes: initialData.duration_minutes.toString(),
-    tutor_notes: initialData.tutor_notes,
-    tutor_notes_id: initialData.tutor_notes_id,
-    student_notes: initialData.student_notes,
+    tutor_notes:      initialData.tutor_notes,
+    tutor_notes_id:   initialData.tutor_notes_id,
+    student_notes:    initialData.student_notes,
   });
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCompressing(true);
+    try {
+      const blob = await compressToThumbnail(file);
+      const compressed = new File([blob], "photo.jpg", { type: "image/jpeg" });
+      if (photoPreview && !isExisting) URL.revokeObjectURL(photoPreview);
+      setPhotoFile(compressed);
+      setPhotoPreview(URL.createObjectURL(blob));
+      setIsExisting(false);
+      toast.success(`Photo ready — ${Math.round(blob.size / 1024)} KB`);
+    } catch {
+      toast.error("Could not process image");
+    }
+    setCompressing(false);
+  }
+
+  function removePhoto() {
+    if (photoPreview && !isExisting) URL.revokeObjectURL(photoPreview);
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    setIsExisting(false);
+    if (fileRef.current) fileRef.current.value = "";
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     const supabase = createClient();
 
+    let photo_url: string | null | undefined = undefined; // undefined = don't change
+
+    if (!isExisting && photoFile) {
+      // Upload new photo
+      const path = `${studentId}/${Date.now()}.jpg`;
+      const { error: upErr } = await supabase.storage
+        .from("session-photos").upload(path, photoFile, { upsert: false });
+      if (upErr) { toast.error("Photo upload failed: " + upErr.message); setLoading(false); return; }
+      const { data } = supabase.storage.from("session-photos").getPublicUrl(path);
+      photo_url = data.publicUrl;
+    } else if (!isExisting && !photoFile) {
+      // Photo was removed
+      photo_url = null;
+    }
+
     const selectedModule = modules.find((m) => m.id === form.course_module_id);
-    const { error } = await supabase
-      .from("learning_sessions")
-      .update({
-        course_module_id: form.course_module_id || null,
-        module_id: selectedModule?.legacy_module_id ?? null,
-        date: form.date,
-        duration_minutes: parseInt(form.duration_minutes),
-        tutor_notes: form.tutor_notes || null,
-        tutor_notes_id: form.tutor_notes_id || null,
-        student_notes: form.student_notes || null,
-      })
-      .eq("id", sessionId);
+    const updateData: Record<string, unknown> = {
+      course_module_id: form.course_module_id || null,
+      module_id:        selectedModule?.legacy_module_id ?? null,
+      date:             form.date,
+      duration_minutes: parseInt(form.duration_minutes),
+      tutor_notes:      form.tutor_notes     || null,
+      tutor_notes_id:   form.tutor_notes_id  || null,
+      student_notes:    form.student_notes   || null,
+    };
+    if (photo_url !== undefined) updateData.photo_url = photo_url;
+
+    const { error } = await supabase.from("learning_sessions").update(updateData).eq("id", sessionId);
 
     setLoading(false);
     if (error) { toast.error(error.message); return; }
@@ -65,13 +144,11 @@ export default function SessionEditForm({ sessionId, studentId, initialData, mod
 
   return (
     <form onSubmit={handleSave} className="space-y-4">
+
       <div>
         <label className="label">Module</label>
-        <select
-          className="input"
-          value={form.course_module_id}
-          onChange={(e) => setForm({ ...form, course_module_id: e.target.value })}
-        >
+        <select className="input" value={form.course_module_id}
+          onChange={(e) => setForm({ ...form, course_module_id: e.target.value })}>
           <option value="">— No module —</option>
           {modules.map((m) => (
             <option key={m.id} value={m.id}>
@@ -84,61 +161,92 @@ export default function SessionEditForm({ sessionId, studentId, initialData, mod
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="label">Date</label>
-          <input
-            type="date" className="input" required
-            value={form.date}
-            onChange={(e) => setForm({ ...form, date: e.target.value })}
-          />
+          <input type="date" className="input" required value={form.date}
+            onChange={(e) => setForm({ ...form, date: e.target.value })} />
         </div>
         <div>
           <label className="label">Duration (min)</label>
-          <input
-            type="number" className="input" min="10" max="180" required
+          <input type="number" className="input" min="10" max="180" required
             value={form.duration_minutes}
-            onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })}
-          />
+            onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })} />
         </div>
       </div>
 
       <div>
         <label className="label">Tutor Notes (EN)</label>
-        <textarea
-          className="input resize-none" rows={3}
-          value={form.tutor_notes}
+        <textarea className="input resize-none" rows={3} value={form.tutor_notes}
           onChange={(e) => setForm({ ...form, tutor_notes: e.target.value })}
-          placeholder="What was covered, how the student performed..."
-        />
+          placeholder="What was covered, how the student performed..." />
       </div>
 
       <div>
         <label className="label">Catatan Tutor (ID)</label>
-        <textarea
-          className="input resize-none" rows={3}
-          value={form.tutor_notes_id}
+        <textarea className="input resize-none" rows={3} value={form.tutor_notes_id}
           onChange={(e) => setForm({ ...form, tutor_notes_id: e.target.value })}
-          placeholder="Apa yang dipelajari, bagaimana performa siswa..."
-        />
+          placeholder="Apa yang dipelajari, bagaimana performa siswa..." />
       </div>
 
       <div>
         <label className="label">Student Notes</label>
-        <textarea
-          className="input resize-none" rows={2}
-          value={form.student_notes}
+        <textarea className="input resize-none" rows={2} value={form.student_notes}
           onChange={(e) => setForm({ ...form, student_notes: e.target.value })}
-          placeholder="What I learned today..."
-        />
+          placeholder="What I learned today..." />
+      </div>
+
+      {/* Photo documentation */}
+      <div>
+        <label className="label">Photo Documentation (optional)</label>
+        {photoPreview ? (
+          <div className="relative inline-block">
+            <img
+              src={photoPreview}
+              alt="Session photo"
+              className="w-full max-w-xs rounded-xl border border-slate-200 object-cover"
+            />
+            <button
+              type="button"
+              onClick={removePhoto}
+              className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center text-sm hover:bg-red-600 transition-colors"
+            >
+              ✕
+            </button>
+            <div className="mt-1 flex items-center gap-2">
+              <span className="text-xs text-slate-400">
+                {photoFile ? `${Math.round(photoFile.size / 1024)} KB` : "Existing photo"}
+              </span>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={compressing}
+                className="text-xs text-teal-600 hover:text-teal-700 underline"
+              >
+                Replace
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={compressing}
+            className="w-full border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center gap-2 text-slate-400 hover:border-teal-400 hover:text-teal-500 transition-colors disabled:opacity-50"
+          >
+            <span className="text-3xl">📷</span>
+            <span className="text-sm font-medium">
+              {compressing ? "Compressing…" : "Click to add photo"}
+            </span>
+            <span className="text-xs">Auto-compressed to ≤ 100 KB</span>
+          </button>
+        )}
+        <input ref={fileRef} type="file" accept="image/*" capture="environment"
+          className="hidden" onChange={handlePhotoChange} />
       </div>
 
       <div className="flex gap-3">
-        <button type="submit" className="btn-primary flex-1" disabled={loading}>
-          {loading ? "Saving..." : "Save Changes"}
+        <button type="submit" className="btn-primary flex-1" disabled={loading || compressing}>
+          {loading ? "Saving…" : "Save Changes"}
         </button>
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="btn-secondary flex-1"
-        >
+        <button type="button" onClick={() => router.back()} className="btn-secondary flex-1">
           Cancel
         </button>
       </div>

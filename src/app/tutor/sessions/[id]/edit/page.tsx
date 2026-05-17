@@ -63,6 +63,7 @@ export default async function EditSessionPage({ params }: { params: { id: string
               tutor_notes: session.tutor_notes ?? "",
               tutor_notes_id: session.tutor_notes_id ?? "",
               student_notes: session.student_notes ?? "",
+              photo_url: session.photo_url ?? null,
             }}
             modules={(modules ?? []) as {
               id: string; title: string; icon: string;
