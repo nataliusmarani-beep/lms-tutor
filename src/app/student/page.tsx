@@ -144,13 +144,13 @@ export default async function StudentDashboard() {
 
   const recentSessions = sessionList.slice(0, 5);
 
-  const courseAccentColors = [
-    "from-indigo-500 to-indigo-600",
-    "from-purple-500 to-purple-600",
-    "from-emerald-500 to-emerald-600",
-    "from-amber-500 to-amber-600",
-    "from-rose-500 to-rose-600",
-    "from-cyan-500 to-cyan-600",
+  const cardThemes = [
+    { bg: "bg-teal-50",   bar: "from-teal-400 to-teal-500",   progress: "bg-teal-500",   pct: "text-teal-600"   },
+    { bg: "bg-amber-50",  bar: "from-amber-400 to-amber-500",  progress: "bg-amber-500",  pct: "text-amber-600"  },
+    { bg: "bg-yellow-50", bar: "from-yellow-400 to-yellow-500", progress: "bg-yellow-500", pct: "text-yellow-600" },
+    { bg: "bg-rose-50",   bar: "from-rose-400 to-rose-500",    progress: "bg-rose-500",   pct: "text-rose-600"   },
+    { bg: "bg-violet-50", bar: "from-violet-400 to-violet-500", progress: "bg-violet-500", pct: "text-violet-600" },
+    { bg: "bg-sky-50",    bar: "from-sky-400 to-sky-500",      progress: "bg-sky-500",    pct: "text-sky-600"    },
   ];
 
   return (
@@ -159,8 +159,8 @@ export default async function StudentDashboard() {
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
 
         {/* Welcome banner */}
-        <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white shadow-md flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full overflow-hidden bg-indigo-400 flex items-center justify-center shrink-0 ring-2 ring-white/40">
+        <div className="rounded-2xl p-6 text-white shadow-md flex items-center gap-4" style={{ backgroundColor: "#0f1f3d" }}>
+          <div className="w-16 h-16 rounded-full overflow-hidden bg-teal-500 flex items-center justify-center shrink-0 ring-2 ring-white/40">
             {profile.avatar_url ? (
               <img src={profile.avatar_url} alt={profile.name} className="w-full h-full object-cover" />
             ) : (
@@ -180,17 +180,17 @@ export default async function StudentDashboard() {
         <div className="grid grid-cols-3 gap-4">
           <div className="card text-center">
             <div className="text-2xl mb-1">📅</div>
-            <div className="text-2xl font-bold text-indigo-600">{totalSessions}</div>
+            <div className="text-2xl font-bold text-teal-600">{totalSessions}</div>
             <div className="text-sm text-slate-500">{t(lang, "sessions")}</div>
           </div>
           <div className="card text-center">
             <div className="text-2xl mb-1">⏱️</div>
-            <div className="text-2xl font-bold text-indigo-600">{totalHours}h</div>
+            <div className="text-2xl font-bold text-teal-600">{totalHours}h</div>
             <div className="text-sm text-slate-500">{t(lang, "learningTime")}</div>
           </div>
           <div className="card text-center">
             <div className="text-2xl mb-1">✅</div>
-            <div className="text-2xl font-bold text-indigo-600">{completedModules}</div>
+            <div className="text-2xl font-bold text-teal-600">{completedModules}</div>
             <div className="text-sm text-slate-500">{t(lang, "modulesDone")}</div>
           </div>
         </div>
@@ -204,6 +204,7 @@ export default async function StudentDashboard() {
           </div>
         ) : (
           enrolledCourses.map((course, courseIdx) => {
+            const theme = cardThemes[courseIdx % cardThemes.length];
             const courseChecks = checkList.filter((c) =>
               course.modules.some((m) => m.id === c.course_module_id)
             ).length;
@@ -218,7 +219,7 @@ export default async function StudentDashboard() {
               <div key={course.id}>
                 {/* Course heading with accent bar */}
                 <div className="flex items-center gap-3 mb-3">
-                  <div className={`w-1 h-8 rounded-full bg-gradient-to-b ${courseAccentColors[courseIdx % courseAccentColors.length]}`} />
+                  <div className={`w-1 h-8 rounded-full bg-gradient-to-b ${theme.bar}`} />
                   <span className="text-2xl">{course.icon}</span>
                   <div className="flex-1">
                     <h2 className="text-lg font-semibold text-slate-700">{course.title}</h2>
@@ -239,10 +240,10 @@ export default async function StudentDashboard() {
                         <Link
                           key={mod.id}
                           href={`/student/courses/${course.id}/modules/${mod.id}`}
-                          className="card hover:shadow-md transition-shadow flex items-stretch gap-0 overflow-hidden p-0"
+                          className={`${theme.bg} rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex items-stretch gap-0 overflow-hidden p-0`}
                         >
                           {/* Left accent bar */}
-                          <div className={`w-1 rounded-l-2xl bg-gradient-to-b ${courseAccentColors[courseIdx % courseAccentColors.length]} shrink-0`} />
+                          <div className={`w-1 rounded-l-2xl bg-gradient-to-b ${theme.bar} shrink-0`} />
                           <div className="flex items-start gap-3 p-4 flex-1 min-w-0">
                             <span className="text-2xl mt-0.5 shrink-0">{mod.icon}</span>
                             <div className="flex-1 min-w-0">
@@ -267,7 +268,7 @@ export default async function StudentDashboard() {
                                       mp.pct >= 100
                                         ? "text-emerald-600"
                                         : mp.pct > 0
-                                        ? "text-indigo-600"
+                                        ? theme.pct
                                         : "text-slate-400"
                                     }`}
                                   >
@@ -277,7 +278,7 @@ export default async function StudentDashboard() {
                                 <div className="w-full bg-slate-200 rounded-full h-1.5">
                                   <div
                                     className={`h-1.5 rounded-full ${
-                                      mp.pct >= 100 ? "bg-emerald-500" : "bg-indigo-500"
+                                      mp.pct >= 100 ? "bg-emerald-500" : theme.progress
                                     }`}
                                     style={{ width: `${mp.pct}%` }}
                                   />

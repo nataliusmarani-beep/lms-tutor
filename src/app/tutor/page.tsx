@@ -126,13 +126,13 @@ export default async function TutorDashboard() {
     progressList.map((p) => [p.id, p.progress])
   );
 
-  const courseAccentColors = [
-    "from-indigo-500 to-indigo-600",
-    "from-purple-500 to-purple-600",
-    "from-emerald-500 to-emerald-600",
-    "from-amber-500 to-amber-600",
-    "from-rose-500 to-rose-600",
-    "from-cyan-500 to-cyan-600",
+  const cardThemes = [
+    { bg: "bg-teal-50",   bar: "from-teal-400 to-teal-500",    progress: "bg-teal-500"   },
+    { bg: "bg-amber-50",  bar: "from-amber-400 to-amber-500",   progress: "bg-amber-500"  },
+    { bg: "bg-yellow-50", bar: "from-yellow-400 to-yellow-500", progress: "bg-yellow-500" },
+    { bg: "bg-rose-50",   bar: "from-rose-400 to-rose-500",     progress: "bg-rose-500"   },
+    { bg: "bg-violet-50", bar: "from-violet-400 to-violet-500", progress: "bg-violet-500" },
+    { bg: "bg-sky-50",    bar: "from-sky-400 to-sky-500",       progress: "bg-sky-500"    },
   ];
 
   return (
@@ -141,14 +141,14 @@ export default async function TutorDashboard() {
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
 
         {/* Welcome banner */}
-        <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white shadow-md flex items-center gap-4">
+        <div className="rounded-2xl p-6 text-white shadow-md flex items-center gap-4" style={{ backgroundColor: "#0f1f3d" }}>
           <div className="flex-1">
             <h1 className="text-2xl font-bold">{t(lang, "welcomeBack")}, {profile.name.split(" ")[0]}! 👋</h1>
             <p className="mt-1 text-indigo-200 text-sm">
               {courseList.length} {t(lang, "courses").toLowerCase()} · {studentList.length} {t(lang, "students").toLowerCase()} · {t(lang, "readyToTeach")}
             </p>
           </div>
-          <div className="w-16 h-16 rounded-full overflow-hidden bg-indigo-400 flex items-center justify-center shrink-0 ring-2 ring-white/40">
+          <div className="w-16 h-16 rounded-full overflow-hidden bg-teal-500 flex items-center justify-center shrink-0 ring-2 ring-white/40">
             {profile.avatar_url ? (
               <img src={profile.avatar_url} alt={profile.name} className="w-full h-full object-cover" />
             ) : (
@@ -161,24 +161,24 @@ export default async function TutorDashboard() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="card text-center">
             <div className="text-3xl mb-1">🎓</div>
-            <div className="text-3xl font-bold text-indigo-600">{studentList.length}</div>
+            <div className="text-3xl font-bold text-teal-600">{studentList.length}</div>
             <div className="text-sm text-slate-500 mt-1">{t(lang, "students")}</div>
           </div>
           <div className="card text-center">
             <div className="text-3xl mb-1">📚</div>
-            <div className="text-3xl font-bold text-indigo-600">{courseList.length}</div>
+            <div className="text-3xl font-bold text-teal-600">{courseList.length}</div>
             <div className="text-sm text-slate-500 mt-1">{t(lang, "courses")}</div>
           </div>
           <div className="card text-center">
             <div className="text-3xl mb-1">🗂️</div>
-            <div className="text-3xl font-bold text-indigo-600">
+            <div className="text-3xl font-bold text-teal-600">
               {enrichedCourses.reduce((a, c) => a + c.moduleCount, 0)}
             </div>
             <div className="text-sm text-slate-500 mt-1">{t(lang, "modules")}</div>
           </div>
           <div className="card text-center">
             <div className="text-3xl mb-1">🎯</div>
-            <div className="text-3xl font-bold text-indigo-600">270</div>
+            <div className="text-3xl font-bold text-teal-600">270</div>
             <div className="text-sm text-slate-500 mt-1">{t(lang, "minWeekGoal")}</div>
           </div>
         </div>
@@ -197,14 +197,16 @@ export default async function TutorDashboard() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {enrichedCourses.map((course, idx) => (
+              {enrichedCourses.map((course, idx) => {
+                const t = cardThemes[idx % cardThemes.length];
+                return (
                 <Link
                   key={course.id}
                   href={`/tutor/courses/${course.id}`}
-                  className="card hover:shadow-md transition-shadow flex items-stretch gap-0 overflow-hidden p-0"
+                  className={`${t.bg} rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex items-stretch gap-0 overflow-hidden p-0`}
                 >
                   {/* Color accent bar */}
-                  <div className={`w-1.5 rounded-l-2xl bg-gradient-to-b ${courseAccentColors[idx % courseAccentColors.length]} shrink-0`} />
+                  <div className={`w-1.5 rounded-l-2xl bg-gradient-to-b ${t.bar} shrink-0`} />
                   <div className="flex items-center gap-3 p-4 flex-1 min-w-0">
                     <span className="text-3xl shrink-0">{course.icon}</span>
                     <div className="flex-1 min-w-0">
@@ -220,7 +222,8 @@ export default async function TutorDashboard() {
                     <span className="text-slate-300 shrink-0">›</span>
                   </div>
                 </Link>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -272,7 +275,7 @@ export default async function TutorDashboard() {
                         <div className="flex items-center justify-between mb-0.5">
                           <span className="text-xs text-slate-400">{t(lang, "thisWeek")}</span>
                           <span className={`text-xs font-semibold ${
-                            p.weekPct >= 100 ? "text-green-600" : p.weekPct >= 50 ? "text-blue-600" : "text-slate-400"
+                            p.weekPct >= 100 ? "text-green-600" : p.weekPct >= 50 ? "text-teal-600" : "text-slate-400"
                           }`}>
                             {p.weekMinutes} / {WEEKLY_TARGET_MINUTES} {t(lang, "min")}
                             {p.weekPct >= 100 ? " ✓" : ` · ${sessionsLeft} ${sessionsLeft !== 1 ? t(lang, "sessionsLeft") : t(lang, "sessionLeft")}`}
@@ -281,7 +284,7 @@ export default async function TutorDashboard() {
                         <div className="w-full bg-slate-100 rounded-full h-1.5">
                           <div
                             className={`h-1.5 rounded-full transition-all ${
-                              p.weekPct >= 100 ? "bg-green-500" : p.weekPct >= 50 ? "bg-blue-500" : "bg-amber-400"
+                              p.weekPct >= 100 ? "bg-green-500" : p.weekPct >= 50 ? "bg-teal-500" : "bg-amber-400"
                             }`}
                             style={{ width: `${p.weekPct}%` }}
                           />

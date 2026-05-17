@@ -208,7 +208,7 @@ export default async function ParentDashboard() {
         {/* Header card */}
         <div
           className="rounded-2xl px-6 py-5 shadow-sm"
-          style={{ background: "linear-gradient(135deg, #0f1f3d 0%, #1e3a6e 60%, #2563eb 100%)" }}
+          style={{ backgroundColor: "#0f1f3d" }}
         >
           <div className="flex items-center gap-4">
             {/* Student avatar */}
@@ -235,19 +235,19 @@ export default async function ParentDashboard() {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="card text-center">
-            <div className="text-2xl font-bold text-blue-600">{sessionList.length}</div>
+            <div className="text-2xl font-bold text-teal-600">{sessionList.length}</div>
             <div className="text-sm text-slate-500">{t(lang, "sessions")}</div>
           </div>
           <div className="card text-center">
-            <div className="text-2xl font-bold text-blue-600">{totalHours}h</div>
+            <div className="text-2xl font-bold text-teal-600">{totalHours}h</div>
             <div className="text-sm text-slate-500">{t(lang, "learningTime")}</div>
           </div>
           <div className="card text-center">
-            <div className="text-2xl font-bold text-blue-600">{completedModules}/{totalModules}</div>
+            <div className="text-2xl font-bold text-teal-600">{completedModules}/{totalModules}</div>
             <div className="text-sm text-slate-500">{t(lang, "modulesDone")}</div>
           </div>
           <div className="card text-center">
-            <div className="text-2xl font-bold text-blue-600">{overallPct}%</div>
+            <div className="text-2xl font-bold text-teal-600">{overallPct}%</div>
             <div className="text-sm text-slate-500">{t(lang, "overall")}</div>
           </div>
         </div>
@@ -298,12 +298,12 @@ export default async function ParentDashboard() {
                             <div className="flex items-center justify-between mb-0.5">
                               <span className="text-xs text-slate-400">{mp.sessionCount} {t(lang, "sessions").toLowerCase()}</span>
                               <span className={`text-xs font-semibold ${
-                                mp.pct >= 100 ? "text-green-600" : mp.pct > 0 ? "text-blue-600" : "text-slate-400"
+                                mp.pct >= 100 ? "text-green-600" : mp.pct > 0 ? "text-teal-600" : "text-slate-400"
                               }`}>{mp.pct}%</span>
                             </div>
                             <div className="w-full bg-slate-200 rounded-full h-1.5">
                               <div
-                                className={`h-1.5 rounded-full ${mp.pct >= 100 ? "bg-green-500" : "bg-blue-500"}`}
+                                className={`h-1.5 rounded-full ${mp.pct >= 100 ? "bg-green-500" : "bg-teal-500"}`}
                                 style={{ width: `${mp.pct}%` }}
                               />
                             </div>
