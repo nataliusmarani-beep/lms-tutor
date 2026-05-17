@@ -54,66 +54,70 @@ export default function Navbar({ name, role }: NavbarProps) {
     : "?";
 
   return (
-    <nav className="bg-navy-900 border-b border-navy-800 sticky top-0 z-50" style={{ backgroundColor: "#0f1f3d" }}>
-      <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-        {/* Logo */}
-        <div className="flex items-center gap-3">
-          <span className="text-xl font-bold text-white flex items-center gap-1.5">
-            <span>💻</span>
-            <span>Learning with Mr. Teis</span>
+    <nav className="sticky top-0 z-50 border-b border-white/10" style={{ backgroundColor: "#0f1f3d" }}>
+      <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between gap-2">
+
+        {/* Logo — full text on sm+, icon only on mobile */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-xl">💻</span>
+          <span className="hidden sm:block text-base font-bold text-white leading-tight">
+            Learning with Mr. Teis
           </span>
         </div>
 
         {/* Right side */}
-        <div className="flex items-center gap-3">
-          {/* Language toggle — sliding pill */}
+        <div className="flex items-center gap-2">
+
+          {/* Language toggle — flags + labels on sm+, flags only on mobile */}
           <div className="flex items-center bg-white/10 rounded-full p-0.5 gap-0.5">
             <button
               onClick={() => { if (lang !== "en") toggleLang(); }}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 ${
-                lang === "en"
-                  ? "bg-white shadow text-slate-800"
-                  : "text-white/60 hover:text-white"
+              className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold transition-all duration-200 ${
+                lang === "en" ? "bg-white shadow text-slate-800" : "text-white/60 hover:text-white"
               }`}
             >
               <span>🇬🇧</span>
-              <span>EN</span>
+              <span className="hidden sm:inline">EN</span>
             </button>
             <button
               onClick={() => { if (lang !== "id") toggleLang(); }}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 ${
-                lang === "id"
-                  ? "bg-white shadow text-slate-800"
-                  : "text-white/60 hover:text-white"
+              className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold transition-all duration-200 ${
+                lang === "id" ? "bg-white shadow text-slate-800" : "text-white/60 hover:text-white"
               }`}
             >
               <span>🇮🇩</span>
-              <span>ID</span>
+              <span className="hidden sm:inline">ID</span>
             </button>
           </div>
 
-          {/* Role badge */}
-          <span className={`hidden sm:inline-flex ${roleBadgeClass[role] ?? "badge-gray"}`}>
+          {/* Role badge — hidden on mobile */}
+          <span className={`hidden sm:inline-flex ${roleBadgeClass[role] ?? "badge-gray"} text-xs`}>
             {roleLabel[lang][role] ?? role}
           </span>
 
-          {/* Name */}
-          <span className="hidden sm:block text-sm font-medium text-white/80 truncate max-w-[120px]">
+          {/* Name — hidden on mobile */}
+          <span className="hidden md:block text-sm font-medium text-white/80 truncate max-w-[120px]">
             {name}
           </span>
 
-          {/* Avatar */}
+          {/* Avatar — always visible, shows initials */}
           <div className="w-8 h-8 rounded-full bg-white/20 text-white flex items-center justify-center text-xs font-bold shrink-0">
             {initials}
           </div>
 
-          {/* Sign out */}
+          {/* Sign out — icon on mobile, text on sm+ */}
           <button
             onClick={handleLogout}
-            className="text-sm text-white/50 hover:text-red-400 transition-colors"
+            title={lang === "en" ? "Sign out" : "Keluar"}
+            className="flex items-center gap-1 text-white/50 hover:text-red-400 transition-colors"
           >
-            {lang === "en" ? "Sign out" : "Keluar"}
+            {/* door/exit icon */}
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+            </svg>
+            <span className="hidden sm:inline text-sm">{lang === "en" ? "Sign out" : "Keluar"}</span>
           </button>
+
         </div>
       </div>
     </nav>
