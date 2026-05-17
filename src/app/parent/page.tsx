@@ -263,7 +263,7 @@ export default async function ParentDashboard() {
                     return (
                       <Link
                         key={mod.id}
-                        href={`/parent/courses/${course.id}/modules/${mod.id}`}
+                        href={`/parent/courses/${course.id}`}
                         className="card hover:shadow-md transition-shadow flex items-start gap-3"
                       >
                         <span className="text-2xl mt-0.5">{mod.icon}</span>
