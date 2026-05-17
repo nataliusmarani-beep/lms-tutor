@@ -174,7 +174,7 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
             {(course as { icon_url?: string | null }).icon_url
               ? <div className="w-14 h-14 rounded-2xl overflow-hidden shrink-0"><img src={(course as { icon_url: string }).icon_url} alt={course.title} className="w-full h-full object-cover" /></div>
               : <span className="text-4xl">{course.icon}</span>}
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <p className="text-blue-200 text-sm">{student?.name}</p>
               <h1 className="text-xl font-bold text-white">
                 {(lang === "id" && (course as {title_id?: string|null}).title_id) ? (course as {title_id: string}).title_id : course.title}
@@ -185,6 +185,17 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
                     ? (course as {description_id: string}).description_id
                     : course.description}
                 </p>
+              )}
+              {tutor && (
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="w-6 h-6 rounded-full overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
+                    {tutor.avatar_url
+                      ? <img src={tutor.avatar_url} alt={tutor.name} className="w-full h-full object-cover" />
+                      : <span className="text-[10px] font-bold text-white">{tutor.name.charAt(0).toUpperCase()}</span>}
+                  </div>
+                  <span className="text-xs text-white/70">Teacher:</span>
+                  <span className="text-xs font-semibold text-white">{tutor.name}</span>
+                </div>
               )}
             </div>
             <div className="text-right shrink-0">

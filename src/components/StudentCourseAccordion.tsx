@@ -222,23 +222,6 @@ function ModulePanel({
             </div>
           </div>
 
-          {/* Tutor info strip */}
-          {tutor && (
-            <div className="flex items-center gap-3 px-4 py-2.5 bg-teal-50 border-b border-teal-100">
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-teal-200 flex items-center justify-center shrink-0">
-                {tutor.avatar_url ? (
-                  <img src={tutor.avatar_url} alt={tutor.name} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-sm font-bold text-teal-700">{tutor.name.charAt(0).toUpperCase()}</span>
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs text-teal-600 font-medium leading-none">Your Tutor</p>
-                <p className="text-sm font-semibold text-teal-800 truncate">{tutor.name}</p>
-              </div>
-            </div>
-          )}
-
           {/* Full-width tabs */}
           <div className="grid grid-cols-4 border-b border-slate-100 bg-white">
             {TABS.map((tabItem) => (

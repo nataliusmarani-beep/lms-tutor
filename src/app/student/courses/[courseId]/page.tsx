@@ -173,6 +173,17 @@ export default async function StudentCoursePage({ params }: { params: { courseId
               {courseDesc && (
                 <p className="text-blue-200 text-sm mt-0.5 line-clamp-2">{courseDesc}</p>
               )}
+              {tutor && (
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="w-6 h-6 rounded-full overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
+                    {tutor.avatar_url
+                      ? <img src={tutor.avatar_url} alt={tutor.name} className="w-full h-full object-cover" />
+                      : <span className="text-[10px] font-bold text-white">{tutor.name.charAt(0).toUpperCase()}</span>}
+                  </div>
+                  <span className="text-xs text-white/70">Teacher:</span>
+                  <span className="text-xs font-semibold text-white">{tutor.name}</span>
+                </div>
+              )}
             </div>
             <div className="text-right shrink-0">
               <div className="text-2xl font-bold text-white">{modules.length}</div>
