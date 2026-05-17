@@ -200,19 +200,19 @@ function ModulePanel({ mod, lang, defaultOpen }: { mod: ModuleData; lang: Lang; 
           </div>
 
           {/* Tabs */}
-          <div className="flex border-b border-slate-100 bg-white overflow-x-auto">
+          <div className="grid grid-cols-4 border-b border-slate-100 bg-white">
             {TABS.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                className={`flex flex-col items-center gap-0.5 py-2.5 text-xs font-semibold border-b-2 transition-colors ${
                   tab === t.id
                     ? "border-blue-500 text-blue-600 bg-blue-50"
-                    : "border-transparent text-slate-400 hover:text-slate-600"
+                    : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50"
                 }`}
               >
-                <span>{t.icon}</span>
-                <span>{lang === "id" ? t.labelId : t.labelEn}</span>
+                <span className="text-base leading-none">{t.icon}</span>
+                <span className="leading-tight">{lang === "id" ? t.labelId : t.labelEn}</span>
               </button>
             ))}
           </div>
