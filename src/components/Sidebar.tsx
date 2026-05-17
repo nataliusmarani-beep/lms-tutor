@@ -77,12 +77,16 @@ export default function Sidebar({ name, role, avatarUrl }: SidebarProps) {
     <div className="flex flex-col h-full" style={{ backgroundColor: "#0f1f3d" }}>
 
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-white/10 shrink-0">
-        <div className="flex items-center gap-2.5">
-          <span className="text-2xl">💻</span>
-          <div className="leading-tight">
-            <div className="text-white font-bold text-sm">Learning with</div>
-            <div className="text-teal-400 font-bold text-sm">Mr. Teis</div>
+      <div className="px-5 py-4 border-b border-white/10 shrink-0">
+        <div className="flex items-center gap-3">
+          {/* Imlearning logo mark */}
+          <svg width="36" height="36" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
+            <circle cx="50" cy="50" r="43" stroke="#7dd3f6" strokeWidth="6"/>
+            <rect x="43" y="18" width="14" height="38" rx="3" fill="#7dd3f6"/>
+          </svg>
+          <div className="leading-tight min-w-0">
+            <div className="text-white font-bold text-sm tracking-wide">IMLEARNING</div>
+            <div className="text-sky-300 text-xs tracking-widest font-medium">LEARN NEVER END</div>
           </div>
         </div>
       </div>

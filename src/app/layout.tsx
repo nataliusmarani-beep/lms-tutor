@@ -3,8 +3,8 @@ import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Tutor With Mr. Teis",
-  description: "Learning Management System by Mr. Teis",
+  title: "Imlearning Club",
+  description: "Learn Never End — Imlearning Club",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
