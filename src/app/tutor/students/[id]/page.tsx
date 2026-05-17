@@ -157,19 +157,21 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
         </div>
 
         {/* Student card */}
-        <div className="card flex items-center gap-5">
-          <AvatarUpload
-            studentId={student.id}
-            currentUrl={student.avatar_url ?? null}
-            studentName={student.name}
-          />
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-slate-800">{student.name}</h1>
-            <p className="text-slate-500 text-sm">{student.id}</p>
+        <div className="card flex items-center gap-4">
+          <div className="shrink-0">
+            <AvatarUpload
+              studentId={student.id}
+              currentUrl={student.avatar_url ?? null}
+              studentName={student.name}
+            />
           </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-blue-600">{overallPct}%</div>
-            <div className="text-sm text-slate-500">Overall progress</div>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-bold text-slate-800 truncate">{student.name}</h1>
+            <p className="text-xs text-slate-400 font-mono truncate">{student.id}</p>
+          </div>
+          <div className="text-right shrink-0">
+            <div className="text-2xl font-bold text-teal-600">{overallPct}%</div>
+            <div className="text-xs text-slate-500">Overall progress</div>
           </div>
         </div>
 
