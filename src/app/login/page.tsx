@@ -36,7 +36,7 @@ export default function LoginPage() {
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: "url('/tutor-bg.jpg')",
-          opacity: 0.10,
+          opacity: 0.25,
           mixBlendMode: "luminosity",
         }}
       />
