@@ -21,10 +21,14 @@ const navByRole: Record<string, NavItem[]> = {
     { href: "/tutor/accounts",       icon: "⚙️", labelEn: "Accounts",    labelId: "Akun"        },
   ],
   student: [
-    { href: "/student", icon: "🏠", labelEn: "Dashboard", labelId: "Beranda", exact: true },
+    { href: "/student",          icon: "🏠", labelEn: "Dashboard",  labelId: "Beranda",     exact: true },
+    { href: "/student/courses",  icon: "📚", labelEn: "My Courses", labelId: "Kursus Saya"              },
+    { href: "/student/sessions", icon: "📋", labelEn: "Sessions",   labelId: "Sesi"                     },
   ],
   parent: [
-    { href: "/parent", icon: "🏠", labelEn: "Dashboard", labelId: "Beranda", exact: true },
+    { href: "/parent",          icon: "🏠", labelEn: "Dashboard", labelId: "Beranda",   exact: true },
+    { href: "/parent/courses",  icon: "📚", labelEn: "Courses",   labelId: "Kursus"                 },
+    { href: "/parent/sessions", icon: "📋", labelEn: "Sessions",  labelId: "Sesi"                   },
   ],
 };
 
