@@ -203,14 +203,17 @@ export default async function ParentDashboard() {
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
 
         {/* Header card */}
-        <div className="card bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
+        <div
+          className="rounded-2xl px-6 py-5 shadow-sm"
+          style={{ background: "linear-gradient(135deg, #0f1f3d 0%, #1e3a6e 60%, #2563eb 100%)" }}
+        >
           <div className="flex items-center gap-4">
             <ProgressRing percent={overallPct} size={80} strokeWidth={8} />
             <div className="flex-1">
-              <p className="text-slate-500 text-sm">{t(lang, "progressReport")}</p>
-              <h1 className="text-2xl font-bold text-slate-800">{student.name}</h1>
+              <p className="text-blue-200 text-sm">{t(lang, "progressReport")}</p>
+              <h1 className="text-2xl font-bold text-white">{student.name}</h1>
               {enrolledCourses.length > 0 && (
-                <p className="text-slate-500 text-sm mt-1">
+                <p className="text-blue-200 text-sm mt-1">
                   {enrolledCourses.map((c) => c.title).join(" · ")}
                 </p>
               )}
