@@ -27,8 +27,23 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: "#0f1f3d" }}>
-      <div className="w-full max-w-sm">
+    <div
+      className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
+      style={{ backgroundColor: "#0f1f3d" }}
+    >
+      {/* Background watermark image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('/tutor-bg.jpg')",
+          opacity: 0.18,
+          mixBlendMode: "luminosity",
+        }}
+      />
+      {/* Navy overlay to keep navy feel */}
+      <div className="absolute inset-0" style={{ backgroundColor: "#0f1f3d", opacity: 0.55 }} />
+
+      <div className="w-full max-w-sm relative z-10">
         <div className="text-center mb-8">
           <div className="text-5xl mb-3">📘</div>
           <h1 className="text-2xl font-bold text-white">Computer Tutor with Mr. Teis</h1>
