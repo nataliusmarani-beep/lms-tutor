@@ -254,28 +254,30 @@ export default function CourseDetailPage() {
 
           {/* Icon */}
           <div>
-            <label className="label">Course Icon</label>
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200">
+            <label className="label">Course Icon Image</label>
+            <div className="flex items-center gap-4">
+              <div
+                className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 flex items-center justify-center shrink-0 border-2 border-dashed border-slate-300 cursor-pointer hover:border-teal-400 transition-colors"
+                onClick={() => iconFileRef.current?.click()}
+              >
                 {iconPreview ? (
                   <img src={iconPreview} alt="icon" className="w-full h-full object-cover" />
                 ) : courseIconUrl ? (
                   <img src={courseIconUrl} alt="icon" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-3xl">{courseIcon || "📚"}</span>
+                  <span className="text-2xl text-slate-400">🖼️</span>
                 )}
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <input className="input w-20 text-2xl" value={iconPreview || courseIconUrl ? "" : courseIcon}
-                  onChange={(e) => setCourseIcon(e.target.value)} maxLength={8}
-                  disabled={!!(iconPreview || courseIconUrl)} placeholder="📚" />
-                <span className="text-xs text-slate-400">or</span>
-                <button type="button" onClick={() => iconFileRef.current?.click()} className="btn-secondary text-xs py-1.5 px-3">
-                  {iconPreview || courseIconUrl ? "Replace Image" : "Upload Image"}
-                </button>
-                {(iconPreview || courseIconUrl) && (
-                  <button type="button" onClick={removeIconImage} className="text-xs text-red-500 hover:text-red-700">Remove</button>
-                )}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => iconFileRef.current?.click()} className="btn-secondary text-xs py-1.5 px-3">
+                    {iconPreview || courseIconUrl ? "Replace" : "Upload Image"}
+                  </button>
+                  {(iconPreview || courseIconUrl) && (
+                    <button type="button" onClick={removeIconImage} className="text-xs text-red-500 hover:text-red-700">Remove</button>
+                  )}
+                </div>
+                <p className="text-xs text-slate-400">PNG or JPG, max 2 MB</p>
               </div>
             </div>
             <input ref={iconFileRef} type="file" accept="image/*" className="hidden" onChange={handleIconFileChange} />

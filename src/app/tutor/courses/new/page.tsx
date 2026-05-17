@@ -9,7 +9,6 @@ export default function NewCoursePage() {
   const router  = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [icon,        setIcon]        = useState("📚");
   const [iconFile,    setIconFile]    = useState<File | null>(null);
   const [iconPreview, setIconPreview] = useState<string | null>(null);
   const [title,       setTitle]       = useState("");
@@ -46,7 +45,7 @@ export default function NewCoursePage() {
       .insert({
         title: title.trim(),
         description: description.trim() || null,
-        icon: icon.trim() || "📚",
+        icon: "📚",
         created_by: user.id,
       })
       .select()
@@ -86,34 +85,28 @@ export default function NewCoursePage() {
         <form onSubmit={handleSubmit} className="card space-y-5">
 
           <div>
-            <label className="label">Course Icon</label>
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200">
+            <label className="label">Course Icon Image</label>
+            <div className="flex items-center gap-4">
+              <div
+                className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 flex items-center justify-center shrink-0 border-2 border-dashed border-slate-300 cursor-pointer hover:border-teal-400 transition-colors"
+                onClick={() => fileRef.current?.click()}
+              >
                 {iconPreview ? (
                   <img src={iconPreview} alt="icon" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-3xl">{icon || "📚"}</span>
+                  <span className="text-2xl text-slate-400">🖼️</span>
                 )}
               </div>
-              <div className="flex-1 space-y-2 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <input
-                    className="input w-20 text-2xl"
-                    value={iconPreview ? "" : icon}
-                    onChange={(e) => setIcon(e.target.value)}
-                    placeholder="📚"
-                    maxLength={8}
-                    disabled={!!iconPreview}
-                  />
-                  <span className="text-xs text-slate-400">or</span>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
                   <button type="button" onClick={() => fileRef.current?.click()} className="btn-secondary text-xs py-1.5 px-3">
-                    {iconPreview ? "Replace Image" : "Upload Image"}
+                    {iconPreview ? "Replace" : "Upload Image"}
                   </button>
                   {iconPreview && (
                     <button type="button" onClick={removeIconImage} className="text-xs text-red-500 hover:text-red-700">Remove</button>
                   )}
                 </div>
-                <p className="text-xs text-slate-400">Paste an emoji, or upload a PNG/JPG (max 2 MB)</p>
+                <p className="text-xs text-slate-400">PNG or JPG, max 2 MB</p>
               </div>
             </div>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleIconFile} />
