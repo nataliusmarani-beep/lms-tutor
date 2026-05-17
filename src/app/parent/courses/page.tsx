@@ -60,15 +60,15 @@ export default async function ParentCoursesPage() {
     })
   );
 
-  // Fetch tutor profiles
+  // Fetch tutor profiles (by created_by, fallback to all tutors)
   const tutorIds = Array.from(new Set(courseWithModules.map((c) => c.created_by).filter(Boolean))) as string[];
   const { data: tutorProfiles } = tutorIds.length > 0
     ? await supabase.from("profiles").select("id, name, avatar_url").in("id", tutorIds)
-    : { data: [] };
+    : await supabase.from("profiles").select("id, name, avatar_url").eq("role", "tutor");
+  const tutors = (tutorProfiles ?? []) as { id: string; name: string; avatar_url: string | null }[];
   const tutorMap: Record<string, { name: string; avatar_url: string | null }> = {};
-  for (const tp of (tutorProfiles ?? []) as { id: string; name: string; avatar_url: string | null }[]) {
-    tutorMap[tp.id] = { name: tp.name, avatar_url: tp.avatar_url };
-  }
+  for (const tp of tutors) tutorMap[tp.id] = { name: tp.name, avatar_url: tp.avatar_url };
+  const defaultTutor = tutors[0] ?? null;
 
   const allModuleIds = courseWithModules.flatMap((c) => c.modules.map((m) => m.id));
 
@@ -158,20 +158,23 @@ export default async function ParentCoursesPage() {
                       <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">
                         {course.modules.length} {t(lang, "modules")}
                       </span>
-                      {course.created_by && tutorMap[course.created_by] && (
-                        <span className="flex items-center gap-1.5">
-                          <span className="w-5 h-5 rounded-full overflow-hidden bg-white/30 flex items-center justify-center shrink-0">
-                            {tutorMap[course.created_by].avatar_url ? (
-                              <img src={tutorMap[course.created_by].avatar_url!} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <span className="text-[10px] text-white font-bold">
-                                {tutorMap[course.created_by].name.charAt(0).toUpperCase()}
-                              </span>
-                            )}
+                      {(() => {
+                        const tutor = (course.created_by && tutorMap[course.created_by]) || defaultTutor;
+                        return tutor ? (
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-5 h-5 rounded-full overflow-hidden bg-white/30 flex items-center justify-center shrink-0">
+                              {tutor.avatar_url ? (
+                                <img src={tutor.avatar_url} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="text-[10px] text-white font-bold">
+                                  {tutor.name.charAt(0).toUpperCase()}
+                                </span>
+                              )}
+                            </span>
+                            <span className="text-xs text-white/80">{tutor.name}</span>
                           </span>
-                          <span className="text-xs text-white/80">{tutorMap[course.created_by].name}</span>
-                        </span>
-                      )}
+                        ) : null;
+                      })()}
                     </div>
                   </div>
 
