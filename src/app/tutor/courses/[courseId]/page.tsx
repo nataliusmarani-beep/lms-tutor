@@ -261,9 +261,10 @@ export default function CourseDetailPage() {
                 onClick={() => iconFileRef.current?.click()}
               >
                 {iconPreview ? (
-                  <img src={iconPreview} alt="icon" className="w-full h-full object-cover" />
+                  <img src={iconPreview} alt="" className="w-full h-full object-cover" />
                 ) : courseIconUrl ? (
-                  <img src={courseIconUrl} alt="icon" className="w-full h-full object-cover" />
+                  <img src={courseIconUrl} alt="" className="w-full h-full object-cover"
+                    onError={() => setCourseIconUrl(null)} />
                 ) : (
                   <span className="text-2xl text-slate-400">🖼️</span>
                 )}
