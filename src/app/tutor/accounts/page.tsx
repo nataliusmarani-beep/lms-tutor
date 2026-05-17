@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import SelfAvatarUpload from "@/components/SelfAvatarUpload";
 
 interface Profile {
   id: string;
@@ -43,13 +44,27 @@ export default async function AccountsPage() {
 
         <div className="flex items-center justify-between">
           <div>
-            <Link href="/tutor" className="text-sm text-slate-400 hover:text-slate-600">← Dashboard</Link>
-            <h1 className="text-2xl font-bold text-slate-800 mt-1">Manage Accounts</h1>
-            <p className="text-slate-500 text-sm mt-0.5">View and manage student & parent accounts</p>
+            <h1 className="text-2xl font-bold text-slate-800">Accounts</h1>
+            <p className="text-slate-500 text-sm mt-0.5">Manage your profile and student accounts</p>
           </div>
-          <Link href="/tutor/students/new" className="btn-primary text-sm">
-            + Add Account
-          </Link>
+          <Link href="/tutor/students/new" className="btn-primary text-sm">+ Add Account</Link>
+        </div>
+
+        {/* My Profile */}
+        <div className="card">
+          <h2 className="text-lg font-semibold text-slate-700 mb-4">My Profile</h2>
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            <SelfAvatarUpload
+              userId={tutor.id}
+              currentUrl={tutor.avatar_url ?? null}
+              name={tutor.name}
+            />
+            <div className="flex-1 space-y-1 text-center sm:text-left">
+              <div className="text-xl font-bold text-slate-800">{tutor.name}</div>
+              <div className="text-sm text-slate-500">{tutor.id}</div>
+              <span className="badge-blue inline-flex mt-1">Tutor</span>
+            </div>
+          </div>
         </div>
 
         {/* Students */}
@@ -71,7 +86,7 @@ export default async function AccountsPage() {
                   .filter(Boolean);
                 return (
                   <div key={s.id} className="card flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-bold text-sm shrink-0">
                       {s.name[0]?.toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -141,20 +156,20 @@ export default async function AccountsPage() {
         </div>
 
         {/* Summary */}
-        <div className="card bg-indigo-50 border-indigo-100">
-          <h3 className="font-semibold text-indigo-800 mb-3">Account Summary</h3>
+        <div className="card bg-teal-50 border-teal-100">
+          <h3 className="font-semibold text-teal-800 mb-3">Account Summary</h3>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <div className="text-2xl font-bold text-indigo-600">{studentList.length}</div>
-              <div className="text-xs text-indigo-500 mt-0.5">Students</div>
+              <div className="text-2xl font-bold text-teal-600">{studentList.length}</div>
+              <div className="text-xs text-teal-500 mt-0.5">Students</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-indigo-600">{parentList.length}</div>
-              <div className="text-xs text-indigo-500 mt-0.5">Parents</div>
+              <div className="text-2xl font-bold text-teal-600">{parentList.length}</div>
+              <div className="text-xs text-teal-500 mt-0.5">Parents</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-indigo-600">{linkList.length}</div>
-              <div className="text-xs text-indigo-500 mt-0.5">Parent–Student Links</div>
+              <div className="text-2xl font-bold text-teal-600">{linkList.length}</div>
+              <div className="text-xs text-teal-500 mt-0.5">Parent–Student Links</div>
             </div>
           </div>
         </div>
