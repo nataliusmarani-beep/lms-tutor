@@ -168,7 +168,6 @@ export default async function StudentCoursePage({ params }: { params: { courseId
               ? <div className="w-14 h-14 rounded-2xl overflow-hidden shrink-0"><img src={(course as { icon_url: string }).icon_url} alt={course.title} className="w-full h-full object-cover" /></div>
               : <span className="text-4xl">{course.icon}</span>}
             <div className="flex-1 min-w-0">
-              <p className="text-teal-200 text-sm">{profile.name}</p>
               <h1 className="text-xl font-bold text-white truncate">{courseTitle}</h1>
               {courseDesc && (
                 <p className="text-blue-200 text-sm mt-0.5 line-clamp-2">{courseDesc}</p>
