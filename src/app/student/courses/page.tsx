@@ -142,7 +142,7 @@ export default async function StudentCoursesPage() {
                     return (
                       <Link
                         key={mod.id}
-                        href={`/student/courses/${course.id}/modules/${mod.id}`}
+                        href={`/student/courses/${course.id}`}
                         className={`${theme.bg} block rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex items-stretch gap-0 overflow-hidden p-0`}
                       >
                         <div className={`w-1 rounded-l-2xl bg-gradient-to-b ${theme.bar} shrink-0`} />
