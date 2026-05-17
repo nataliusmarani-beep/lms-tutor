@@ -211,7 +211,14 @@ export default async function ParentDashboard() {
           style={{ background: "linear-gradient(135deg, #0f1f3d 0%, #1e3a6e 60%, #2563eb 100%)" }}
         >
           <div className="flex items-center gap-4">
-            <ProgressRing percent={overallPct} size={80} strokeWidth={8} variant="dark" />
+            {/* Student avatar */}
+            <div className="w-16 h-16 rounded-full overflow-hidden bg-blue-400 flex items-center justify-center shrink-0 ring-2 ring-white/40">
+              {student.avatar_url ? (
+                <img src={student.avatar_url} alt={student.name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-2xl font-bold text-white">{student.name[0]?.toUpperCase()}</span>
+              )}
+            </div>
             <div className="flex-1">
               <p className="text-blue-200 text-sm">{t(lang, "progressReport")}</p>
               <h1 className="text-2xl font-bold text-white">{student.name}</h1>
@@ -221,6 +228,7 @@ export default async function ParentDashboard() {
                 </p>
               )}
             </div>
+            <ProgressRing percent={overallPct} size={72} strokeWidth={7} variant="dark" />
           </div>
         </div>
 
