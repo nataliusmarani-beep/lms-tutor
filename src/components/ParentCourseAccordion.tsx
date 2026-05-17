@@ -47,7 +47,9 @@ interface Resource {
 interface ModuleData {
   id: string;
   title: string;
+  title_id?: string | null;
   focus: string | null;
+  focus_id?: string | null;
   icon: string;
   week_number: number | null;
   pct: number;
@@ -121,6 +123,8 @@ function ModulePanel({ mod, lang, defaultOpen }: { mod: ModuleData; lang: Lang; 
   const { resources, loading: resLoading } = useResources(mod.id, open && tab === "resources");
 
   const isDone = (key: string) => mod.completedKeys.includes(key);
+  const displayTitle = (lang === "id" && mod.title_id) ? mod.title_id : mod.title;
+  const displayFocus = (lang === "id" && mod.focus_id) ? mod.focus_id : mod.focus;
 
   return (
     <div className="border border-slate-200 rounded-2xl overflow-hidden">
@@ -147,9 +151,9 @@ function ModulePanel({ mod, lang, defaultOpen }: { mod: ModuleData; lang: Lang; 
               {t(lang, "week")} {mod.week_number}
             </span>
           )}
-          <span className="font-semibold text-slate-800 text-sm">{mod.title}</span>
-          {mod.focus && (
-            <p className="text-xs text-slate-400 mt-0.5 truncate">{mod.focus}</p>
+          <span className="font-semibold text-slate-800 text-sm">{displayTitle}</span>
+          {displayFocus && (
+            <p className="text-xs text-slate-400 mt-0.5 truncate">{displayFocus}</p>
           )}
         </div>
 

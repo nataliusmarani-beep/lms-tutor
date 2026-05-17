@@ -32,7 +32,7 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
   // All modules
   const { data: modulesRaw } = await supabase
     .from("course_modules")
-    .select("id, title, focus, icon, week_number, sort_order, legacy_module_id")
+    .select("id, title, title_id, focus, focus_id, icon, week_number, sort_order, legacy_module_id")
     .eq("course_id", params.courseId)
     .order("sort_order");
   const modules = modulesRaw ?? [];
@@ -125,7 +125,9 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
     return {
       id: mod.id,
       title: mod.title,
+      title_id: (mod as { title_id?: string | null }).title_id ?? null,
       focus: mod.focus,
+      focus_id: (mod as { focus_id?: string | null }).focus_id ?? null,
       icon: mod.icon,
       week_number: mod.week_number,
       pct: total > 0 ? Math.round((done / total) * 100) : 0,

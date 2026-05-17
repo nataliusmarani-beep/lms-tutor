@@ -10,7 +10,9 @@ import { getLang } from "@/lib/getLang";
 interface CourseModule {
   id: string;
   title: string;
+  title_id?: string | null;
   focus: string | null;
+  focus_id?: string | null;
   icon: string;
   week_number: number | null;
   sort_order: number;
@@ -273,14 +275,16 @@ export default async function ParentDashboard() {
                             <span className="badge-gray text-xs">{t(lang, "week")} {mod.week_number}</span>
                           )}
                           <div className="font-medium text-slate-800 text-sm leading-tight mt-0.5">
-                            {mod.title}
+                            {(lang === "id" && mod.title_id) ? mod.title_id : mod.title}
                           </div>
-                          {mod.focus && (
-                            <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{mod.focus}</p>
+                          {((lang === "id" && mod.focus_id) ? mod.focus_id : mod.focus) && (
+                            <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+                              {(lang === "id" && mod.focus_id) ? mod.focus_id : mod.focus}
+                            </p>
                           )}
                           <div className="mt-2 flex justify-between text-xs text-slate-400">
-                            <span>Student: {mp.studentDone}/{mp.studentTotal}</span>
-                            <span>Tutor: {mp.tutorDone}/{mp.tutorTotal}</span>
+                            <span>{t(lang, "studentLabel")}: {mp.studentDone}/{mp.studentTotal}</span>
+                            <span>{t(lang, "tutorLabel")}: {mp.tutorDone}/{mp.tutorTotal}</span>
                           </div>
                           <div className="mt-1">
                             <div className="flex items-center justify-between mb-0.5">

@@ -54,7 +54,7 @@ export default async function ParentModulePage({ params }: { params: PageParams 
   // All modules in this course for curriculum overview
   const { data: allCourseModules } = await supabase
     .from("course_modules")
-    .select("id, title, focus, icon, week_number, sort_order")
+    .select("id, title, title_id, focus, focus_id, icon, week_number, sort_order")
     .eq("course_id", params.courseId)
     .order("sort_order");
 
