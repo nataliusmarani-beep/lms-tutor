@@ -23,6 +23,7 @@ interface EnrolledCourse {
   id: string;
   title: string;
   icon: string;
+  icon_url?: string | null;
   description: string | null;
   modules: CourseModule[];
 }
@@ -88,11 +89,11 @@ export default async function ParentDashboard() {
   // Enrolled courses
   const { data: enrollments } = await supabase
     .from("course_enrollments")
-    .select("course_id, courses(id, title, icon, description)")
+    .select("course_id, courses(id, title, icon, icon_url, description)")
     .eq("student_id", studentId);
 
   const rawCourses = (enrollments ?? []).map((e: { course_id: string; courses: unknown }) => e.courses) as Array<{
-    id: string; title: string; icon: string; description: string | null;
+    id: string; title: string; icon: string; icon_url?: string | null; description: string | null;
   }>;
 
   const enrolledCourses: EnrolledCourse[] = await Promise.all(
@@ -258,7 +259,9 @@ export default async function ParentDashboard() {
           enrolledCourses.map((course) => (
             <div key={course.id}>
               <div className="flex items-center gap-3 mb-3">
-                <span className="text-2xl">{course.icon}</span>
+                {course.icon_url
+                  ? <div className="w-8 h-8 rounded-xl overflow-hidden shrink-0"><img src={course.icon_url} alt={course.title} className="w-full h-full object-cover" /></div>
+                  : <span className="text-2xl">{course.icon}</span>}
                 <h2 className="text-lg font-semibold text-slate-700">{course.title}</h2>
               </div>
               {course.modules.length === 0 ? (

@@ -7,6 +7,7 @@ interface CourseRow {
   title: string;
   description: string | null;
   icon: string;
+  icon_url?: string | null;
   created_at: string;
 }
 
@@ -72,7 +73,9 @@ export default async function TutorCoursesPage() {
                 className="card block hover:shadow-md transition-shadow flex flex-col gap-3"
               >
                 <div className="flex items-start gap-3">
-                  <span className="text-3xl">{course.icon}</span>
+                  {course.icon_url
+                    ? <div className="w-10 h-10 rounded-2xl overflow-hidden shrink-0"><img src={course.icon_url} alt={course.title} className="w-full h-full object-cover" /></div>
+                    : <span className="text-3xl">{course.icon}</span>}
                   <div className="flex-1">
                     <h2 className="font-semibold text-slate-800 leading-tight">{course.title}</h2>
                     {course.description && (

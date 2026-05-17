@@ -25,7 +25,7 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
     .from("profiles").select("id, name").eq("id", studentId).single();
 
   const { data: course } = await supabase
-    .from("courses").select("id, title, title_id, icon, description, description_id").eq("id", params.courseId).single();
+    .from("courses").select("id, title, title_id, icon, icon_url, description, description_id").eq("id", params.courseId).single();
   if (!course) notFound();
 
   // All modules
@@ -164,7 +164,9 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
           style={{ background: "linear-gradient(135deg, #0f1f3d 0%, #1e3a6e 60%, #2563eb 100%)" }}
         >
           <div className="flex items-center gap-4">
-            <span className="text-4xl">{course.icon}</span>
+            {(course as { icon_url?: string | null }).icon_url
+              ? <div className="w-14 h-14 rounded-2xl overflow-hidden shrink-0"><img src={(course as { icon_url: string }).icon_url} alt={course.title} className="w-full h-full object-cover" /></div>
+              : <span className="text-4xl">{course.icon}</span>}
             <div className="flex-1">
               <p className="text-blue-200 text-sm">{student?.name}</p>
               <h1 className="text-xl font-bold text-white">

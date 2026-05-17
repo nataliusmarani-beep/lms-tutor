@@ -11,6 +11,7 @@ interface CourseRow {
   title: string;
   description: string | null;
   icon: string;
+  icon_url?: string | null;
 }
 
 const WEEKLY_TARGET_MINUTES = 270;
@@ -206,7 +207,9 @@ export default async function TutorDashboard() {
                   {/* Color accent bar */}
                   <div className={`w-1.5 rounded-l-2xl bg-gradient-to-b ${t.bar} shrink-0`} />
                   <div className="flex items-center gap-3 p-4 flex-1 min-w-0">
-                    <span className="text-3xl shrink-0">{course.icon}</span>
+                    {course.icon_url
+                      ? <div className="w-10 h-10 rounded-2xl overflow-hidden shrink-0"><img src={course.icon_url} alt={course.title} className="w-full h-full object-cover" /></div>
+                      : <span className="text-3xl shrink-0">{course.icon}</span>}
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-slate-800 truncate">{course.title}</div>
                       {course.description && (
