@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/nataliusfillepmarani/Documents/LMS-Tutor/.claude/hooks/translate.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
