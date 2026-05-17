@@ -67,7 +67,7 @@ export default function SessionForm({ studentId, preselectedCourseModuleId, modu
   const [form, setForm] = useState({
     course_module_id: preselectedCourseModuleId ?? modules[0]?.id ?? "",
     date:             new Date().toISOString().split("T")[0],
-    duration_minutes: "75",
+    duration_minutes: "90",
     tutor_notes:      "",
     student_notes:    "",
   });
