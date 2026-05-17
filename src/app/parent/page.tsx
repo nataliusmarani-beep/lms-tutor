@@ -271,7 +271,7 @@ export default async function ParentDashboard() {
                       <Link
                         key={mod.id}
                         href={`/parent/courses/${course.id}`}
-                        className="card hover:shadow-md transition-shadow flex items-start gap-3"
+                        className="card block hover:shadow-md transition-shadow flex items-start gap-3"
                       >
                         <span className="text-2xl mt-0.5">{mod.icon}</span>
                         <div className="flex-1 min-w-0">

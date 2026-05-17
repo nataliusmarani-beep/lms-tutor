@@ -69,7 +69,7 @@ export default async function TutorCoursesPage() {
               <Link
                 key={course.id}
                 href={`/tutor/courses/${course.id}`}
-                className="card hover:shadow-md transition-shadow flex flex-col gap-3"
+                className="card block hover:shadow-md transition-shadow flex flex-col gap-3"
               >
                 <div className="flex items-start gap-3">
                   <span className="text-3xl">{course.icon}</span>

@@ -201,7 +201,7 @@ export default async function TutorDashboard() {
                 <Link
                   key={course.id}
                   href={`/tutor/courses/${course.id}`}
-                  className={`${t.bg} rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex items-stretch gap-0 overflow-hidden p-0`}
+                  className={`${t.bg} block rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex items-stretch gap-0 overflow-hidden p-0`}
                 >
                   {/* Color accent bar */}
                   <div className={`w-1.5 rounded-l-2xl bg-gradient-to-b ${t.bar} shrink-0`} />
@@ -250,7 +250,7 @@ export default async function TutorDashboard() {
                   <Link
                     key={student.id}
                     href={`/tutor/students/${student.id}`}
-                    className="card hover:shadow-md transition-shadow"
+                    className="card block hover:shadow-md transition-shadow"
                   >
                     {/* Row 1: avatar + name + badge + arrow */}
                     <div className="flex items-center gap-3">
@@ -321,7 +321,7 @@ export default async function TutorDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <Link
               href="/tutor/sessions/new"
-              className="card hover:shadow-md transition-shadow flex items-center gap-3"
+              className="card block hover:shadow-md transition-shadow flex items-center gap-3"
             >
               <span className="text-2xl">⏱️</span>
               <div>
@@ -331,7 +331,7 @@ export default async function TutorDashboard() {
             </Link>
             <Link
               href="/tutor/students/new"
-              className="card hover:shadow-md transition-shadow flex items-center gap-3"
+              className="card block hover:shadow-md transition-shadow flex items-center gap-3"
             >
               <span className="text-2xl">👤</span>
               <div>
@@ -341,7 +341,7 @@ export default async function TutorDashboard() {
             </Link>
             <Link
               href="/tutor/courses"
-              className="card hover:shadow-md transition-shadow flex items-center gap-3"
+              className="card block hover:shadow-md transition-shadow flex items-center gap-3"
             >
               <span className="text-2xl">📚</span>
               <div>
@@ -351,7 +351,7 @@ export default async function TutorDashboard() {
             </Link>
             <Link
               href="/tutor/accounts"
-              className="card hover:shadow-md transition-shadow flex items-center gap-3"
+              className="card block hover:shadow-md transition-shadow flex items-center gap-3"
             >
               <span className="text-2xl">⚙️</span>
               <div>

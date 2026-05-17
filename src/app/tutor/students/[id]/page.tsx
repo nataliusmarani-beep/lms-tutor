@@ -221,7 +221,7 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
                       <Link
                         key={mod.id}
                         href={`/tutor/students/${params.id}/courses/${course.id}/modules/${mod.id}`}
-                        className="card hover:shadow-md transition-shadow flex items-start gap-3"
+                        className="card block hover:shadow-md transition-shadow flex items-start gap-3"
                       >
                         <span className="text-2xl mt-0.5">{mod.icon}</span>
                         <div className="flex-1 min-w-0">
