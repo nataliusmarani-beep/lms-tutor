@@ -76,7 +76,7 @@ export default async function ParentDashboard() {
     return (
       <div className="min-h-screen">
         <Navbar name={profile.name} role="parent" />
-        <div className="max-w-xl mx-auto px-4 py-16 text-center">
+        <div className="max-w-5xl mx-auto px-4 py-16 text-center">
           <div className="text-5xl mb-4">👤</div>
           <h1 className="text-xl font-bold text-slate-700">{t(lang, "noStudentLinked")}</h1>
           <p className="text-slate-400 mt-2">{t(lang, "noStudentLinkedDesc")}</p>

@@ -59,11 +59,9 @@ export default function Navbar({ name, role }: NavbarProps) {
         {/* Logo */}
         <div className="flex items-center gap-3">
           <span className="text-xl font-bold text-white flex items-center gap-1.5">
-            <span>📘</span>
-            <span>LMS Tutor</span>
+            <span>💻</span>
+            <span>Learning with Mr. Teis</span>
           </span>
-          <span className="hidden sm:block text-white/30 font-light text-lg">|</span>
-          <span className="hidden sm:block text-sm text-white/50">Learn with Mr. Teis</span>
         </div>
 
         {/* Right side */}

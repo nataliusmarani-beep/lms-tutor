@@ -64,7 +64,7 @@ export default async function TutorModuleDetailPage({
   return (
     <div className="min-h-screen">
       <Navbar name={tutor.name} role="tutor" />
-      <div className="max-w-3xl mx-auto px-4 py-8 space-y-8">
+      <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
         <div className="flex items-center gap-2 text-sm text-slate-400">
           <Link href="/tutor">Dashboard</Link>
           <span>›</span>

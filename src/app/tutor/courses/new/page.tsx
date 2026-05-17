@@ -47,12 +47,12 @@ export default function NewCoursePage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <nav className="bg-white border-b border-slate-100 sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-4 py-3">
+        <div className="max-w-5xl mx-auto px-4 py-3">
           <span className="text-xl font-bold text-blue-600">📘 LMS Tutor</span>
         </div>
       </nav>
 
-      <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
+      <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
         <div className="flex items-center gap-2 text-sm text-slate-400">
           <Link href="/tutor" className="hover:text-slate-600">Dashboard</Link>
           <span>›</span>

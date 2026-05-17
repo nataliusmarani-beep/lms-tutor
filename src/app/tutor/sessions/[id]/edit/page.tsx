@@ -43,7 +43,7 @@ export default async function EditSessionPage({ params }: { params: { id: string
   return (
     <div className="min-h-screen">
       <Navbar name={tutor.name} role="tutor" />
-      <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
+      <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
         <div className="flex items-center gap-2 text-sm text-slate-400">
           <Link href={`/tutor/students/${session.student_id}`}>← Back to {student?.name ?? "Student"}</Link>
         </div>

@@ -46,7 +46,7 @@ export default function NewStudentPage() {
   return (
     <div className="min-h-screen">
       {profile && <Navbar name={profile.name} role={profile.role} />}
-      <div className="max-w-lg mx-auto px-4 py-8 space-y-6">
+      <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
         <div className="flex items-center gap-2 text-sm text-slate-400">
           <Link href="/tutor">← Dashboard</Link>
         </div>
