@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { format } from "date-fns";
+import { t } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -143,7 +144,7 @@ function ModulePanel({ mod, lang, defaultOpen }: { mod: ModuleData; lang: Lang; 
         <div className="flex-1 min-w-0">
           {mod.week_number && (
             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 mr-1.5">
-              {lang === "id" ? "Minggu" : "Week"} {mod.week_number}
+              {t(lang, "week")} {mod.week_number}
             </span>
           )}
           <span className="font-semibold text-slate-800 text-sm">{mod.title}</span>
@@ -175,19 +176,19 @@ function ModulePanel({ mod, lang, defaultOpen }: { mod: ModuleData; lang: Lang; 
           <div className="grid grid-cols-4 divide-x divide-slate-100 border-b border-slate-100 bg-slate-50">
             <div className="text-center py-2">
               <div className="text-base font-bold text-blue-600">{mod.sessions.length}</div>
-              <div className="text-xs text-slate-400">{lang === "id" ? "Sesi" : "Sessions"}</div>
+              <div className="text-xs text-slate-400">{t(lang, "sessions")}</div>
             </div>
             <div className="text-center py-2">
               <div className="text-base font-bold text-blue-600">{mod.studentDone}/{mod.studentItems.length}</div>
-              <div className="text-xs text-slate-400">{lang === "id" ? "Siswa" : "Student"}</div>
+              <div className="text-xs text-slate-400">{t(lang, "studentLabel")}</div>
             </div>
             <div className="text-center py-2">
               <div className="text-base font-bold text-blue-600">{mod.tutorDone}/{mod.tutorItems.length}</div>
-              <div className="text-xs text-slate-400">{lang === "id" ? "Tutor" : "Tutor"}</div>
+              <div className="text-xs text-slate-400">{t(lang, "tutorLabel")}</div>
             </div>
             <div className="text-center py-2">
               <div className="text-base font-bold text-blue-600">{mod.quizzes.length}</div>
-              <div className="text-xs text-slate-400">{lang === "id" ? "Kuis" : "Quizzes"}</div>
+              <div className="text-xs text-slate-400">{t(lang, "quizzes")}</div>
             </div>
           </div>
 
@@ -216,7 +217,7 @@ function ModulePanel({ mod, lang, defaultOpen }: { mod: ModuleData; lang: Lang; 
             {tab === "sessions" && (
               mod.sessions.length === 0 ? (
                 <p className="text-sm text-slate-400 italic text-center py-4">
-                  {lang === "id" ? "Belum ada sesi untuk modul ini." : "No sessions logged for this module yet."}
+                  {t(lang, "noSessionsForModule")}
                 </p>
               ) : (
                 mod.sessions.map((s) => (
@@ -226,18 +227,18 @@ function ModulePanel({ mod, lang, defaultOpen }: { mod: ModuleData; lang: Lang; 
                         {format(new Date(s.date), "EEEE, MMMM d, yyyy")}
                       </span>
                       <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                        {s.duration_minutes} {lang === "id" ? "mnt" : "min"}
+                        {s.duration_minutes} {t(lang, "min")}
                       </span>
                     </div>
                     {s.tutor_notes && (
                       <p className="text-xs text-slate-600">
-                        <span className="text-slate-400 font-medium">{lang === "id" ? "Catatan tutor: " : "Tutor notes: "}</span>
+                        <span className="text-slate-400 font-medium">{t(lang, "tutorNotes")} </span>
                         {s.tutor_notes}
                       </p>
                     )}
                     {s.student_notes && (
                       <p className="text-xs text-slate-600">
-                        <span className="text-slate-400 font-medium">{lang === "id" ? "Catatan siswa: " : "Student notes: "}</span>
+                        <span className="text-slate-400 font-medium">{t(lang, "studentNotes")} </span>
                         {s.student_notes}
                       </p>
                     )}
@@ -252,7 +253,7 @@ function ModulePanel({ mod, lang, defaultOpen }: { mod: ModuleData; lang: Lang; 
                 {mod.studentItems.length > 0 && (
                   <div>
                     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
-                      {lang === "id" ? "Aktivitas Siswa" : "Student Activities"}
+                      {t(lang, "studentActivities")}
                     </p>
                     <div className="space-y-2">
                       {mod.studentItems.map((item) => {
@@ -271,14 +272,14 @@ function ModulePanel({ mod, lang, defaultOpen }: { mod: ModuleData; lang: Lang; 
                         );
                       })}
                     </div>
-                    <p className="text-xs text-slate-400 mt-2">{mod.studentDone}/{mod.studentItems.length} {lang === "id" ? "selesai" : "completed"}</p>
+                    <p className="text-xs text-slate-400 mt-2">{mod.studentDone}/{mod.studentItems.length} {t(lang, "completed")}</p>
                   </div>
                 )}
 
                 {mod.tutorItems.length > 0 && (
                   <div>
                     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
-                      {lang === "id" ? "Materi Tutor" : "Tutor-Led Topics"}
+                      {t(lang, "tutorLedTopics")}
                     </p>
                     <div className="space-y-2">
                       {mod.tutorItems.map((item) => {
@@ -297,13 +298,13 @@ function ModulePanel({ mod, lang, defaultOpen }: { mod: ModuleData; lang: Lang; 
                         );
                       })}
                     </div>
-                    <p className="text-xs text-slate-400 mt-2">{mod.tutorDone}/{mod.tutorItems.length} {lang === "id" ? "selesai" : "completed"}</p>
+                    <p className="text-xs text-slate-400 mt-2">{mod.tutorDone}/{mod.tutorItems.length} {t(lang, "completed")}</p>
                   </div>
                 )}
 
                 {mod.studentItems.length === 0 && mod.tutorItems.length === 0 && (
                   <p className="text-sm text-slate-400 italic text-center py-4">
-                    {lang === "id" ? "Belum ada item checklist." : "No checklist items yet."}
+                    {t(lang, "noChecklistItemsYet")}
                   </p>
                 )}
               </div>
@@ -315,7 +316,7 @@ function ModulePanel({ mod, lang, defaultOpen }: { mod: ModuleData; lang: Lang; 
                 <p className="text-sm text-slate-400 text-center py-4">Loading…</p>
               ) : resources.length === 0 ? (
                 <p className="text-sm text-slate-400 italic text-center py-4">
-                  {lang === "id" ? "Belum ada materi." : "No resources yet."}
+                  {t(lang, "noResourcesYet")}
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -363,7 +364,7 @@ function ModulePanel({ mod, lang, defaultOpen }: { mod: ModuleData; lang: Lang; 
             {tab === "quizzes" && (
               mod.quizzes.length === 0 ? (
                 <p className="text-sm text-slate-400 italic text-center py-4">
-                  {lang === "id" ? "Belum ada kuis." : "No quizzes yet."}
+                  {t(lang, "noQuizzesYet")}
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -387,7 +388,7 @@ function ModulePanel({ mod, lang, defaultOpen }: { mod: ModuleData; lang: Lang; 
                             </>
                           ) : (
                             <span className="text-xs text-slate-400 italic">
-                              {lang === "id" ? "Belum dikerjakan" : "Not attempted"}
+                              {t(lang, "notAttempted")}
                             </span>
                           )}
                         </div>

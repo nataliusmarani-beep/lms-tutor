@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { t } from "@/lib/i18n";
 
 interface Module {
   id: string;
@@ -64,10 +65,10 @@ export default function CurriculumAccordion({
       <h2 className="font-semibold text-slate-700 mb-4 flex items-center justify-between">
         <span className="flex items-center gap-2">
           <span>📚</span>
-          {lang === "id" ? "Kurikulum Kursus" : "Course Curriculum"}
+          {t(lang, "courseCurriculum")}
         </span>
         <span className="badge-gray text-xs">
-          {modules.length} {lang === "id" ? "modul" : "modules"}
+          {modules.length} {t(lang, "modules")}
         </span>
       </h2>
 
@@ -105,12 +106,12 @@ export default function CurriculumAccordion({
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                         isCurrent ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-500"
                       }`}>
-                        {lang === "id" ? "Minggu" : "Week"} {m.week_number}
+                        {t(lang, "week")} {m.week_number}
                       </span>
                     )}
                     {isCurrent && (
                       <span className="text-xs font-semibold text-indigo-500">
-                        {lang === "id" ? "● Dibuka" : "● Current"}
+                        {t(lang, "currentModule")}
                       </span>
                     )}
                   </div>
@@ -151,7 +152,7 @@ export default function CurriculumAccordion({
                   {studentItems.length > 0 && (
                     <div>
                       <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
-                        {lang === "id" ? "Aktivitas Siswa" : "Student Activities"}
+                        {t(lang, "studentActivities")}
                       </p>
                       <ul className="space-y-1.5">
                         {studentItems.map((item) => {
@@ -177,7 +178,7 @@ export default function CurriculumAccordion({
                   {teacherItems.length > 0 && (
                     <div>
                       <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
-                        {lang === "id" ? "Materi Tutor" : "Tutor-Led Topics"}
+                        {t(lang, "tutorLedTopics")}
                       </p>
                       <ul className="space-y-1.5">
                         {teacherItems.map((item) => {
@@ -201,7 +202,7 @@ export default function CurriculumAccordion({
 
                   {items.length === 0 && (
                     <p className="text-xs text-slate-400 italic">
-                      {lang === "id" ? "Belum ada materi." : "No topics yet."}
+                      {t(lang, "noResourcesYet")}
                     </p>
                   )}
 
@@ -209,7 +210,7 @@ export default function CurriculumAccordion({
                     href={`/parent/courses/${courseId}/modules/${m.id}`}
                     className="inline-block text-xs text-indigo-600 hover:text-indigo-800 font-medium pt-1"
                   >
-                    {lang === "id" ? "Lihat detail sesi & kuis →" : "View sessions & quizzes →"}
+                    {t(lang, "viewSessionsQuizzes")}
                   </Link>
                 </div>
               )}

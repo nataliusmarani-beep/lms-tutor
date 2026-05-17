@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/Navbar";
 import ProgressRing from "@/components/ProgressRing";
 import { format } from "date-fns";
-import { getLang, t } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
+import { getLang } from "@/lib/getLang";
 
 interface CourseModule {
   id: string;

@@ -1,5 +1,3 @@
-import { cookies } from "next/headers";
-
 export type Lang = "en" | "id";
 
 export const translations = {
@@ -87,6 +85,27 @@ export const translations = {
     addAccount: "+ Add Account",
     // Dashboard breadcrumb
     dashboard: "← Dashboard",
+    // Module overview
+    moduleOverview: "Module Overview",
+    totalSessions: "Total Sessions",
+    // Notes labels
+    tutorNotes: "Tutor notes:",
+    studentNotes: "Student notes:",
+    // Checklist / accordion
+    studentActivities: "Student Activities",
+    tutorLedTopics: "Tutor-Led Topics",
+    completed: "completed",
+    noChecklistItemsYet: "No checklist items yet.",
+    noResourcesYet: "No resources yet.",
+    noQuizzesYet: "No quizzes yet.",
+    noSessionsForModule: "No sessions logged for this module yet.",
+    // Curriculum accordion
+    courseCurriculum: "Course Curriculum",
+    currentModule: "● Current",
+    viewSessionsQuizzes: "View sessions & quizzes →",
+    // Stats labels
+    studentLabel: "Student",
+    tutorLabel: "Tutor",
   },
   id: {
     signOut: "Keluar",
@@ -159,6 +178,27 @@ export const translations = {
     manageAccountsSubtitle: "Lihat dan kelola akun siswa & orang tua",
     addAccount: "+ Tambah Akun",
     dashboard: "← Dasbor",
+    // Module overview
+    moduleOverview: "Gambaran Umum Modul",
+    totalSessions: "Total Sesi",
+    // Notes labels
+    tutorNotes: "Catatan tutor:",
+    studentNotes: "Catatan siswa:",
+    // Checklist / accordion
+    studentActivities: "Aktivitas Siswa",
+    tutorLedTopics: "Materi Tutor",
+    completed: "selesai",
+    noChecklistItemsYet: "Belum ada item checklist.",
+    noResourcesYet: "Belum ada materi.",
+    noQuizzesYet: "Belum ada kuis.",
+    noSessionsForModule: "Belum ada sesi yang dicatat untuk modul ini.",
+    // Curriculum accordion
+    courseCurriculum: "Kurikulum Kursus",
+    currentModule: "● Dibuka",
+    viewSessionsQuizzes: "Lihat detail sesi & kuis →",
+    // Stats labels
+    studentLabel: "Siswa",
+    tutorLabel: "Tutor",
   },
 } as const;
 
@@ -168,12 +208,3 @@ export function t(lang: Lang, key: TranslationKey): string {
   return (translations[lang] as Record<string, string>)[key] ?? (translations.en as Record<string, string>)[key] ?? key;
 }
 
-/** Read language from cookie — use inside Server Components only */
-export function getLang(): Lang {
-  try {
-    const val = cookies().get("lang")?.value;
-    return val === "id" ? "id" : "en";
-  } catch {
-    return "en";
-  }
-}

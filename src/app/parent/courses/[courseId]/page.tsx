@@ -3,7 +3,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/Navbar";
 import ParentCourseAccordion from "@/components/ParentCourseAccordion";
-import { getLang, t } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
+import { getLang } from "@/lib/getLang";
 
 export default async function ParentCoursePage({ params }: { params: { courseId: string } }) {
   const supabase = createClient();
