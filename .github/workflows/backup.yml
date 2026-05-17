@@ -1,0 +1,39 @@
+name: Daily Supabase Backup
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Export Supabase tables
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          mkdir -p backups
+          for TABLE in profiles learning_sessions checklist_completions parent_student course_enrollments courses course_modules module_checklist_items; do
+            echo "Backing up $TABLE..."
+            curl -s \
+              -H "apikey: $SUPABASE_SERVICE_KEY" \
+              -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
+              "$SUPABASE_URL/rest/v1/$TABLE?select=*" \
+              -o "backups/${TABLE}.json"
+          done
+          echo "Backup completed at $(date -u)" > backups/last_backup.txt
+
+      - name: Commit backup files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add backups/
+          git diff --staged --quiet || git commit -m "chore: daily backup $(date -u '+%Y-%m-%d')"
+          git push
