@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/Navbar";
 import ChecklistSection from "@/components/ChecklistSection";
 import { format } from "date-fns";
+import { getLang } from "@/lib/getLang";
 
 interface PageParams {
   id: string;        // student id
@@ -40,6 +41,8 @@ export default async function TutorCourseModuleDetailPage({
     .single();
   if (!mod) notFound();
 
+  const lang = getLang();
+
   const [{ data: sessions }, { data: checks }, { data: checklistItems }] = await Promise.all([
     supabase
       .from("learning_sessions")
@@ -69,7 +72,7 @@ export default async function TutorCourseModuleDetailPage({
           <span>›</span>
           <Link href={`/tutor/students/${params.id}`} className="hover:text-slate-600">{student.name}</Link>
           <span>›</span>
-          <span className="text-slate-600">{mod.title}</span>
+          <span className="text-slate-600">{(lang === "id" && mod.title_id) ? mod.title_id : mod.title}</span>
         </div>
 
         {/* Module Header */}
@@ -81,8 +84,14 @@ export default async function TutorCourseModuleDetailPage({
                 {mod.week_number && <span className="badge-blue">Week {mod.week_number}</span>}
                 <span className="badge-gray">{course.icon} {course.title}</span>
               </div>
-              <h1 className="text-xl font-bold text-slate-800 mt-1">{mod.title}</h1>
-              {mod.focus && <p className="text-slate-500 text-sm mt-1">{mod.focus}</p>}
+              <h1 className="text-xl font-bold text-slate-800 mt-1">
+                {(lang === "id" && mod.title_id) ? mod.title_id : mod.title}
+              </h1>
+              {mod.focus && (
+                <p className="text-slate-500 text-sm mt-1">
+                  {(lang === "id" && mod.focus_id) ? mod.focus_id : mod.focus}
+                </p>
+              )}
               <p className="text-sm text-slate-500 mt-2">
                 Student: <strong>{student.name}</strong>
               </p>
@@ -150,6 +159,7 @@ export default async function TutorCourseModuleDetailPage({
           studentId={params.id}
           currentUserId={user.id}
           currentUserRole="tutor"
+          lang={lang}
         />
 
         {/* Assignments placeholder */}

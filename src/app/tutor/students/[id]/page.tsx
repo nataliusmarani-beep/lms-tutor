@@ -4,11 +4,14 @@ import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/Navbar";
 import SessionActions from "@/components/SessionActions";
 import { format } from "date-fns";
+import { getLang } from "@/lib/getLang";
 
 interface CourseModule {
   id: string;
   title: string;
+  title_id?: string | null;
   focus: string | null;
+  focus_id?: string | null;
   icon: string;
   week_number: number | null;
   sort_order: number;
@@ -51,6 +54,8 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
 
   const { data: tutor } = await supabase.from("profiles").select("*").eq("id", user.id).single();
   if (!tutor || tutor.role !== "tutor") redirect("/login");
+
+  const lang = getLang();
 
   const { data: student } = await supabase.from("profiles").select("*").eq("id", params.id).single();
   if (!student) notFound();
@@ -222,10 +227,12 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
                             <span className="badge-gray text-xs">Week {mod.week_number}</span>
                           )}
                           <div className="font-medium text-slate-800 text-sm leading-tight mt-0.5">
-                            {mod.title}
+                            {(lang === "id" && mod.title_id) ? mod.title_id : mod.title}
                           </div>
                           {mod.focus && (
-                            <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{mod.focus}</p>
+                            <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                              {(lang === "id" && mod.focus_id) ? mod.focus_id : mod.focus}
+                            </p>
                           )}
                           <div className="mt-2">
                             <div className="flex items-center justify-between mb-1">
@@ -286,7 +293,9 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
                     <span className="text-xl shrink-0">{mod?.icon ?? "📅"}</span>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-slate-700">
-                        {mod ? mod.title : s.module_id ? `Module ${s.module_id}` : "Session"}
+                        {mod
+                          ? ((lang === "id" && mod.title_id) ? mod.title_id : mod.title)
+                          : s.module_id ? `Module ${s.module_id}` : "Session"}
                       </div>
                       {s.tutor_notes && (
                         <div className="text-xs text-slate-500 mt-0.5 line-clamp-1">{s.tutor_notes}</div>
