@@ -10,6 +10,7 @@ import type { Lang } from "@/lib/i18n";
 interface ChecklistItem {
   item_key: string;
   label: string;
+  label_id?: string | null;
   item_type: string;
   sort_order: number;
 }
@@ -270,7 +271,7 @@ function ModulePanel({ mod, lang, defaultOpen }: { mod: ModuleData; lang: Lang; 
                               {done ? "✓" : ""}
                             </div>
                             <span className={`text-sm leading-relaxed ${done ? "text-slate-400 line-through" : "text-slate-700"}`}>
-                              {item.label}
+                              {(lang === "id" && item.label_id) ? item.label_id : item.label}
                             </span>
                           </div>
                         );
@@ -296,7 +297,7 @@ function ModulePanel({ mod, lang, defaultOpen }: { mod: ModuleData; lang: Lang; 
                               {done ? "✓" : ""}
                             </div>
                             <span className={`text-sm leading-relaxed ${done ? "text-slate-400 line-through" : "text-slate-700"}`}>
-                              {item.label}
+                              {(lang === "id" && item.label_id) ? item.label_id : item.label}
                             </span>
                           </div>
                         );

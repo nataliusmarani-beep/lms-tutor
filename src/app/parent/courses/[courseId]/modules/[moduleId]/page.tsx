@@ -63,7 +63,7 @@ export default async function ParentModulePage({ params }: { params: PageParams 
   const { data: allModuleItems } = allModIds.length > 0
     ? await supabase
         .from("module_checklist_items")
-        .select("course_module_id, item_key, label, item_type, sort_order")
+        .select("course_module_id, item_key, label, label_id, item_type, sort_order")
         .in("course_module_id", allModIds)
         .order("sort_order")
     : { data: [] };
@@ -99,7 +99,7 @@ export default async function ParentModulePage({ params }: { params: PageParams 
       .or(completionFilter),
     supabase
       .from("module_checklist_items")
-      .select("id, item_key, label, item_type, sort_order")
+      .select("id, item_key, label, label_id, item_type, sort_order")
       .eq("course_module_id", params.moduleId)
       .order("sort_order"),
     supabase
