@@ -66,9 +66,15 @@ interface ModuleData {
   quizzes: Quiz[];
 }
 
+interface TutorInfo {
+  name: string;
+  avatar_url: string | null;
+}
+
 interface Props {
   modules: ModuleData[];
   lang: Lang;
+  tutor?: TutorInfo | null;
 }
 
 // ─── Resource loader (client-side per module) ────────────────────────────────
@@ -121,7 +127,7 @@ const TABS: { id: Tab; icon: string; labelEn: string; labelId: string }[] = [
 
 // ─── Single module panel ──────────────────────────────────────────────────────
 
-function ModulePanel({ mod, lang, defaultOpen }: { mod: ModuleData; lang: Lang; defaultOpen: boolean }) {
+function ModulePanel({ mod, lang, defaultOpen, tutor }: { mod: ModuleData; lang: Lang; defaultOpen: boolean; tutor?: TutorInfo | null }) {
   const [open, setOpen]   = useState(defaultOpen);
   const [tab, setTab]     = useState<Tab>("sessions");
   const { resources, loading: resLoading } = useResources(mod.id, open && tab === "resources");
@@ -199,6 +205,23 @@ function ModulePanel({ mod, lang, defaultOpen }: { mod: ModuleData; lang: Lang; 
               <div className="text-xs text-slate-400">{t(lang, "quizzes")}</div>
             </div>
           </div>
+
+          {/* Tutor info strip */}
+          {tutor && (
+            <div className="flex items-center gap-3 px-4 py-2.5 bg-blue-50 border-b border-blue-100">
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-blue-200 flex items-center justify-center shrink-0">
+                {tutor.avatar_url ? (
+                  <img src={tutor.avatar_url} alt={tutor.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-sm font-bold text-blue-700">{tutor.name.charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-blue-600 font-medium leading-none">Tutor</p>
+                <p className="text-sm font-semibold text-blue-800 truncate">{tutor.name}</p>
+              </div>
+            </div>
+          )}
 
           {/* Tabs */}
           <div className="grid grid-cols-4 border-b border-slate-100 bg-white">
@@ -429,11 +452,11 @@ function ModulePanel({ mod, lang, defaultOpen }: { mod: ModuleData; lang: Lang; 
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 
-export default function ParentCourseAccordion({ modules, lang }: Props) {
+export default function ParentCourseAccordion({ modules, lang, tutor }: Props) {
   return (
     <div className="space-y-3">
       {modules.map((mod, i) => (
-        <ModulePanel key={mod.id} mod={mod} lang={lang} defaultOpen={i === 0} />
+        <ModulePanel key={mod.id} mod={mod} lang={lang} defaultOpen={i === 0} tutor={tutor} />
       ))}
     </div>
   );

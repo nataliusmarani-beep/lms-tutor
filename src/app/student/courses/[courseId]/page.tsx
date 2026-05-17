@@ -17,10 +17,17 @@ export default async function StudentCoursePage({ params }: { params: { courseId
 
   const { data: course } = await supabase
     .from("courses")
-    .select("id, title, title_id, icon, icon_url, description, description_id")
+    .select("id, title, title_id, icon, icon_url, description, description_id, created_by")
     .eq("id", params.courseId)
     .single();
   if (!course) notFound();
+
+  // Fetch tutor info
+  const createdBy = (course as { created_by?: string | null }).created_by;
+  const { data: tutorRows } = createdBy
+    ? await supabase.from("profiles").select("id, name, avatar_url").eq("id", createdBy)
+    : await supabase.from("profiles").select("id, name, avatar_url").eq("role", "tutor");
+  const tutor = (tutorRows?.[0] as { name: string; avatar_url: string | null } | undefined) ?? null;
 
   // All modules
   const { data: modulesRaw } = await supabase
@@ -181,7 +188,7 @@ export default async function StudentCoursePage({ params }: { params: { courseId
             <p className="text-slate-500">No modules in this course yet.</p>
           </div>
         ) : (
-          <StudentCourseAccordion modules={moduleData} lang={lang} studentId={user.id} />
+          <StudentCourseAccordion modules={moduleData} lang={lang} studentId={user.id} tutor={tutor} />
         )}
 
       </div>

@@ -64,10 +64,16 @@ interface ModuleData {
   quizzes: Quiz[];
 }
 
+interface TutorInfo {
+  name: string;
+  avatar_url: string | null;
+}
+
 interface Props {
   modules: ModuleData[];
   lang: Lang;
   studentId: string;
+  tutor?: TutorInfo | null;
 }
 
 function useResources(moduleId: string, active: boolean) {
@@ -113,9 +119,9 @@ const TABS: { id: Tab; icon: string; labelEn: string; labelId: string }[] = [
 ];
 
 function ModulePanel({
-  mod, lang, studentId, defaultOpen,
+  mod, lang, studentId, defaultOpen, tutor,
 }: {
-  mod: ModuleData; lang: Lang; studentId: string; defaultOpen: boolean;
+  mod: ModuleData; lang: Lang; studentId: string; defaultOpen: boolean; tutor?: TutorInfo | null;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const [tab, setTab]   = useState<Tab>("sessions");
@@ -215,6 +221,23 @@ function ModulePanel({
               <div className="text-xs text-slate-400">{t(lang, "quizzes")}</div>
             </div>
           </div>
+
+          {/* Tutor info strip */}
+          {tutor && (
+            <div className="flex items-center gap-3 px-4 py-2.5 bg-teal-50 border-b border-teal-100">
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-teal-200 flex items-center justify-center shrink-0">
+                {tutor.avatar_url ? (
+                  <img src={tutor.avatar_url} alt={tutor.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-sm font-bold text-teal-700">{tutor.name.charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-teal-600 font-medium leading-none">Your Tutor</p>
+                <p className="text-sm font-semibold text-teal-800 truncate">{tutor.name}</p>
+              </div>
+            </div>
+          )}
 
           {/* Full-width tabs */}
           <div className="grid grid-cols-4 border-b border-slate-100 bg-white">
@@ -451,11 +474,11 @@ function ModulePanel({
   );
 }
 
-export default function StudentCourseAccordion({ modules, lang, studentId }: Props) {
+export default function StudentCourseAccordion({ modules, lang, studentId, tutor }: Props) {
   return (
     <div className="space-y-3">
       {modules.map((mod, i) => (
-        <ModulePanel key={mod.id} mod={mod} lang={lang} studentId={studentId} defaultOpen={i === 0} />
+        <ModulePanel key={mod.id} mod={mod} lang={lang} studentId={studentId} defaultOpen={i === 0} tutor={tutor} />
       ))}
     </div>
   );
