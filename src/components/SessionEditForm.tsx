@@ -13,6 +13,7 @@ interface Props {
     date: string;
     duration_minutes: number;
     tutor_notes: string;
+    tutor_notes_id: string;
     student_notes: string;
   };
   modules: {
@@ -32,6 +33,7 @@ export default function SessionEditForm({ sessionId, studentId, initialData, mod
     date: initialData.date,
     duration_minutes: initialData.duration_minutes.toString(),
     tutor_notes: initialData.tutor_notes,
+    tutor_notes_id: initialData.tutor_notes_id,
     student_notes: initialData.student_notes,
   });
 
@@ -49,6 +51,7 @@ export default function SessionEditForm({ sessionId, studentId, initialData, mod
         date: form.date,
         duration_minutes: parseInt(form.duration_minutes),
         tutor_notes: form.tutor_notes || null,
+        tutor_notes_id: form.tutor_notes_id || null,
         student_notes: form.student_notes || null,
       })
       .eq("id", sessionId);
@@ -98,12 +101,22 @@ export default function SessionEditForm({ sessionId, studentId, initialData, mod
       </div>
 
       <div>
-        <label className="label">Tutor Notes</label>
+        <label className="label">Tutor Notes (EN)</label>
         <textarea
           className="input resize-none" rows={3}
           value={form.tutor_notes}
           onChange={(e) => setForm({ ...form, tutor_notes: e.target.value })}
           placeholder="What was covered, how the student performed..."
+        />
+      </div>
+
+      <div>
+        <label className="label">Catatan Tutor (ID)</label>
+        <textarea
+          className="input resize-none" rows={3}
+          value={form.tutor_notes_id}
+          onChange={(e) => setForm({ ...form, tutor_notes_id: e.target.value })}
+          placeholder="Apa yang dipelajari, bagaimana performa siswa..."
         />
       </div>
 

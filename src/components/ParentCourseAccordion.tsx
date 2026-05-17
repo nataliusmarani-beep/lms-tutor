@@ -20,7 +20,9 @@ interface Session {
   date: string;
   duration_minutes: number;
   tutor_notes: string | null;
+  tutor_notes_id?: string | null;
   student_notes?: string | null;
+  student_notes_id?: string | null;
 }
 
 interface QuizAttempt {
@@ -235,16 +237,16 @@ function ModulePanel({ mod, lang, defaultOpen }: { mod: ModuleData; lang: Lang; 
                         {s.duration_minutes} {t(lang, "min")}
                       </span>
                     </div>
-                    {s.tutor_notes && (
+                    {(s.tutor_notes || s.tutor_notes_id) && (
                       <p className="text-xs text-slate-600">
                         <span className="text-slate-400 font-medium">{t(lang, "tutorNotes")} </span>
-                        {s.tutor_notes}
+                        {(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
                       </p>
                     )}
-                    {s.student_notes && (
+                    {(s.student_notes || s.student_notes_id) && (
                       <p className="text-xs text-slate-600">
                         <span className="text-slate-400 font-medium">{t(lang, "studentNotes")} </span>
-                        {s.student_notes}
+                        {(lang === "id" && s.student_notes_id) ? s.student_notes_id : s.student_notes}
                       </p>
                     )}
                   </div>

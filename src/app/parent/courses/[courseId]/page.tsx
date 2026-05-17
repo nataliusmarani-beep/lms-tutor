@@ -26,7 +26,7 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
     .from("profiles").select("id, name").eq("id", studentId).single();
 
   const { data: course } = await supabase
-    .from("courses").select("id, title, icon, description").eq("id", params.courseId).single();
+    .from("courses").select("id, title, title_id, icon, description, description_id").eq("id", params.courseId).single();
   if (!course) notFound();
 
   // All modules
@@ -56,7 +56,7 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
   // All sessions for student in this course
   const { data: allSessions } = await supabase
     .from("learning_sessions")
-    .select("id, date, duration_minutes, tutor_notes, student_notes, course_module_id, module_id")
+    .select("id, date, duration_minutes, tutor_notes, tutor_notes_id, student_notes, student_notes_id, course_module_id, module_id")
     .eq("student_id", studentId)
     .order("date", { ascending: false });
 
@@ -169,9 +169,15 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
             <span className="text-4xl">{course.icon}</span>
             <div className="flex-1">
               <p className="text-blue-200 text-sm">{student?.name}</p>
-              <h1 className="text-xl font-bold text-white">{course.title}</h1>
-              {course.description && (
-                <p className="text-blue-200 text-sm mt-0.5">{course.description}</p>
+              <h1 className="text-xl font-bold text-white">
+                {(lang === "id" && (course as {title_id?: string|null}).title_id) ? (course as {title_id: string}).title_id : course.title}
+              </h1>
+              {(course.description || (course as {description_id?: string|null}).description_id) && (
+                <p className="text-blue-200 text-sm mt-0.5">
+                  {(lang === "id" && (course as {description_id?: string|null}).description_id)
+                    ? (course as {description_id: string}).description_id
+                    : course.description}
+                </p>
               )}
             </div>
             <div className="text-right shrink-0">
