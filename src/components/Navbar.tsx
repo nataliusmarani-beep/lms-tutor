@@ -60,6 +60,9 @@ export default function Navbar({ name, role }: NavbarProps) {
         {/* Logo — full text on sm+, icon only on mobile */}
         <div className="flex items-center gap-1.5 shrink-0">
           <span className="text-xl">💻</span>
+          <span className="block sm:hidden text-base font-bold text-white leading-tight">
+            Learning with Teis
+          </span>
           <span className="hidden sm:block text-base font-bold text-white leading-tight">
             Learning with Mr. Teis
           </span>
