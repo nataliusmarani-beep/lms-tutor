@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import Navbar from "@/components/Navbar";
 import ProgressRing from "@/components/ProgressRing";
 import { format } from "date-fns";
 import { t } from "@/lib/i18n";
@@ -77,13 +76,10 @@ export default async function ParentDashboard() {
 
   if (!studentId) {
     return (
-      <div className="min-h-screen">
-        <Navbar name={profile.name} role="parent" />
-        <div className="max-w-5xl mx-auto px-4 py-16 text-center">
-          <div className="text-5xl mb-4">👤</div>
-          <h1 className="text-xl font-bold text-slate-700">{t(lang, "noStudentLinked")}</h1>
-          <p className="text-slate-400 mt-2">{t(lang, "noStudentLinkedDesc")}</p>
-        </div>
+      <div className="max-w-5xl mx-auto px-4 py-16 text-center">
+        <div className="text-5xl mb-4">👤</div>
+        <h1 className="text-xl font-bold text-slate-700">{t(lang, "noStudentLinked")}</h1>
+        <p className="text-slate-400 mt-2">{t(lang, "noStudentLinkedDesc")}</p>
       </div>
     );
   }
@@ -202,13 +198,12 @@ export default async function ParentDashboard() {
 
   return (
     <div className="min-h-screen">
-      <Navbar name={profile.name} role="parent" />
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
 
         {/* Header card */}
         <div
           className="rounded-2xl px-6 py-5 shadow-sm"
-          style={{ backgroundColor: "#0f1f3d" }}
+          style={{ background: "linear-gradient(135deg, #0f1f3d 0%, #134e5e 60%, #0d9488 100%)" }}
         >
           <div className="flex items-center gap-4">
             {/* Student avatar */}

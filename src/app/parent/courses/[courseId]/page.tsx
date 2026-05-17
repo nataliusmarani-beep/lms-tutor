@@ -1,7 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import Navbar from "@/components/Navbar";
 import ParentCourseAccordion from "@/components/ParentCourseAccordion";
 import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/getLang";
@@ -148,7 +147,6 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
 
   return (
     <div className="min-h-screen">
-      <Navbar name={profile.name} role="parent" />
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
 
         {/* Breadcrumb */}

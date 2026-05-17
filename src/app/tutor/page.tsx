@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import Navbar from "@/components/Navbar";
 import ProgressRing from "@/components/ProgressRing";
 import type { Profile } from "@/types";
 import { t } from "@/lib/i18n";
@@ -137,14 +136,13 @@ export default async function TutorDashboard() {
 
   return (
     <div className="min-h-screen">
-      <Navbar name={profile.name} role="tutor" />
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
 
         {/* Welcome banner */}
-        <div className="rounded-2xl p-6 text-white shadow-md flex items-center gap-4" style={{ backgroundColor: "#0f1f3d" }}>
+        <div className="rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-600 p-6 text-white shadow-md flex items-center gap-4">
           <div className="flex-1">
             <h1 className="text-2xl font-bold">{t(lang, "welcomeBack")}, {profile.name.split(" ")[0]}! 👋</h1>
-            <p className="mt-1 text-indigo-200 text-sm">
+            <p className="mt-1 text-teal-100 text-sm">
               {courseList.length} {t(lang, "courses").toLowerCase()} · {studentList.length} {t(lang, "students").toLowerCase()} · {t(lang, "readyToTeach")}
             </p>
           </div>

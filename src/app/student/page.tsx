@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import Navbar from "@/components/Navbar";
 import ProgressRing from "@/components/ProgressRing";
 import { format } from "date-fns";
 import { t } from "@/lib/i18n";
@@ -155,11 +154,10 @@ export default async function StudentDashboard() {
 
   return (
     <div className="min-h-screen">
-      <Navbar name={profile.name} role="student" />
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
 
         {/* Welcome banner */}
-        <div className="rounded-2xl p-6 text-white shadow-md flex items-center gap-4" style={{ backgroundColor: "#0f1f3d" }}>
+        <div className="rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-600 p-6 text-white shadow-md flex items-center gap-4">
           <div className="w-16 h-16 rounded-full overflow-hidden bg-teal-500 flex items-center justify-center shrink-0 ring-2 ring-white/40">
             {profile.avatar_url ? (
               <img src={profile.avatar_url} alt={profile.name} className="w-full h-full object-cover" />
@@ -169,7 +167,7 @@ export default async function StudentDashboard() {
           </div>
           <div className="flex-1">
             <h1 className="text-2xl font-bold">{t(lang, "hiGreeting")}, {profile.name.split(" ")[0]}! 👋</h1>
-            <p className="mt-1 text-indigo-200 text-sm">
+            <p className="mt-1 text-teal-100 text-sm">
               {enrolledCourses.length} {t(lang, "coursesEnrolled")}
             </p>
           </div>

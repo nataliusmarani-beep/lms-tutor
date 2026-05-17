@@ -1,7 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import Navbar from "@/components/Navbar";
 import ChecklistSection from "@/components/ChecklistSection";
 import AssignmentPanel from "@/components/AssignmentPanel";
 import { getModule } from "@/lib/course-data";
@@ -61,7 +60,6 @@ export default async function StudentModulePage({ params }: { params: { id: stri
 
   return (
     <div className="min-h-screen">
-      <Navbar name={profile.name} role="student" />
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
         <div className="flex items-center gap-2 text-sm text-slate-400">
           <Link href="/student">← Dashboard</Link>

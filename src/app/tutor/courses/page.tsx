@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import Navbar from "@/components/Navbar";
 
 interface CourseRow {
   id: string;
@@ -45,7 +44,6 @@ export default async function TutorCoursesPage() {
 
   return (
     <div className="min-h-screen">
-      <Navbar name={profile.name} role="tutor" />
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
         <div className="flex items-center justify-between">
           <div>

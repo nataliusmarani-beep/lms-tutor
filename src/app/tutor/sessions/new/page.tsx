@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import Navbar from "@/components/Navbar";
 import SessionForm from "@/components/SessionForm";
 
 export default async function NewSessionPage({
@@ -43,7 +42,6 @@ export default async function NewSessionPage({
 
   return (
     <div className="min-h-screen">
-      <Navbar name={tutor.name} role="tutor" />
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
         <div className="flex items-center gap-2 text-sm text-slate-400">
           <Link href="/tutor">← Dashboard</Link>

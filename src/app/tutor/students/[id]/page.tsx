@@ -1,7 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import Navbar from "@/components/Navbar";
 import SessionActions from "@/components/SessionActions";
 import AvatarUpload from "@/components/AvatarUpload";
 import { format } from "date-fns";
@@ -151,7 +150,6 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
 
   return (
     <div className="min-h-screen">
-      <Navbar name={tutor.name} role="tutor" />
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
         <div className="flex items-center gap-3">
           <Link href="/tutor" className="text-slate-400 hover:text-slate-600 text-sm">← Dashboard</Link>
