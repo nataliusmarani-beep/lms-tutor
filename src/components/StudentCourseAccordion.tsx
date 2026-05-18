@@ -46,6 +46,22 @@ interface Resource {
   description: string | null;
 }
 
+interface QuizOption {
+  id: string;
+  question_id: string;
+  option_text: string;
+  is_correct: boolean;
+  sort_order: number;
+}
+
+interface QuizQuestion {
+  id: string;
+  question_type: "single_choice" | "multiple_choice" | "fill_blank";
+  question_text: string;
+  sort_order: number;
+  options: QuizOption[];
+}
+
 interface ModuleData {
   id: string;
   title: string;
@@ -118,6 +134,147 @@ const TABS: { id: Tab; icon: string; labelEn: string; labelId: string }[] = [
   { id: "quizzes",   icon: "📝", labelEn: "Quizzes",   labelId: "Kuis" },
 ];
 
+function QuizPlayer({
+  quiz, studentId, lang, onClose, onComplete,
+}: {
+  quiz: Quiz; studentId: string; lang: Lang;
+  onClose: () => void;
+  onComplete: (score: number, max: number) => void;
+}) {
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [answers, setAnswers]     = useState<Record<string, string>>({});
+  const [submitted, setSubmitted] = useState(false);
+  const [score, setScore]         = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient();
+      const { data: qs } = await supabase
+        .from("quiz_questions")
+        .select("id, question_type, question_text, sort_order")
+        .eq("quiz_id", quiz.id)
+        .order("sort_order");
+      if (!qs?.length) { setLoading(false); return; }
+      const { data: opts } = await supabase
+        .from("quiz_options")
+        .select("id, question_id, option_text, is_correct, sort_order")
+        .in("question_id", qs.map((q) => q.id))
+        .order("sort_order");
+      setQuestions(qs.map((q) => ({
+        ...q,
+        options: (opts ?? []).filter((o) => o.question_id === q.id),
+      })) as QuizQuestion[]);
+      setLoading(false);
+    })();
+  }, [quiz.id]);
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    let s = 0;
+    for (const q of questions) {
+      const correct = q.options.find((o) => o.is_correct);
+      if (correct && answers[q.id] === correct.id) s++;
+    }
+    const supabase = createClient();
+    await supabase.from("quiz_attempts").insert({
+      quiz_id: quiz.id, student_id: studentId,
+      score: s, max_score: questions.length, answers,
+    });
+    setScore(s);
+    setSubmitted(true);
+    setSubmitting(false);
+    onComplete(s, questions.length);
+  }
+
+  if (loading) return <p className="text-sm text-slate-400 text-center py-6">Loading quiz…</p>;
+  if (!questions.length) return <p className="text-sm text-slate-400 text-center py-6">No questions found.</p>;
+
+  if (submitted) {
+    const pct = Math.round((score / questions.length) * 100);
+    return (
+      <div className="space-y-4">
+        <div className={`rounded-2xl p-5 text-center ${pct >= 80 ? "bg-green-50 border border-green-200" : pct >= 50 ? "bg-teal-50 border border-teal-200" : "bg-amber-50 border border-amber-200"}`}>
+          <div className={`text-4xl font-bold ${pct >= 80 ? "text-green-600" : pct >= 50 ? "text-teal-600" : "text-amber-500"}`}>{pct}%</div>
+          <div className="text-slate-600 text-sm mt-1">{score}/{questions.length} {lang === "id" ? "benar" : "correct"}</div>
+          <div className="text-slate-400 text-xs mt-1">
+            {pct >= 80 ? (lang === "id" ? "Luar biasa! 🎉" : "Excellent! 🎉") : pct >= 50 ? (lang === "id" ? "Bagus! Terus berlatih." : "Good job! Keep practising.") : (lang === "id" ? "Pelajari lagi materinya ya!" : "Review the material and try again.")}
+          </div>
+        </div>
+        <div className="space-y-3">
+          {questions.map((q, i) => {
+            const correct = q.options.find((o) => o.is_correct);
+            const isRight = answers[q.id] === correct?.id;
+            return (
+              <div key={q.id} className={`rounded-xl px-4 py-3 border ${isRight ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
+                <p className="text-sm font-semibold text-slate-800 mb-2">{i + 1}. {q.question_text}</p>
+                <div className="space-y-1">
+                  {q.options.map((o) => (
+                    <div key={o.id} className={`text-xs rounded-lg px-3 py-1.5 flex items-center gap-2 ${
+                      o.is_correct ? "bg-green-100 text-green-700 font-semibold" :
+                      answers[q.id] === o.id ? "bg-red-100 text-red-600" : "text-slate-400"
+                    }`}>
+                      <span className="shrink-0">{o.is_correct ? "✓" : answers[q.id] === o.id ? "✗" : "○"}</span>
+                      <span>{o.option_text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <button onClick={onClose} className="btn-secondary w-full text-sm">
+          {lang === "id" ? "Kembali ke Kuis" : "Back to Quizzes"}
+        </button>
+      </div>
+    );
+  }
+
+  const allAnswered = questions.every((q) => answers[q.id]);
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold text-slate-800">{quiz.title}</h3>
+          {quiz.description && <p className="text-xs text-slate-500 mt-0.5">{quiz.description}</p>}
+        </div>
+        <button onClick={onClose} className="text-xs text-slate-400 hover:text-slate-600 shrink-0">✕ {lang === "id" ? "Batal" : "Cancel"}</button>
+      </div>
+      <div className="space-y-4">
+        {questions.map((q, i) => (
+          <div key={q.id} className="bg-slate-50 rounded-xl px-4 py-4 space-y-3">
+            <p className="text-sm font-semibold text-slate-800">{i + 1}. {q.question_text}</p>
+            <div className="space-y-2">
+              {q.options.map((o) => (
+                <label key={o.id} className={`flex items-center gap-3 cursor-pointer rounded-lg px-3 py-2.5 border transition-colors ${
+                  answers[q.id] === o.id ? "bg-teal-50 border-teal-400" : "bg-white border-slate-200 hover:bg-slate-50"
+                }`}>
+                  <input
+                    type="radio" name={q.id} value={o.id}
+                    checked={answers[q.id] === o.id}
+                    onChange={() => setAnswers((prev) => ({ ...prev, [q.id]: o.id }))}
+                    className="accent-teal-600 shrink-0"
+                  />
+                  <span className="text-sm text-slate-700">{o.option_text}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <button onClick={handleSubmit} disabled={!allAnswered || submitting} className="btn-primary w-full">
+        {submitting ? (lang === "id" ? "Mengirim…" : "Submitting…") : (lang === "id" ? "Kirim Jawaban" : "Submit Quiz")}
+      </button>
+      {!allAnswered && (
+        <p className="text-xs text-slate-400 text-center">
+          {lang === "id" ? "Jawab semua pertanyaan untuk mengirim." : "Answer all questions to submit."}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function ModulePanel({
   mod, lang, studentId, defaultOpen, tutor,
 }: {
@@ -126,6 +283,8 @@ function ModulePanel({
   const [open, setOpen] = useState(defaultOpen);
   const [tab, setTab]   = useState<Tab>("sessions");
   const [completedKeys, setCompletedKeys] = useState<string[]>(mod.completedKeys);
+  const [activeQuizId, setActiveQuizId]   = useState<string | null>(null);
+  const [localBest, setLocalBest]         = useState<Record<string, { score: number; max_score: number }>>({});
   const { resources, loading: resLoading } = useResources(mod.id, open && tab === "resources");
 
   const isDone = (key: string) => completedKeys.includes(key);
@@ -413,36 +572,58 @@ function ModulePanel({
 
             {/* Quizzes */}
             {tab === "quizzes" && (
-              mod.quizzes.length === 0 ? (
+              activeQuizId ? (
+                <QuizPlayer
+                  quiz={mod.quizzes.find((q) => q.id === activeQuizId)!}
+                  studentId={studentId}
+                  lang={lang}
+                  onClose={() => setActiveQuizId(null)}
+                  onComplete={(score, max) => {
+                    setLocalBest((prev) => {
+                      const existing = prev[activeQuizId] ?? (mod.quizzes.find((q) => q.id === activeQuizId)?.bestAttempt ?? null);
+                      if (!existing || score > existing.score) return { ...prev, [activeQuizId]: { score, max_score: max } };
+                      return prev;
+                    });
+                  }}
+                />
+              ) : mod.quizzes.length === 0 ? (
                 <p className="text-sm text-slate-400 italic text-center py-4">
                   {t(lang, "noQuizzesYet")}
                 </p>
               ) : (
                 <div className="space-y-3">
                   {mod.quizzes.map((quiz) => {
-                    const best = quiz.bestAttempt;
-                    const pct = best ? Math.round((best.score / best.max_score) * 100) : null;
+                    const best = localBest[quiz.id] ?? quiz.bestAttempt;
+                    const pct  = best ? Math.round((best.score / best.max_score) * 100) : null;
                     return (
-                      <div key={quiz.id} className="flex items-center gap-3 bg-slate-50 rounded-xl px-4 py-3">
-                        <span className="text-2xl shrink-0">📝</span>
-                        <div className="flex-1">
-                          <div className="text-sm font-semibold text-slate-800">{quiz.title}</div>
-                          {quiz.description && <p className="text-xs text-slate-500 mt-0.5">{quiz.description}</p>}
-                        </div>
-                        <div className="text-right shrink-0">
-                          {best ? (
-                            <>
+                      <div key={quiz.id} className="bg-slate-50 rounded-xl px-4 py-3 space-y-3">
+                        <div className="flex items-start gap-3">
+                          <span className="text-2xl shrink-0 mt-0.5">📝</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold text-slate-800">{quiz.title}</div>
+                            {quiz.description && <p className="text-xs text-slate-500 mt-0.5">{quiz.description}</p>}
+                          </div>
+                          {best && (
+                            <div className="text-right shrink-0">
                               <div className={`text-base font-bold ${pct! >= 80 ? "text-green-600" : pct! >= 50 ? "text-teal-600" : "text-amber-500"}`}>
                                 {best.score}/{best.max_score}
                               </div>
                               <div className="text-xs text-slate-400">{pct}%</div>
-                            </>
-                          ) : (
-                            <span className="text-xs text-slate-400 italic">
-                              {t(lang, "notAttempted")}
-                            </span>
+                            </div>
                           )}
                         </div>
+                        <button
+                          onClick={() => setActiveQuizId(quiz.id)}
+                          className={`w-full text-sm font-semibold py-2 rounded-lg transition-colors ${
+                            best
+                              ? "bg-white border border-teal-300 text-teal-600 hover:bg-teal-50"
+                              : "bg-teal-500 text-white hover:bg-teal-600"
+                          }`}
+                        >
+                          {best
+                            ? (lang === "id" ? "Coba Lagi" : "Retake Quiz")
+                            : (lang === "id" ? "Mulai Kuis" : "Start Quiz")}
+                        </button>
                       </div>
                     );
                   })}
