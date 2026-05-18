@@ -22,6 +22,7 @@ export async function GET() {
 
     let translated = 0;
     let failed = 0;
+    let lastError = "";
 
     for (const s of sessions) {
       try {
@@ -44,12 +45,14 @@ export async function GET() {
             .eq("id", s.id);
           translated++;
         }
-      } catch {
+      } catch (e) {
+        console.error("Translation failed for session", s.id, e);
         failed++;
+        lastError = String(e);
       }
     }
 
-    return NextResponse.json({ ok: true, translated, failed, total: sessions.length });
+    return NextResponse.json({ ok: true, translated, failed, total: sessions.length, lastError });
   } catch (err) {
     return NextResponse.json({ ok: false, error: String(err) }, { status: 500 });
   }
