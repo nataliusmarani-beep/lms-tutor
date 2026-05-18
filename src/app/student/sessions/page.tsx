@@ -102,30 +102,33 @@ export default async function StudentSessionsPage() {
               {items.map((s) => {
                 const mod = s.course_module_id ? moduleMap[s.course_module_id] : null;
                 return (
-                  <div key={s.id} className="card flex items-center gap-3 py-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "#0f1f3d" }}>
-                      <span className="text-lg">{mod?.icon ?? "📅"}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-slate-700">
-                        {mod ? mod.title : s.module_id ? `Module ${s.module_id}` : "Session"}
+                  <div key={s.id} className="card py-3 space-y-2">
+                    {/* Top row: icon + title + duration/date */}
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: "#0f1f3d" }}>
+                        <span className="text-lg">{mod?.icon ?? "📅"}</span>
                       </div>
-                      {s.tutor_notes && (
-                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{s.tutor_notes}</p>
-                      )}
-                      {s.student_notes && (
-                        <p className="text-xs text-teal-600 mt-0.5 line-clamp-1">{s.student_notes}</p>
-                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-slate-800">
+                          {mod ? mod.title : s.module_id ? `Module ${s.module_id}` : "Session"}
+                        </div>
+                        <div className="text-xs text-slate-400 mt-0.5">{s.duration_minutes} min · {format(new Date(s.date), "MMM d, yyyy")}</div>
+                      </div>
                     </div>
+                    {/* Tutor notes */}
+                    {s.tutor_notes && (
+                      <p className="text-sm text-slate-600 leading-relaxed">{s.tutor_notes}</p>
+                    )}
+                    {/* Student notes */}
+                    {s.student_notes && (
+                      <p className="text-sm text-teal-700 leading-relaxed italic">{s.student_notes}</p>
+                    )}
+                    {/* Photo */}
                     {s.photo_url && (
-                      <a href={s.photo_url} target="_blank" rel="noopener noreferrer" className="shrink-0">
-                        <img src={s.photo_url} alt="doc" className="w-14 h-10 object-cover rounded-lg border border-slate-200 hover:opacity-80 transition-opacity" />
+                      <a href={s.photo_url} target="_blank" rel="noopener noreferrer">
+                        <img src={s.photo_url} alt="session" className="w-full max-w-sm rounded-xl border border-slate-200 object-cover hover:opacity-90 transition-opacity" />
                       </a>
                     )}
-                    <div className="text-right shrink-0">
-                      <div className="text-sm font-semibold text-slate-700">{s.duration_minutes} min</div>
-                      <div className="text-xs text-slate-400">{format(new Date(s.date), "MMM d, yyyy")}</div>
-                    </div>
                   </div>
                 );
               })}
