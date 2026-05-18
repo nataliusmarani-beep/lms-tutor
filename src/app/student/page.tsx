@@ -83,11 +83,11 @@ export default async function StudentDashboard() {
     })
   );
 
-  // Fetch all sessions and completions for this student
+  // Fetch sessions (with photo) and completions
   const [{ data: sessions }, { data: checks }] = await Promise.all([
     supabase
       .from("learning_sessions")
-      .select("id, date, duration_minutes, tutor_notes, student_notes, course_module_id, module_id")
+      .select("id, date, duration_minutes, tutor_notes, student_notes, photo_url, course_module_id, module_id")
       .eq("student_id", user.id)
       .order("date", { ascending: false }),
     supabase
@@ -99,7 +99,7 @@ export default async function StudentDashboard() {
   const sessionList = (sessions ?? []) as SessionRow[];
   const checkList = (checks ?? []) as CompletionRow[];
 
-  // Fetch checklist item counts per course_module_id (for progress)
+  // Checklist item counts per module
   const allModuleIds = enrolledCourses.flatMap((c) => c.modules.map((m) => m.id));
   const { data: itemCounts } = await supabase
     .from("module_checklist_items")
@@ -113,215 +113,162 @@ export default async function StudentDashboard() {
     itemsByModule[item.course_module_id].push(item);
   }
 
-  // Compute per-module progress
-  function moduleProgress(moduleId: string) {
-    const items = itemsByModule[moduleId] ?? [];
-    const completed = checkList.filter(
-      (c) => c.course_module_id === moduleId
-    ).length;
-    const total = items.length;
-    return { completed, total, pct: total > 0 ? Math.round((completed / total) * 100) : 0 };
+  // Per-course progress
+  function courseProgress(course: EnrolledCourse) {
+    const totalItems = course.modules.reduce((a, m) => a + (itemsByModule[m.id]?.length ?? 0), 0);
+    const doneItems = checkList.filter((c) => course.modules.some((m) => m.id === c.course_module_id)).length;
+    const completedModules = course.modules.filter((m) => {
+      const total = itemsByModule[m.id]?.length ?? 0;
+      if (total === 0) return false;
+      const done = checkList.filter((c) => c.course_module_id === m.id).length;
+      return done >= total;
+    }).length;
+    const pct = totalItems > 0 ? Math.round((doneItems / totalItems) * 100) : 0;
+    return { pct, completedModules, totalModules: course.modules.length };
   }
 
   // Overall stats
   const totalSessions = sessionList.length;
   const totalMinutes = sessionList.reduce((a, s) => a + s.duration_minutes, 0);
   const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
+  const allPcts = enrolledCourses.map((c) => courseProgress(c).pct);
+  const overallPct = allPcts.length > 0 ? Math.round(allPcts.reduce((a, b) => a + b, 0) / allPcts.length) : 0;
 
-  const allModuleProgressValues = enrolledCourses
-    .flatMap((c) => c.modules.map((m) => moduleProgress(m.id).pct));
-  const overallPct =
-    allModuleProgressValues.length > 0
-      ? Math.round(allModuleProgressValues.reduce((a, b) => a + b, 0) / allModuleProgressValues.length)
-      : 0;
-  const completedModules = allModuleProgressValues.filter((p) => p === 100).length;
-
-  // Build a map of course_module_id -> module info for sessions display
+  // Module map for session labels
   const moduleMap: Record<string, CourseModule> = {};
   for (const course of enrolledCourses) {
-    for (const mod of course.modules) {
-      moduleMap[mod.id] = mod;
-    }
+    for (const mod of course.modules) moduleMap[mod.id] = mod;
   }
 
   const recentSessions = sessionList.slice(0, 5);
 
-  const cardThemes = [
-    { bg: "bg-teal-50",   bar: "from-teal-400 to-teal-500",   progress: "bg-teal-500",   pct: "text-teal-600"   },
-    { bg: "bg-amber-50",  bar: "from-amber-400 to-amber-500",  progress: "bg-amber-500",  pct: "text-amber-600"  },
-    { bg: "bg-yellow-50", bar: "from-yellow-400 to-yellow-500", progress: "bg-yellow-500", pct: "text-yellow-600" },
-    { bg: "bg-rose-50",   bar: "from-rose-400 to-rose-500",    progress: "bg-rose-500",   pct: "text-rose-600"   },
-    { bg: "bg-violet-50", bar: "from-violet-400 to-violet-500", progress: "bg-violet-500", pct: "text-violet-600" },
-    { bg: "bg-sky-50",    bar: "from-sky-400 to-sky-500",      progress: "bg-sky-500",    pct: "text-sky-600"    },
+  const courseColors = [
+    { bar: "from-teal-400 to-teal-500", progress: "bg-teal-500", text: "text-teal-600", bg: "bg-teal-50" },
+    { bar: "from-amber-400 to-amber-500", progress: "bg-amber-500", text: "text-amber-600", bg: "bg-amber-50" },
+    { bar: "from-violet-400 to-violet-500", progress: "bg-violet-500", text: "text-violet-600", bg: "bg-violet-50" },
+    { bar: "from-rose-400 to-rose-500", progress: "bg-rose-500", text: "text-rose-600", bg: "bg-rose-50" },
+    { bar: "from-sky-400 to-sky-500", progress: "bg-sky-500", text: "text-sky-600", bg: "bg-sky-50" },
   ];
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+      <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
 
         {/* Welcome banner */}
-        <div className="rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-600 p-6 text-white shadow-md flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full overflow-hidden bg-teal-500 flex items-center justify-center shrink-0 ring-2 ring-white/40">
-            {profile.avatar_url ? (
-              <img src={profile.avatar_url} alt={profile.name} className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-2xl font-bold text-white">{profile.name[0]?.toUpperCase()}</span>
-            )}
+        <div className="rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-600 p-5 text-white shadow-md flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full overflow-hidden bg-teal-400 flex items-center justify-center shrink-0 ring-2 ring-white/40">
+            {profile.avatar_url
+              ? <img src={profile.avatar_url} alt={profile.name} className="w-full h-full object-cover" />
+              : <span className="text-xl font-bold text-white">{profile.name[0]?.toUpperCase()}</span>}
           </div>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold">{t(lang, "hiGreeting")}, {profile.name.split(" ")[0]}! 👋</h1>
-            <p className="mt-1 text-teal-100 text-sm">
-              {enrolledCourses.length} {t(lang, "coursesEnrolled")}
+            <h1 className="text-xl font-bold">{t(lang, "hiGreeting")}, {profile.name.split(" ")[0]}! 👋</h1>
+            <p className="text-teal-100 text-sm mt-0.5">
+              {totalSessions} {t(lang, "sessions").toLowerCase()} · {totalHours}h {t(lang, "learningTime").toLowerCase()}
             </p>
           </div>
-          <ProgressRing percent={overallPct} size={72} strokeWidth={7} label="Overall" />
+          <ProgressRing percent={overallPct} size={60} strokeWidth={6} label="Overall" />
         </div>
 
-        {/* Stat cards */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="card text-center">
-            <div className="text-2xl mb-1">📅</div>
-            <div className="text-2xl font-bold text-teal-600">{totalSessions}</div>
-            <div className="text-sm text-slate-500">{t(lang, "sessions")}</div>
-          </div>
-          <div className="card text-center">
-            <div className="text-2xl mb-1">⏱️</div>
-            <div className="text-2xl font-bold text-teal-600">{totalHours}h</div>
-            <div className="text-sm text-slate-500">{t(lang, "learningTime")}</div>
-          </div>
-          <div className="card text-center">
-            <div className="text-2xl mb-1">✅</div>
-            <div className="text-2xl font-bold text-teal-600">{completedModules}</div>
-            <div className="text-sm text-slate-500">{t(lang, "modulesDone")}</div>
-          </div>
-        </div>
-
-        {/* Enrolled Courses */}
-        {enrolledCourses.length === 0 ? (
-          <div className="card text-center py-16">
-            <div className="text-5xl mb-4">📚</div>
-            <p className="text-slate-500">{t(lang, "noCoursesYet")}</p>
-            <p className="text-slate-400 text-sm mt-2">{t(lang, "askTutorEnroll")}</p>
-          </div>
-        ) : (
-          enrolledCourses.map((course, courseIdx) => {
-            const theme = cardThemes[courseIdx % cardThemes.length];
-            const courseChecks = checkList.filter((c) =>
-              course.modules.some((m) => m.id === c.course_module_id)
-            ).length;
-            const courseItems = course.modules.reduce(
-              (a, m) => a + (itemsByModule[m.id]?.length ?? 0),
-              0
-            );
-            const coursePct =
-              courseItems > 0 ? Math.round((courseChecks / courseItems) * 100) : 0;
-
-            return (
-              <div key={course.id}>
-                {/* Course heading with accent bar */}
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={`w-1 h-8 rounded-full bg-gradient-to-b ${theme.bar}`} />
-                  {course.icon_url
-                    ? <div className="w-8 h-8 rounded-xl overflow-hidden shrink-0"><img src={course.icon_url} alt={course.title} className="w-full h-full object-cover" /></div>
-                    : <span className="text-2xl">{course.icon}</span>}
-                  <div className="flex-1">
-                    <h2 className="text-lg font-semibold text-slate-700">{course.title}</h2>
-                    {course.description && (
-                      <p className="text-sm text-slate-500">{course.description}</p>
-                    )}
-                  </div>
-                  <span className="badge-blue">{coursePct}{t(lang, "percentComplete")}</span>
-                </div>
-
-                {course.modules.length === 0 ? (
-                  <p className="text-sm text-slate-400 italic ml-10">{t(lang, "noModulesYet")}</p>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 ml-0">
-                    {course.modules.map((mod) => {
-                      const mp = moduleProgress(mod.id);
-                      return (
-                        <Link
-                          key={mod.id}
-                          href={`/student/courses/${course.id}/modules/${mod.id}`}
-                          className={`${theme.bg} rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex items-stretch gap-0 overflow-hidden p-0`}
-                        >
-                          {/* Left accent bar */}
-                          <div className={`w-1 rounded-l-2xl bg-gradient-to-b ${theme.bar} shrink-0`} />
-                          <div className="flex items-start gap-3 p-4 flex-1 min-w-0">
-                            <span className="text-2xl mt-0.5 shrink-0">{mod.icon}</span>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                                {mod.week_number && (
-                                  <span className="badge-gray text-xs">{t(lang, "week")} {mod.week_number}</span>
-                                )}
-                              </div>
-                              <div className="font-medium text-slate-800 text-sm leading-tight">
-                                {mod.title}
-                              </div>
-                              {mod.focus && (
-                                <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{mod.focus}</p>
-                              )}
-                              <div className="mt-2">
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="text-xs text-slate-400">
-                                    {mp.completed}/{mp.total} {t(lang, "items")}
-                                  </span>
-                                  <span
-                                    className={`text-xs font-semibold ${
-                                      mp.pct >= 100
-                                        ? "text-emerald-600"
-                                        : mp.pct > 0
-                                        ? theme.pct
-                                        : "text-slate-400"
-                                    }`}
-                                  >
-                                    {mp.pct}%
-                                  </span>
-                                </div>
-                                <div className="w-full bg-slate-200 rounded-full h-1.5">
-                                  <div
-                                    className={`h-1.5 rounded-full ${
-                                      mp.pct >= 100 ? "bg-emerald-500" : theme.progress
-                                    }`}
-                                    style={{ width: `${mp.pct}%` }}
-                                  />
-                                </div>
-                              </div>
-                            </div>
+        {/* My Courses */}
+        <div>
+          <h2 className="text-base font-semibold text-slate-700 mb-3">{t(lang, "courses")}</h2>
+          {enrolledCourses.length === 0 ? (
+            <div className="card text-center py-12">
+              <div className="text-4xl mb-3">📚</div>
+              <p className="text-slate-500 text-sm">{t(lang, "noCoursesYet")}</p>
+              <p className="text-slate-400 text-xs mt-1">{t(lang, "askTutorEnroll")}</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {enrolledCourses.map((course, idx) => {
+                const color = courseColors[idx % courseColors.length];
+                const cp = courseProgress(course);
+                return (
+                  <Link
+                    key={course.id}
+                    href={`/student/courses/${course.id}`}
+                    className="flex items-stretch gap-0 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden"
+                  >
+                    {/* Accent bar */}
+                    <div className={`w-1.5 shrink-0 bg-gradient-to-b ${color.bar}`} />
+                    <div className="flex items-center gap-3 p-4 flex-1 min-w-0">
+                      {/* Course icon */}
+                      {course.icon_url
+                        ? <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0"><img src={course.icon_url} alt={course.title} className="w-full h-full object-cover" /></div>
+                        : <span className="text-3xl shrink-0">{course.icon}</span>}
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-slate-800 leading-tight">{course.title}</div>
+                        {course.description && (
+                          <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{course.description}</p>
+                        )}
+                        {/* Progress */}
+                        <div className="mt-2 flex items-center gap-2">
+                          <div className="flex-1 bg-slate-100 rounded-full h-1.5">
+                            <div
+                              className={`h-1.5 rounded-full ${cp.pct >= 100 ? "bg-emerald-500" : color.progress}`}
+                              style={{ width: `${cp.pct}%` }}
+                            />
                           </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })
-        )}
+                          <span className={`text-xs font-semibold shrink-0 ${cp.pct >= 100 ? "text-emerald-600" : color.text}`}>
+                            {cp.pct}%
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1">
+                          {cp.completedModules} / {cp.totalModules} {t(lang, "modules").toLowerCase()} {t(lang, "modulesDone").toLowerCase()}
+                        </p>
+                      </div>
+                      <span className="text-slate-300 shrink-0 ml-1">›</span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* Recent Sessions */}
         <div>
-          <h2 className="text-lg font-semibold text-slate-700 mb-4">{t(lang, "recentSessions")}</h2>
+          <h2 className="text-base font-semibold text-slate-700 mb-3">{t(lang, "recentSessions")}</h2>
           {recentSessions.length === 0 ? (
             <div className="card text-center py-8">
-              <p className="text-slate-400">{t(lang, "noSessionsYet")}</p>
+              <p className="text-slate-400 text-sm">{t(lang, "noSessionsYet")}</p>
             </div>
           ) : (
             <div className="space-y-2">
               {recentSessions.map((s) => {
                 const mod = s.course_module_id ? moduleMap[s.course_module_id] : null;
                 return (
-                  <div key={s.id} className="card flex items-center gap-3 py-3">
-                    <span className="text-xl">{mod?.icon ?? "📅"}</span>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-slate-700">
-                        {mod ? mod.title : s.module_id ? `Module ${s.module_id}` : "Session"}
+                  <div key={s.id} className="card py-3 flex items-start gap-3">
+                    {/* Photo or icon */}
+                    {s.photo_url ? (
+                      <a href={s.photo_url} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                        <img
+                          src={s.photo_url}
+                          alt="session"
+                          className="w-16 h-12 object-cover rounded-xl border border-slate-200 hover:opacity-80 transition-opacity"
+                        />
+                      </a>
+                    ) : (
+                      <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 text-xl">
+                        {mod?.icon ?? "📅"}
+                      </div>
+                    )}
+                    {/* Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-slate-800 leading-tight">
+                        {mod ? mod.title : s.module_id ? `Module ${s.module_id}` : t(lang, "sessions")}
                       </div>
                       {s.tutor_notes && (
-                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{s.tutor_notes}</p>
+                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{s.tutor_notes}</p>
+                      )}
+                      {s.student_notes && (
+                        <p className="text-xs text-teal-600 mt-0.5 line-clamp-1 italic">{s.student_notes}</p>
                       )}
                     </div>
-                    <div className="text-right">
+                    {/* Date + duration */}
+                    <div className="text-right shrink-0">
                       <div className="text-sm font-medium text-slate-700">{s.duration_minutes} min</div>
                       <div className="text-xs text-slate-400">{format(new Date(s.date), "MMM d")}</div>
                     </div>
@@ -331,6 +278,7 @@ export default async function StudentDashboard() {
             </div>
           )}
         </div>
+
       </div>
     </div>
   );
