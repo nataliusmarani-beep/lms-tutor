@@ -17,6 +17,7 @@ interface CourseRow {
 const WEEKLY_TARGET_MINUTES = 270;
 const MINUTES_PER_SESSION = 90;
 const WEEKLY_TARGET_SESSIONS = WEEKLY_TARGET_MINUTES / MINUTES_PER_SESSION; // 3
+const SEMESTER_TARGET_SESSIONS = 36; // 3/week × 12 weeks
 
 function getWeekStart(): string {
   const now = new Date();
@@ -58,6 +59,10 @@ async function getStudentProgress(
   const weekMinutes = weekSessionCount * MINUTES_PER_SESSION;
   const weekPct = Math.min(100, Math.round((weekSessionCount / WEEKLY_TARGET_SESSIONS) * 100));
 
+  // Overall progress toward semester goal (shown in ring)
+  const sessionsCount = sessions?.length ?? 0;
+  const overallPct = Math.min(100, Math.round((sessionsCount / SEMESTER_TARGET_SESSIONS) * 100));
+
   // Count unique modules started
   const modulesStarted = new Set(
     sessions
@@ -70,10 +75,11 @@ async function getStudentProgress(
     totalMinutes,
     totalHours: Math.round((totalMinutes / 60) * 10) / 10,
     modulesStarted,
-    sessionsCount: sessions?.length ?? 0,
+    sessionsCount,
     weekMinutes,
     weekSessionCount,
     weekPct,
+    overallPct,
   };
 }
 
@@ -317,7 +323,10 @@ export default async function TutorDashboard() {
 
                     {/* Row 2: ring + weekly bar */}
                     <div className="flex items-center gap-3 mt-3">
-                      <ProgressRing percent={p.weekPct} size={52} strokeWidth={5} />
+                      <div className="flex flex-col items-center shrink-0">
+                        <ProgressRing percent={p.overallPct} size={52} strokeWidth={5} />
+                        <span className="text-[10px] text-slate-400 mt-0.5 leading-none">overall</span>
+                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs text-slate-400">{t(lang, "thisWeek")}</span>
