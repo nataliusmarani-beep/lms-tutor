@@ -66,13 +66,22 @@ export default function SessionForm({ studentId, preselectedCourseModuleId, cour
   const [photoFile,    setPhotoFile]    = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [compressing,  setCompressing]  = useState(false);
+
+  const preselectedModule = preselectedCourseModuleId
+    ? modules.find((m) => m.id === preselectedCourseModuleId)
+    : null;
+  const [selectedCourseId, setSelectedCourseId] = useState<string>(
+    preselectedModule?.course_id ?? courses[0]?.id ?? ""
+  );
   const [form, setForm] = useState({
-    course_module_id: preselectedCourseModuleId ?? modules[0]?.id ?? "",
+    course_module_id: preselectedCourseModuleId ?? "",
     date:             new Date().toISOString().split("T")[0],
     duration_minutes: "90",
     tutor_notes:      "",
     student_notes:    "",
   });
+
+  const filteredModules = modules.filter((m) => m.course_id === selectedCourseId);
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -141,26 +150,36 @@ export default function SessionForm({ studentId, preselectedCourseModuleId, cour
     <form onSubmit={handleSubmit} className="space-y-4">
 
       <div>
-        <label className="label">Course &amp; Module</label>
+        <label className="label">Course</label>
+        <select
+          className="input"
+          value={selectedCourseId}
+          onChange={(e) => {
+            setSelectedCourseId(e.target.value);
+            setForm((prev) => ({ ...prev, course_module_id: "" }));
+          }}
+        >
+          <option value="">— Select a course —</option>
+          {courses.map((c) => (
+            <option key={c.id} value={c.id}>{c.icon} {c.title}</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="label">Module</label>
         <select
           className="input"
           value={form.course_module_id}
           onChange={(e) => setForm({ ...form, course_module_id: e.target.value })}
+          disabled={!selectedCourseId}
         >
           <option value="">— No module —</option>
-          {courses.map((course) => {
-            const courseModules = modules.filter((m) => m.course_id === course.id);
-            if (courseModules.length === 0) return null;
-            return (
-              <optgroup key={course.id} label={`${course.icon} ${course.title}`}>
-                {courseModules.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.icon} {m.week_number ? `Week ${m.week_number} – ` : ""}{m.title}
-                  </option>
-                ))}
-              </optgroup>
-            );
-          })}
+          {filteredModules.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.icon} {m.week_number ? `Week ${m.week_number} – ` : ""}{m.title}
+            </option>
+          ))}
         </select>
       </div>
 
