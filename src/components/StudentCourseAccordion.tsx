@@ -361,6 +361,19 @@ function ModulePanel({
       {/* Expanded */}
       {open && (
         <div className="border-t border-slate-100">
+          {/* About this module */}
+          {displayFocus && (
+            <div className="px-4 py-3 bg-teal-50 border-b border-teal-100 flex items-start gap-2.5">
+              <span className="text-teal-500 shrink-0 mt-0.5">📖</span>
+              <div>
+                <p className="text-xs font-semibold text-teal-700 uppercase tracking-wide mb-0.5">
+                  {lang === "id" ? "Tentang Modul Ini" : "About this Module"}
+                </p>
+                <p className="text-sm text-teal-800">{displayFocus}</p>
+              </div>
+            </div>
+          )}
+
           {/* Stats bar */}
           <div className="grid grid-cols-4 divide-x divide-slate-100 border-b border-slate-100 bg-slate-50">
             <div className="text-center py-2">
