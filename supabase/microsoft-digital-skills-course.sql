@@ -1,4 +1,7 @@
 
+-- Make module_id nullable so new course modules don't need a legacy integer ID
+ALTER TABLE module_checklist_items ALTER COLUMN module_id DROP NOT NULL;
+
 DO $$
 DECLARE
   v_course_id UUID;
