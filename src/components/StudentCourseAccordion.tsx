@@ -50,6 +50,7 @@ interface QuizOption {
   id: string;
   question_id: string;
   option_text: string;
+  option_text_id?: string | null;
   is_correct: boolean;
   sort_order: number;
 }
@@ -58,6 +59,7 @@ interface QuizQuestion {
   id: string;
   question_type: "single_choice" | "multiple_choice" | "fill_blank";
   question_text: string;
+  question_text_id?: string | null;
   sort_order: number;
   options: QuizOption[];
 }
@@ -153,13 +155,13 @@ function QuizPlayer({
       const supabase = createClient();
       const { data: qs } = await supabase
         .from("quiz_questions")
-        .select("id, question_type, question_text, sort_order")
+        .select("id, question_type, question_text, question_text_id, sort_order")
         .eq("quiz_id", quiz.id)
         .order("sort_order");
       if (!qs?.length) { setLoading(false); return; }
       const { data: opts } = await supabase
         .from("quiz_options")
-        .select("id, question_id, option_text, is_correct, sort_order")
+        .select("id, question_id, option_text, option_text_id, is_correct, sort_order")
         .in("question_id", qs.map((q) => q.id))
         .order("sort_order");
       setQuestions(qs.map((q) => ({
@@ -208,7 +210,7 @@ function QuizPlayer({
             const isRight = answers[q.id] === correct?.id;
             return (
               <div key={q.id} className={`rounded-xl px-4 py-3 border ${isRight ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
-                <p className="text-sm font-semibold text-slate-800 mb-2">{i + 1}. {q.question_text}</p>
+                <p className="text-sm font-semibold text-slate-800 mb-2">{i + 1}. {(lang === "id" && q.question_text_id) ? q.question_text_id : q.question_text}</p>
                 <div className="space-y-1">
                   {q.options.map((o) => (
                     <div key={o.id} className={`text-xs rounded-lg px-3 py-1.5 flex items-center gap-2 ${
@@ -216,7 +218,7 @@ function QuizPlayer({
                       answers[q.id] === o.id ? "bg-red-100 text-red-600" : "text-slate-400"
                     }`}>
                       <span className="shrink-0">{o.is_correct ? "✓" : answers[q.id] === o.id ? "✗" : "○"}</span>
-                      <span>{o.option_text}</span>
+                      <span>{(lang === "id" && o.option_text_id) ? o.option_text_id : o.option_text}</span>
                     </div>
                   ))}
                 </div>
@@ -244,7 +246,7 @@ function QuizPlayer({
       <div className="space-y-4">
         {questions.map((q, i) => (
           <div key={q.id} className="bg-slate-50 rounded-xl px-4 py-4 space-y-3">
-            <p className="text-sm font-semibold text-slate-800">{i + 1}. {q.question_text}</p>
+            <p className="text-sm font-semibold text-slate-800">{i + 1}. {(lang === "id" && q.question_text_id) ? q.question_text_id : q.question_text}</p>
             <div className="space-y-2">
               {q.options.map((o) => (
                 <label key={o.id} className={`flex items-center gap-3 cursor-pointer rounded-lg px-3 py-2.5 border transition-colors ${
@@ -256,7 +258,7 @@ function QuizPlayer({
                     onChange={() => setAnswers((prev) => ({ ...prev, [q.id]: o.id }))}
                     className="accent-teal-600 shrink-0"
                   />
-                  <span className="text-sm text-slate-700">{o.option_text}</span>
+                  <span className="text-sm text-slate-700">{(lang === "id" && o.option_text_id) ? o.option_text_id : o.option_text}</span>
                 </label>
               ))}
             </div>
