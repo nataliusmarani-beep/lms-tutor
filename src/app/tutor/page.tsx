@@ -126,6 +126,35 @@ export default async function TutorDashboard() {
     progressList.map((p) => [p.id, p.progress])
   );
 
+  // Recent sessions across all students
+  const studentIds = studentList.map((s) => s.id);
+  const { data: recentSessionsRaw } = studentIds.length > 0
+    ? await supabase
+        .from("learning_sessions")
+        .select("id, date, duration_minutes, tutor_notes, student_id, course_module_id, photo_url")
+        .in("student_id", studentIds)
+        .order("date", { ascending: false })
+        .limit(8)
+    : { data: [] };
+
+  const recentSessions = (recentSessionsRaw ?? []) as {
+    id: string; date: string; duration_minutes: number;
+    tutor_notes: string | null; student_id: string;
+    course_module_id: string | null; photo_url: string | null;
+  }[];
+
+  // Fetch module names for recent sessions
+  const recentModuleIds = Array.from(new Set(recentSessions.map(s => s.course_module_id).filter(Boolean))) as string[];
+  const { data: recentModulesRaw } = recentModuleIds.length > 0
+    ? await supabase.from("course_modules").select("id, title, title_id, icon").in("id", recentModuleIds)
+    : { data: [] };
+  const recentModuleMap = Object.fromEntries(
+    ((recentModulesRaw ?? []) as { id: string; title: string; title_id?: string | null; icon: string }[])
+      .map(m => [m.id, m])
+  );
+
+  const studentMap = Object.fromEntries(studentList.map(s => [s.id, s]));
+
   const cardThemes = [
     { bg: "bg-teal-50",   bar: "from-teal-400 to-teal-500",    progress: "bg-teal-500"   },
     { bg: "bg-amber-50",  bar: "from-amber-400 to-amber-500",   progress: "bg-amber-500"  },
@@ -312,6 +341,71 @@ export default async function TutorDashboard() {
                       </div>
                     </div>
                   </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Recent Sessions */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-700">
+              {lang === "id" ? "Sesi Terbaru" : "Recent Sessions"}
+            </h2>
+            <Link href="/tutor/sessions/new" className="btn-primary text-sm py-1.5">
+              + {lang === "id" ? "Catat Sesi" : "Log Session"}
+            </Link>
+          </div>
+          {recentSessions.length === 0 ? (
+            <div className="card text-center py-8">
+              <p className="text-slate-400 text-sm">
+                {lang === "id" ? "Belum ada sesi yang dicatat." : "No sessions recorded yet."}
+              </p>
+              <Link href="/tutor/sessions/new" className="btn-primary mt-3 inline-block text-sm">
+                {lang === "id" ? "Catat Sesi Pertama" : "Log First Session"}
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {recentSessions.map((s) => {
+                const student = studentMap[s.student_id];
+                const mod = s.course_module_id ? recentModuleMap[s.course_module_id] : null;
+                return (
+                  <div key={s.id} className="card flex items-center gap-3 py-3">
+                    <span className="text-xl shrink-0">{mod?.icon ?? "📅"}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold text-slate-800">
+                          {student?.name ?? "Student"}
+                        </span>
+                        {mod && (
+                          <span className="text-xs text-slate-400">
+                            — {(lang === "id" && mod.title_id) ? mod.title_id : mod.title}
+                          </span>
+                        )}
+                      </div>
+                      {s.tutor_notes && (
+                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{s.tutor_notes}</p>
+                      )}
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {s.duration_minutes} {lang === "id" ? "mnt" : "min"} · {new Date(s.date).toLocaleDateString(lang === "id" ? "id-ID" : "en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
+                    </div>
+                    {s.photo_url && (
+                      <a href={s.photo_url} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                        <img src={s.photo_url} alt="doc" className="w-14 h-10 object-cover rounded-lg border border-slate-200 hover:opacity-80 transition-opacity" />
+                      </a>
+                    )}
+                    <div className="flex items-center gap-3 shrink-0">
+                      <Link href={`/tutor/sessions/${s.id}/edit`} className="text-sm text-blue-500 hover:text-blue-700 font-medium">
+                        {lang === "id" ? "Edit" : "Edit"}
+                      </Link>
+                      <Link href={`/tutor/students/${s.student_id}`} className="text-sm text-slate-400 hover:text-slate-600 font-medium">
+                        {lang === "id" ? "Detail" : "View"}
+                      </Link>
+                    </div>
+                  </div>
                 );
               })}
             </div>
