@@ -2,6 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import ChecklistSection from "@/components/ChecklistSection";
+import SessionActions from "@/components/SessionActions";
 import { format } from "date-fns";
 import { getLang } from "@/lib/getLang";
 
@@ -42,12 +43,17 @@ export default async function TutorCourseModuleDetailPage({
 
   const lang = getLang();
 
+  const legacyModuleId = mod.legacy_module_id ?? null;
+  const sessionFilter = legacyModuleId
+    ? `course_module_id.eq.${params.moduleId},module_id.eq.${legacyModuleId}`
+    : `course_module_id.eq.${params.moduleId}`;
+
   const [{ data: sessions }, { data: checks }, { data: checklistItems }] = await Promise.all([
     supabase
       .from("learning_sessions")
       .select("*")
       .eq("student_id", params.id)
-      .eq("course_module_id", params.moduleId)
+      .or(sessionFilter)
       .order("date", { ascending: false }),
     supabase
       .from("checklist_completions")
@@ -126,11 +132,14 @@ export default async function TutorCourseModuleDetailPage({
                 student_notes: string | null;
               }) => (
                 <div key={s.id} className="card py-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-slate-700">
-                      {format(new Date(s.date), "EEEE, MMMM d, yyyy")}
-                    </span>
-                    <span className="badge-blue">{s.duration_minutes} min</span>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+                      <span className="text-sm font-medium text-slate-700">
+                        {format(new Date(s.date), "EEEE, MMMM d, yyyy")}
+                      </span>
+                      <span className="badge-blue shrink-0">{s.duration_minutes} min</span>
+                    </div>
+                    <SessionActions sessionId={s.id} />
                   </div>
                   {s.tutor_notes && (
                     <p className="text-sm text-slate-600 mt-1">
