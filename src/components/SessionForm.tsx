@@ -128,20 +128,34 @@ export default function SessionForm({ studentId, preselectedCourseModuleId, cour
     }
 
     const selectedModule = modules.find((m) => m.id === form.course_module_id);
-    const { error } = await supabase.from("learning_sessions").insert({
-      student_id:        studentId,
-      course_module_id:  form.course_module_id || null,
-      module_id:         selectedModule?.legacy_module_id ?? null,
-      date:              form.date,
-      duration_minutes:  parseInt(form.duration_minutes),
-      tutor_notes:       form.tutor_notes  || null,
-      student_notes:     form.student_notes || null,
-      photo_url,
-    });
+    const { data: inserted, error } = await supabase
+      .from("learning_sessions")
+      .insert({
+        student_id:        studentId,
+        course_module_id:  form.course_module_id || null,
+        module_id:         selectedModule?.legacy_module_id ?? null,
+        date:              form.date,
+        duration_minutes:  parseInt(form.duration_minutes),
+        tutor_notes:       form.tutor_notes  || null,
+        student_notes:     form.student_notes || null,
+        photo_url,
+      })
+      .select("id")
+      .single();
 
     setLoading(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Session recorded!");
+
+    // Fire-and-forget translation (doesn't block navigation)
+    if (inserted?.id && form.tutor_notes?.trim()) {
+      fetch("/api/translate-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: inserted.id, tutor_notes: form.tutor_notes }),
+      }).catch(() => {});
+    }
+
     router.refresh();
     router.back();
   }
