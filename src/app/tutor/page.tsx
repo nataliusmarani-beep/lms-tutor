@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import ProgressRing from "@/components/ProgressRing";
+import SessionActions from "@/components/SessionActions";
 import type { Profile } from "@/types";
 import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/getLang";
@@ -407,9 +408,7 @@ export default async function TutorDashboard() {
                       </a>
                     )}
                     <div className="flex items-center gap-3 shrink-0">
-                      <Link href={`/tutor/sessions/${s.id}/edit`} className="text-sm text-blue-500 hover:text-blue-700 font-medium">
-                        {lang === "id" ? "Edit" : "Edit"}
-                      </Link>
+                      <SessionActions sessionId={s.id} />
                       <Link href={`/tutor/students/${s.student_id}`} className="text-sm text-slate-400 hover:text-slate-600 font-medium">
                         {lang === "id" ? "Detail" : "View"}
                       </Link>
