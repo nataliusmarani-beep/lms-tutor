@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 import ResourcePanel from "@/components/ResourcePanel";
 import QuizBuilder from "@/components/QuizBuilder";
+import TranslateQuizButton from "@/components/TranslateQuizButton";
 
 interface ChecklistItem {
   id: string;
@@ -329,7 +330,12 @@ export default function EditCourseModulePage() {
         <ResourcePanel courseModuleId={moduleId} currentUserRole="tutor" />
 
         {/* Quiz Builder */}
-        <QuizBuilder courseModuleId={moduleId} />
+        <div className="space-y-3">
+          <QuizBuilder courseModuleId={moduleId} />
+          <div className="flex justify-end">
+            <TranslateQuizButton moduleId={moduleId} />
+          </div>
+        </div>
       </div>
     </div>
   );
