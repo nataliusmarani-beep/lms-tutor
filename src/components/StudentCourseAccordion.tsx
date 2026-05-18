@@ -319,12 +319,12 @@ function ModulePanel({
   const displayFocus = (lang === "id" && mod.focus_id) ? mod.focus_id : mod.focus;
 
   return (
-    <div className="border border-slate-200 rounded-2xl overflow-hidden">
+    <div className={`rounded-2xl overflow-hidden border-2 transition-colors ${open ? "border-teal-400 shadow-md" : "border-slate-200"}`}>
       {/* Header */}
       <button
         onClick={() => setOpen((v) => !v)}
         className={`w-full flex items-center gap-3 px-4 py-4 text-left transition-colors ${
-          open ? "bg-slate-50" : "bg-white hover:bg-slate-50"
+          open ? "bg-teal-50" : "bg-white hover:bg-slate-50"
         }`}
       >
         <svg
