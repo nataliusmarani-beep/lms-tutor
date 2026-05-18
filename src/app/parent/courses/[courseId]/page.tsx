@@ -87,6 +87,11 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
     : { data: [] };
 
   // Build per-module data packages
+  const courseTitle = (lang === "id" && (course as { title_id?: string | null }).title_id)
+    ? (course as { title_id: string }).title_id : course.title;
+  const courseDesc = (lang === "id" && (course as { description_id?: string | null }).description_id)
+    ? (course as { description_id: string }).description_id : course.description;
+
   const moduleData = modules.map((mod: {
     id: string; title: string; focus: string | null; icon: string;
     week_number: number | null; sort_order: number; legacy_module_id: number | null;
@@ -152,6 +157,11 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
     };
   });
 
+  const maxWeek = Math.max(0, ...modules.map((m: { week_number: number | null }) => m.week_number ?? 0));
+  const overallPct = moduleData.length > 0 ? Math.round(moduleData.reduce((sum, m) => sum + m.pct, 0) / moduleData.length) : 0;
+  const completedModules = moduleData.filter(m => m.pct >= 100).length;
+  const totalQuizzes = moduleData.reduce((sum, m) => sum + m.quizzes.length, 0);
+
   return (
     <div className="min-h-screen">
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
@@ -206,6 +216,125 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
             </div>
           </div>
         </div>
+
+        {/* Course Overview */}
+        {modules.length > 0 && (
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📋</span>
+                <h2 className="font-bold text-slate-800">{lang === "id" ? "Ringkasan Kursus" : "Course Overview"}</h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-24 bg-slate-200 rounded-full h-2">
+                  <div className={`h-2 rounded-full transition-all ${overallPct >= 100 ? "bg-green-500" : "bg-blue-500"}`} style={{ width: `${overallPct}%` }} />
+                </div>
+                <span className={`text-sm font-bold ${overallPct >= 100 ? "text-green-600" : overallPct > 0 ? "text-blue-600" : "text-slate-400"}`}>{overallPct}%</span>
+              </div>
+            </div>
+
+            <div className="p-5 space-y-5">
+              {/* Goal */}
+              {courseDesc && (
+                <div>
+                  <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1.5">
+                    🎯 {lang === "id" ? "Tujuan Kursus" : "Course Goal"}
+                  </p>
+                  <p className="text-sm text-slate-700 leading-relaxed">{courseDesc}</p>
+                </div>
+              )}
+
+              {/* Stats row */}
+              <div className="flex items-center gap-5 flex-wrap">
+                {maxWeek > 0 && (
+                  <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                    <span>🗓️</span>
+                    <span className="font-semibold">{maxWeek}</span>
+                    <span className="text-slate-400">{lang === "id" ? "minggu" : "weeks"}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                  <span>📚</span>
+                  <span className="font-semibold">{modules.length}</span>
+                  <span className="text-slate-400">{lang === "id" ? "modul" : "modules"}</span>
+                </div>
+                {totalQuizzes > 0 && (
+                  <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                    <span>📝</span>
+                    <span className="font-semibold">{totalQuizzes}</span>
+                    <span className="text-slate-400">{lang === "id" ? "kuis" : "quizzes"}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Curriculum */}
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">
+                  {lang === "id" ? "Kurikulum" : "Curriculum"}
+                </p>
+                <div className="space-y-2.5">
+                  {moduleData.map((mod) => {
+                    const displayTitle = (lang === "id" && mod.title_id) ? mod.title_id : mod.title;
+                    const displayFocus = (lang === "id" && mod.focus_id) ? mod.focus_id : mod.focus;
+                    return (
+                      <div key={mod.id} className="flex items-start gap-3">
+                        <div className="flex items-center justify-center w-7 h-7 rounded-full bg-slate-100 shrink-0 mt-0.5 text-base leading-none">
+                          {mod.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {mod.week_number && (
+                              <span className="text-xs font-semibold px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-md shrink-0">
+                                {lang === "id" ? "Minggu" : "Wk"} {mod.week_number}
+                              </span>
+                            )}
+                            <span className="text-sm font-medium text-slate-700">{displayTitle}</span>
+                          </div>
+                          {displayFocus && <p className="text-xs text-slate-400 mt-0.5 truncate">{displayFocus}</p>}
+                        </div>
+                        <div className="shrink-0 flex items-center gap-1.5">
+                          <div className="w-10 bg-slate-100 rounded-full h-1.5">
+                            <div className={`h-1.5 rounded-full ${mod.pct >= 100 ? "bg-green-400" : "bg-blue-400"}`} style={{ width: `${mod.pct}%` }} />
+                          </div>
+                          <span className="text-xs text-slate-400 w-7 text-right">{mod.pct}%</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Completion projection */}
+              {overallPct < 100 ? (
+                <div className="bg-blue-50 rounded-xl px-4 py-3 flex items-center gap-3">
+                  <span className="text-2xl shrink-0">🎓</span>
+                  <div>
+                    <p className="text-sm font-semibold text-blue-800">
+                      {lang === "id"
+                        ? `${student?.name} telah menyelesaikan ${completedModules} dari ${modules.length} modul`
+                        : `${student?.name} has completed ${completedModules} of ${modules.length} modules`}
+                    </p>
+                    <p className="text-xs text-blue-600 mt-0.5">
+                      {lang === "id"
+                        ? `${modules.length - completedModules} modul lagi untuk menyelesaikan kursus ini`
+                        : `${modules.length - completedModules} module${modules.length - completedModules !== 1 ? "s" : ""} remaining to complete this course`}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-green-50 rounded-xl px-4 py-3 flex items-center gap-3">
+                  <span className="text-2xl shrink-0">🏆</span>
+                  <div>
+                    <p className="text-sm font-semibold text-green-800">
+                      {lang === "id" ? `${student?.name} telah menyelesaikan kursus ini!` : `${student?.name} has completed this course!`}
+                    </p>
+                    <p className="text-xs text-green-600 mt-0.5">{lang === "id" ? "Semua modul sudah selesai." : "All modules are complete."}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Per-week accordion */}
         {modules.length === 0 ? (
