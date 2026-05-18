@@ -32,13 +32,19 @@ export default async function NewSessionPage({
     : { data: [] };
 
   const courseIds = (enrollments ?? []).map((e: { course_id: string }) => e.course_id);
-  const { data: modules } = courseIds.length > 0
-    ? await supabase
-        .from("course_modules")
-        .select("id, title, icon, week_number, course_id, legacy_module_id")
-        .in("course_id", courseIds)
-        .order("sort_order")
-    : { data: [] };
+
+  const [{ data: courses }, { data: modules }] = await Promise.all([
+    courseIds.length > 0
+      ? supabase.from("courses").select("id, title, icon").in("id", courseIds).order("title")
+      : Promise.resolve({ data: [] }),
+    courseIds.length > 0
+      ? supabase
+          .from("course_modules")
+          .select("id, title, icon, week_number, course_id, legacy_module_id")
+          .in("course_id", courseIds)
+          .order("sort_order")
+      : Promise.resolve({ data: [] }),
+  ]);
 
   return (
     <div className="min-h-screen">
@@ -70,9 +76,10 @@ export default async function NewSessionPage({
             <SessionForm
               studentId={selectedStudent}
               preselectedCourseModuleId={searchParams.courseModule ?? ""}
+              courses={(courses ?? []) as { id: string; title: string; icon: string }[]}
               modules={(modules ?? []) as {
                 id: string; title: string; icon: string;
-                week_number: number | null; legacy_module_id: number | null;
+                week_number: number | null; course_id: string; legacy_module_id: number | null;
               }[]}
             />
           ) : (

@@ -7,11 +7,13 @@ import toast from "react-hot-toast";
 interface Props {
   studentId: string;
   preselectedCourseModuleId?: string;
+  courses: { id: string; title: string; icon: string }[];
   modules: {
     id: string;
     title: string;
     icon: string;
     week_number: number | null;
+    course_id: string;
     legacy_module_id: number | null;
   }[];
 }
@@ -57,7 +59,7 @@ async function compressToThumbnail(file: File): Promise<Blob> {
   });
 }
 
-export default function SessionForm({ studentId, preselectedCourseModuleId, modules }: Props) {
+export default function SessionForm({ studentId, preselectedCourseModuleId, courses, modules }: Props) {
   const router   = useRouter();
   const fileRef  = useRef<HTMLInputElement>(null);
   const [loading,      setLoading]      = useState(false);
@@ -139,18 +141,26 @@ export default function SessionForm({ studentId, preselectedCourseModuleId, modu
     <form onSubmit={handleSubmit} className="space-y-4">
 
       <div>
-        <label className="label">Module</label>
+        <label className="label">Course &amp; Module</label>
         <select
           className="input"
           value={form.course_module_id}
           onChange={(e) => setForm({ ...form, course_module_id: e.target.value })}
         >
           <option value="">— No module —</option>
-          {modules.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.icon} {m.week_number ? `Week ${m.week_number} – ` : ""}{m.title}
-            </option>
-          ))}
+          {courses.map((course) => {
+            const courseModules = modules.filter((m) => m.course_id === course.id);
+            if (courseModules.length === 0) return null;
+            return (
+              <optgroup key={course.id} label={`${course.icon} ${course.title}`}>
+                {courseModules.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.icon} {m.week_number ? `Week ${m.week_number} – ` : ""}{m.title}
+                  </option>
+                ))}
+              </optgroup>
+            );
+          })}
         </select>
       </div>
 
