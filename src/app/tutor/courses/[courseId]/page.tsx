@@ -8,7 +8,9 @@ import toast from "react-hot-toast";
 interface CourseModule {
   id: string;
   title: string;
+  title_id?: string | null;
   focus: string | null;
+  focus_id?: string | null;
   icon: string;
   week_number: number | null;
   sort_order: number;
@@ -66,6 +68,12 @@ export default function CourseDetailPage() {
   // Enroll state
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [enrolling, setEnrolling] = useState(false);
+
+  const [lang, setLang] = useState<"en" | "id">("en");
+  useEffect(() => {
+    const m = document.cookie.match(/(?:^|;\s*)lang=([^;]*)/);
+    setLang(m?.[1] === "id" ? "id" : "en");
+  }, []);
 
   const loadData = useCallback(async () => {
     const [{ data: courseData }, { data: moduleData }, { data: enrollData }, { data: studentsData }] = await Promise.all([
@@ -318,8 +326,14 @@ export default function CourseDetailPage() {
                 <li key={mod.id} className="bg-slate-50 rounded-xl px-4 py-3 flex items-center gap-3">
                   <span className="text-xl">{mod.icon}</span>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-slate-800 truncate">{mod.title}</div>
-                    {mod.focus && <p className="text-xs text-slate-500 mt-0.5 truncate">{mod.focus}</p>}
+                    <div className="font-medium text-slate-800 truncate">
+                      {(lang === "id" && mod.title_id) ? mod.title_id : mod.title}
+                    </div>
+                    {(mod.focus || mod.focus_id) && (
+                      <p className="text-xs text-slate-500 mt-0.5 truncate">
+                        {(lang === "id" && mod.focus_id) ? mod.focus_id : mod.focus}
+                      </p>
+                    )}
                     {mod.week_number && (
                       <span className="badge-gray text-xs mt-1 inline-block">Week {mod.week_number}</span>
                     )}
