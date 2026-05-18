@@ -34,7 +34,7 @@ export default async function StudentSessionsPage() {
 
   const { data: sessions } = await supabase
     .from("learning_sessions")
-    .select("id, date, duration_minutes, tutor_notes, student_notes, course_module_id, module_id")
+    .select("id, date, duration_minutes, tutor_notes, student_notes, photo_url, course_module_id, module_id")
     .eq("student_id", user.id)
     .order("date", { ascending: false });
 
