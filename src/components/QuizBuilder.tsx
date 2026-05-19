@@ -54,6 +54,8 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
   const [questionsMap, setQuestionsMap] = useState<Record<string, QuizQuestion[]>>({});
   const [loading, setLoading] = useState(true);
   const [creatingQuiz, setCreatingQuiz] = useState(false);
+  const [showNewQuizForm, setShowNewQuizForm] = useState(false);
+  const [newQuizTitle, setNewQuizTitle] = useState("");
 
   // Per-quiz UI state
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
@@ -194,13 +196,13 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
     setLoading(false);
   }
 
-  async function handleCreateQuiz() {
+  async function handleCreateQuiz(title: string) {
+    if (!title.trim()) return;
     setCreatingQuiz(true);
     const maxOrder = quizzes.reduce((m, q) => Math.max(m, q.sort_order ?? 0), 0);
-    const title = quizzes.length === 0 ? "Module Quiz" : `Quiz ${quizzes.length + 1}`;
     const { data, error } = await supabase
       .from("module_quizzes")
-      .insert({ course_module_id: courseModuleId, title, sort_order: maxOrder + 1 })
+      .insert({ course_module_id: courseModuleId, title: title.trim(), sort_order: maxOrder + 1 })
       .select()
       .single();
     setCreatingQuiz(false);
@@ -208,6 +210,8 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
     const newQuiz = data as Quiz;
     setQuizzes((prev) => [...prev, newQuiz]);
     setQuestionsMap((prev) => ({ ...prev, [newQuiz.id]: [] }));
+    setShowNewQuizForm(false);
+    setNewQuizTitle("");
     toast.success("Quiz created!");
   }
 
@@ -408,11 +412,28 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
       </div>
 
       {quizzes.length === 0 && (
-        <div className="card text-center py-8">
-          <p className="text-slate-400 text-sm mb-3">No quizzes for this module yet.</p>
-          <button onClick={handleCreateQuiz} disabled={creatingQuiz} className="btn-primary text-sm">
-            {creatingQuiz ? "Creating…" : "+ Create Quiz"}
-          </button>
+        <div className="card space-y-3 py-6 text-center">
+          <p className="text-slate-400 text-sm">No quizzes for this module yet.</p>
+          {!showNewQuizForm ? (
+            <button onClick={() => setShowNewQuizForm(true)} className="btn-primary text-sm">
+              + Create Quiz
+            </button>
+          ) : (
+            <div className="flex gap-2 max-w-sm mx-auto">
+              <input
+                className="input flex-1 text-sm"
+                value={newQuizTitle}
+                onChange={(e) => setNewQuizTitle(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCreateQuiz(newQuizTitle); } if (e.key === "Escape") { setShowNewQuizForm(false); setNewQuizTitle(""); } }}
+                placeholder="Quiz title…"
+                autoFocus
+              />
+              <button onClick={() => handleCreateQuiz(newQuizTitle)} disabled={creatingQuiz || !newQuizTitle.trim()} className="btn-primary text-sm shrink-0">
+                {creatingQuiz ? "…" : "Create"}
+              </button>
+              <button onClick={() => { setShowNewQuizForm(false); setNewQuizTitle(""); }} className="btn-secondary text-sm shrink-0">Cancel</button>
+            </div>
+          )}
         </div>
       )}
 
@@ -693,15 +714,32 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
         );
       })}
 
-      {/* Create new quiz button (always visible if at least one quiz exists) */}
+      {/* Create new quiz (always visible if at least one quiz exists) */}
       {quizzes.length > 0 && (
-        <button
-          onClick={handleCreateQuiz}
-          disabled={creatingQuiz}
-          className="btn-secondary text-sm w-full"
-        >
-          {creatingQuiz ? "Creating…" : "+ Create New Quiz"}
-        </button>
+        !showNewQuizForm ? (
+          <button
+            onClick={() => setShowNewQuizForm(true)}
+            disabled={creatingQuiz}
+            className="btn-secondary text-sm w-full"
+          >
+            + Create New Quiz
+          </button>
+        ) : (
+          <div className="card flex gap-2">
+            <input
+              className="input flex-1 text-sm"
+              value={newQuizTitle}
+              onChange={(e) => setNewQuizTitle(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCreateQuiz(newQuizTitle); } if (e.key === "Escape") { setShowNewQuizForm(false); setNewQuizTitle(""); } }}
+              placeholder="New quiz title…"
+              autoFocus
+            />
+            <button onClick={() => handleCreateQuiz(newQuizTitle)} disabled={creatingQuiz || !newQuizTitle.trim()} className="btn-primary text-sm shrink-0">
+              {creatingQuiz ? "Creating…" : "Create"}
+            </button>
+            <button onClick={() => { setShowNewQuizForm(false); setNewQuizTitle(""); }} className="btn-secondary text-sm shrink-0">Cancel</button>
+          </div>
+        )
       )}
     </div>
   );
