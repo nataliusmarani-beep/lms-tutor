@@ -19,9 +19,11 @@ interface CourseModule {
 interface EnrolledCourse {
   id: string;
   title: string;
+  title_id?: string | null;
   icon: string;
   icon_url?: string | null;
   description: string | null;
+  description_id?: string | null;
   modules: CourseModule[];
 }
 
@@ -60,15 +62,17 @@ export default async function StudentDashboard() {
   // Fetch enrollments with course data
   const { data: enrollments } = await supabase
     .from("course_enrollments")
-    .select("course_id, courses(id, title, icon, icon_url, description)")
+    .select("course_id, courses(id, title, title_id, icon, icon_url, description, description_id)")
     .eq("student_id", user.id);
 
   const rawCourses = (enrollments ?? []).map((e: { course_id: string; courses: unknown }) => e.courses) as Array<{
     id: string;
     title: string;
+    title_id?: string | null;
     icon: string;
     icon_url?: string | null;
     description: string | null;
+    description_id?: string | null;
   }>;
 
   // For each enrolled course, fetch its modules
@@ -199,9 +203,13 @@ export default async function StudentDashboard() {
                         : <span className="text-3xl shrink-0">{course.icon}</span>}
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-slate-800 leading-tight">{course.title}</div>
-                        {course.description && (
-                          <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{course.description}</p>
+                        <div className="font-semibold text-slate-800 leading-tight">
+                          {(lang === "id" && course.title_id) ? course.title_id : course.title}
+                        </div>
+                        {(course.description || course.description_id) && (
+                          <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+                            {(lang === "id" && course.description_id) ? course.description_id : course.description}
+                          </p>
                         )}
                         {/* Progress */}
                         <div className="mt-2 flex items-center gap-2">
