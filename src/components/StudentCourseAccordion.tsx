@@ -60,6 +60,8 @@ interface QuizQuestion {
   question_type: "single_choice" | "multiple_choice" | "fill_blank" | "homework_upload";
   question_text: string;
   question_text_id?: string | null;
+  attachment_url: string | null;
+  attachment_type: "image" | "pdf" | null;
   sort_order: number;
   options: QuizOption[];
 }
@@ -187,7 +189,7 @@ function QuizPlayer({
       const supabase = createClient();
       const { data: qs } = await supabase
         .from("quiz_questions")
-        .select("id, question_type, question_text, question_text_id, sort_order")
+        .select("id, question_type, question_text, question_text_id, attachment_url, attachment_type, sort_order")
         .eq("quiz_id", quiz.id)
         .order("sort_order");
       if (!qs?.length) { setLoading(false); return; }
@@ -283,8 +285,14 @@ function QuizPlayer({
             const correct = q.options.find((o) => o.is_correct);
             const isRight = answers[q.id] === correct?.id;
             return (
-              <div key={q.id} className={`rounded-xl px-4 py-3 border ${isRight ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
+              <div key={q.id} className={`rounded-xl px-4 py-3 border ${q.question_type === "homework_upload" ? "bg-purple-50 border-purple-200" : isRight ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
                 <p className="text-sm font-semibold text-slate-800 mb-2">{i + 1}. {(lang === "id" && q.question_text_id) ? q.question_text_id : q.question_text}</p>
+                {q.attachment_url && q.attachment_type === "image" && (
+                  <img src={q.attachment_url} alt="question" className="w-full max-w-xs rounded-lg border border-slate-200 mb-2 object-cover" />
+                )}
+                {q.question_type === "homework_upload" && answers[q.id] && (
+                  <p className="text-xs text-purple-600 mt-1">✓ {lang === "id" ? "File diunggah" : "File submitted"}</p>
+                )}
                 <div className="space-y-1">
                   {q.options.map((o) => (
                     <div key={o.id} className={`text-xs rounded-lg px-3 py-1.5 flex items-center gap-2 ${
@@ -321,6 +329,32 @@ function QuizPlayer({
         {questions.map((q, i) => (
           <div key={q.id} className="bg-slate-50 rounded-xl px-4 py-4 space-y-3">
             <p className="text-sm font-semibold text-slate-800">{i + 1}. {(lang === "id" && q.question_text_id) ? q.question_text_id : q.question_text}</p>
+
+            {/* Question attachment — image or PDF from tutor */}
+            {q.attachment_url && (
+              q.attachment_type === "image" ? (
+                <a href={q.attachment_url} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={q.attachment_url}
+                    alt="question"
+                    className="w-full rounded-xl border border-slate-200 object-cover hover:opacity-90 transition-opacity cursor-zoom-in"
+                  />
+                </a>
+              ) : (
+                <a
+                  href={q.attachment_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2.5 hover:bg-slate-50 transition-colors"
+                >
+                  <span className="text-xl">📄</span>
+                  <span className="text-sm text-blue-600 font-medium flex-1">
+                    {lang === "id" ? "Buka PDF soal" : "Open question PDF"}
+                  </span>
+                  <span className="text-xs text-slate-400">↗</span>
+                </a>
+              )
+            )}
 
             {q.question_type === "homework_upload" ? (
               <div>

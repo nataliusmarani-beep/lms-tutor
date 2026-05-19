@@ -24,6 +24,8 @@ interface QuizQuestion {
   quiz_id: string;
   question_type: "single_choice" | "multiple_choice" | "fill_blank" | "homework_upload";
   question_text: string;
+  attachment_url: string | null;
+  attachment_type: "image" | "pdf" | null;
   sort_order: number;
   options: QuizOption[];
 }
@@ -65,7 +67,74 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
     { text: "", correct: false },
   ]);
   const [fillAnswer, setFillAnswer] = useState("");
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null);
+  const [attachmentType, setAttachmentType] = useState<"image" | "pdf" | null>(null);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const [savingQ, setSavingQ] = useState(false);
+
+  async function compressImage(file: File, maxKB: number): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 1200;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w >= h) { h = Math.round((h * MAX) / w); w = MAX; }
+          else        { w = Math.round((w * MAX) / h); h = MAX; }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        let quality = 0.9;
+        function attempt() {
+          canvas.toBlob((blob) => {
+            if (!blob) { reject(new Error("Compression failed")); return; }
+            if (blob.size <= maxKB * 1024 || quality <= 0.05) { resolve(blob); }
+            else { quality = Math.max(0.05, quality - 0.1); attempt(); }
+          }, "image/jpeg", quality);
+        }
+        attempt();
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Load failed")); };
+      img.src = url;
+    });
+  }
+
+  async function handleAttachmentChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const isImage = file.type.startsWith("image/");
+    const isPdf   = file.type === "application/pdf";
+    if (!isImage && !isPdf) { toast.error("Only images or PDFs allowed"); return; }
+    if (isPdf && file.size > 2 * 1024 * 1024) { toast.error("PDF must be under 2 MB"); return; }
+    setUploadingAttachment(true);
+    try {
+      if (isImage) {
+        const blob = await compressImage(file, 500);
+        const compressed = new File([blob], "attachment.jpg", { type: "image/jpeg" });
+        setAttachmentFile(compressed);
+        setAttachmentPreview(URL.createObjectURL(blob));
+        setAttachmentType("image");
+        toast.success(`Image ready — ${Math.round(blob.size / 1024)} KB`);
+      } else {
+        setAttachmentFile(file);
+        setAttachmentPreview(null);
+        setAttachmentType("pdf");
+        toast.success(`PDF ready — ${Math.round(file.size / 1024)} KB`);
+      }
+    } catch { toast.error("Could not process file"); }
+    setUploadingAttachment(false);
+  }
+
+  function resetAttachment() {
+    setAttachmentFile(null);
+    if (attachmentPreview) URL.revokeObjectURL(attachmentPreview);
+    setAttachmentPreview(null);
+    setAttachmentType(null);
+  }
 
   useEffect(() => {
     loadQuiz();
@@ -181,6 +250,20 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
     }
 
     setSavingQ(true);
+
+    // Upload attachment first if provided
+    let attachment_url: string | null = null;
+    if (attachmentFile && attachmentType) {
+      const ext = attachmentType === "pdf" ? "pdf" : "jpg";
+      const path = `${courseModuleId}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("quiz-attachments")
+        .upload(path, attachmentFile, { upsert: false });
+      if (upErr) { toast.error("Attachment upload failed: " + upErr.message); setSavingQ(false); return; }
+      const { data: urlData } = supabase.storage.from("quiz-attachments").getPublicUrl(path);
+      attachment_url = urlData.publicUrl;
+    }
+
     const maxOrder = questions.reduce((m, q) => Math.max(m, q.sort_order), 0);
     const { data: qData, error: qError } = await supabase
       .from("quiz_questions")
@@ -188,6 +271,8 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
         quiz_id: quiz.id,
         question_type: newQType,
         question_text: newQText.trim(),
+        attachment_url,
+        attachment_type: attachmentType,
         sort_order: maxOrder + 1,
       })
       .select()
@@ -237,6 +322,7 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
     setNewQType("single_choice");
     setNewOptions([{ text: "", correct: false }, { text: "", correct: false }]);
     setFillAnswer("");
+    resetAttachment();
     setShowAddQuestion(false);
     setSavingQ(false);
     toast.success("Question added!");
@@ -414,6 +500,31 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
                   />
                 </div>
 
+                {/* Optional question attachment (image or PDF shown to student) */}
+                <div>
+                  <label className="label">Question Attachment <span className="text-slate-400 font-normal">(optional — image or PDF shown to student)</span></label>
+                  {attachmentFile ? (
+                    <div className="space-y-2">
+                      {attachmentType === "image" && attachmentPreview ? (
+                        <img src={attachmentPreview} alt="attachment" className="w-full max-w-xs rounded-xl border border-slate-200 object-cover" />
+                      ) : (
+                        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                          <span className="text-xl">📄</span>
+                          <span className="text-sm text-slate-700 flex-1 truncate">{attachmentFile.name}</span>
+                          <span className="text-xs text-slate-400">{Math.round(attachmentFile.size / 1024)} KB</span>
+                        </div>
+                      )}
+                      <button type="button" onClick={resetAttachment} className="text-xs text-red-400 hover:text-red-600">Remove attachment</button>
+                    </div>
+                  ) : (
+                    <label className={`flex items-center gap-2 border-2 border-dashed border-slate-200 rounded-xl px-4 py-3 cursor-pointer hover:border-teal-400 hover:bg-teal-50 transition-colors ${uploadingAttachment ? "opacity-50" : ""}`}>
+                      <span className="text-lg">{uploadingAttachment ? "⏳" : "📎"}</span>
+                      <span className="text-sm text-slate-500">{uploadingAttachment ? "Processing…" : "Click to attach image or PDF"}</span>
+                      <input type="file" accept="image/*,.pdf" className="hidden" disabled={uploadingAttachment} onChange={handleAttachmentChange} />
+                    </label>
+                  )}
+                </div>
+
                 {newQType === "homework_upload" ? (
                   <p className="text-xs text-slate-400 bg-purple-50 border border-purple-100 rounded-lg px-3 py-2">
                     📎 Students will upload a PDF (≤500 KB) or image (auto-compressed to ≤200 KB) as their answer.
@@ -498,6 +609,7 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
                       setNewQText("");
                       setNewOptions([{ text: "", correct: false }, { text: "", correct: false }]);
                       setFillAnswer("");
+                      resetAttachment();
                     }}
                     className="btn-secondary text-sm"
                   >
