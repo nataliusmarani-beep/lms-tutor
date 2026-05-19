@@ -28,8 +28,7 @@ function getWeekStart(): string {
   const diffToMonday = day === 0 ? -6 : 1 - day;
   const monday = new Date(now);
   monday.setDate(now.getDate() + diffToMonday);
-  monday.setHours(0, 0, 0, 0);
-  return monday.toISOString();
+  return monday.toISOString().split("T")[0]; // "YYYY-MM-DD" — matches date-only session.date strings
 }
 
 async function getStudentProgress(
