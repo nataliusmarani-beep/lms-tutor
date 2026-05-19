@@ -23,7 +23,7 @@ export const translations = {
     items: "items",
     complete: "complete",
     // Weekly progress
-    thisWeek: "This week",
+    thisWeek: "Last 7 days",
     goalMet: "Goal met 🎉",
     onTrack: "On track",
     behind: "Behind",
@@ -179,7 +179,7 @@ export const translations = {
     week: "Minggu",
     items: "item",
     complete: "selesai",
-    thisWeek: "Minggu ini",
+    thisWeek: "7 hari terakhir",
     goalMet: "Target tercapai 🎉",
     onTrack: "Sesuai target",
     behind: "Tertinggal",

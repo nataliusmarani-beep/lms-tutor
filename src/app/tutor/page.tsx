@@ -24,11 +24,9 @@ const SEMESTER_TARGET_SESSIONS = 36; // 3/week × 12 weeks
 
 function getWeekStart(): string {
   const now = new Date();
-  const day = now.getDay(); // 0=Sun … 6=Sat
-  const diffToMonday = day === 0 ? -6 : 1 - day;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + diffToMonday);
-  return monday.toISOString().split("T")[0]; // "YYYY-MM-DD" — matches date-only session.date strings
+  const sevenDaysAgo = new Date(now);
+  sevenDaysAgo.setDate(now.getDate() - 6); // rolling 7-day window (today + past 6 days)
+  return sevenDaysAgo.toISOString().split("T")[0]; // "YYYY-MM-DD"
 }
 
 async function getStudentProgress(
