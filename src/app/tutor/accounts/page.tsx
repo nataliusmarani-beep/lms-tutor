@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import SelfAvatarUpload from "@/components/SelfAvatarUpload";
+import { t } from "@/lib/i18n";
+import { getLang } from "@/lib/getLang";
 
 interface Profile {
   id: string;
@@ -21,6 +23,8 @@ export default async function AccountsPage() {
 
   const { data: tutor } = await supabase.from("profiles").select("*").eq("id", user.id).single();
   if (!tutor || tutor.role !== "tutor") redirect("/login");
+
+  const lang = getLang();
 
   const [{ data: students }, { data: parents }, { data: links }] = await Promise.all([
     supabase.from("profiles").select("*").eq("role", "student").order("name"),
@@ -44,15 +48,15 @@ export default async function AccountsPage() {
 
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">Accounts</h1>
-            <p className="text-slate-500 text-sm mt-0.5">Manage your profile and student accounts</p>
+            <h1 className="text-2xl font-bold text-slate-800">{t(lang, "manageAccountsTitle")}</h1>
+            <p className="text-slate-500 text-sm mt-0.5">{t(lang, "manageAccountsSubtitle")}</p>
           </div>
-          <Link href="/tutor/students/new" className="btn-primary text-sm">+ Add Account</Link>
+          <Link href="/tutor/students/new" className="btn-primary text-sm">{t(lang, "addAccount")}</Link>
         </div>
 
         {/* My Profile */}
         <div className="card">
-          <h2 className="text-lg font-semibold text-slate-700 mb-4">My Profile</h2>
+          <h2 className="text-lg font-semibold text-slate-700 mb-4">{t(lang, "myProfile")}</h2>
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
             <SelfAvatarUpload
               userId={tutor.id}
@@ -70,13 +74,13 @@ export default async function AccountsPage() {
         {/* Students */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <h2 className="text-lg font-semibold text-slate-700">Students</h2>
+            <h2 className="text-lg font-semibold text-slate-700">{t(lang, "students")}</h2>
             <span className="badge-blue">{studentList.length}</span>
           </div>
           {studentList.length === 0 ? (
             <div className="card text-center py-10">
-              <p className="text-slate-400">No students yet.</p>
-              <Link href="/tutor/students/new" className="btn-primary mt-3 inline-block text-sm">Add First Student</Link>
+              <p className="text-slate-400">{t(lang, "noStudentsYet")}</p>
+              <Link href="/tutor/students/new" className="btn-primary mt-3 inline-block text-sm">{t(lang, "addFirstStudent")}</Link>
             </div>
           ) : (
             <div className="space-y-2">
@@ -99,12 +103,12 @@ export default async function AccountsPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="badge-green">Student</span>
+                      <span className="badge-green">{t(lang, "rolestudent")}</span>
                       <Link
                         href={`/tutor/students/${s.id}`}
                         className="btn-secondary text-xs py-1 px-3"
                       >
-                        View Progress
+                        {t(lang, "viewProgress")}
                       </Link>
                     </div>
                   </div>
@@ -117,13 +121,13 @@ export default async function AccountsPage() {
         {/* Guardians */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <h2 className="text-lg font-semibold text-slate-700">Guardians</h2>
+            <h2 className="text-lg font-semibold text-slate-700">{t(lang, "guardians")}</h2>
             <span className="badge-blue">{parentList.length}</span>
           </div>
           {parentList.length === 0 ? (
             <div className="card text-center py-10">
-              <p className="text-slate-400">No guardian accounts yet.</p>
-              <Link href="/tutor/students/new" className="btn-primary mt-3 inline-block text-sm">Add Guardian</Link>
+              <p className="text-slate-400">{lang === "id" ? "Belum ada akun wali." : "No guardian accounts yet."}</p>
+              <Link href="/tutor/students/new" className="btn-primary mt-3 inline-block text-sm">{lang === "id" ? "Tambah Wali" : "Add Guardian"}</Link>
             </div>
           ) : (
             <div className="space-y-2">
@@ -146,7 +150,7 @@ export default async function AccountsPage() {
                       )}
                     </div>
                     <div className="shrink-0">
-                      <span className="badge-yellow">Guardian</span>
+                      <span className="badge-yellow">{t(lang, "roleparent")}</span>
                     </div>
                   </div>
                 );
@@ -157,19 +161,19 @@ export default async function AccountsPage() {
 
         {/* Summary */}
         <div className="card bg-teal-50 border-teal-100">
-          <h3 className="font-semibold text-teal-800 mb-3">Account Summary</h3>
+          <h3 className="font-semibold text-teal-800 mb-3">{t(lang, "accountSummary")}</h3>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold text-teal-600">{studentList.length}</div>
-              <div className="text-xs text-teal-500 mt-0.5">Students</div>
+              <div className="text-xs text-teal-500 mt-0.5">{t(lang, "students")}</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-teal-600">{parentList.length}</div>
-              <div className="text-xs text-teal-500 mt-0.5">Parents</div>
+              <div className="text-xs text-teal-500 mt-0.5">{t(lang, "guardians")}</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-teal-600">{linkList.length}</div>
-              <div className="text-xs text-teal-500 mt-0.5">Parent–Student Links</div>
+              <div className="text-xs text-teal-500 mt-0.5">{t(lang, "parentStudentLinks")}</div>
             </div>
           </div>
         </div>

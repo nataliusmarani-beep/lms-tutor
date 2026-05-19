@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { t } from "@/lib/i18n";
+import { getLang } from "@/lib/getLang";
 
 interface CourseRow {
   id: string;
@@ -19,6 +21,8 @@ export default async function TutorCoursesPage() {
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
   if (!profile || profile.role !== "tutor") redirect("/login");
 
+  const lang = getLang();
+
   const { data: courses } = await supabase
     .from("courses")
     .select("*")
@@ -26,7 +30,6 @@ export default async function TutorCoursesPage() {
 
   const courseList = (courses ?? []) as CourseRow[];
 
-  // For each course, fetch module count and enrolled student count
   const enriched = await Promise.all(
     courseList.map(async (course) => {
       const [{ count: moduleCount }, { count: studentCount }] = await Promise.all([
@@ -49,20 +52,20 @@ export default async function TutorCoursesPage() {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 text-sm text-slate-400 mb-1">
-              <Link href="/tutor" className="hover:text-slate-600">Dashboard</Link>
+              <Link href="/tutor" className="hover:text-slate-600">{t(lang, "dashboard").replace("← ", "")}</Link>
               <span>›</span>
-              <span className="text-slate-600">Courses</span>
+              <span className="text-slate-600">{t(lang, "courses")}</span>
             </div>
-            <h1 className="text-2xl font-bold text-slate-800">Courses</h1>
+            <h1 className="text-2xl font-bold text-slate-800">{t(lang, "courses")}</h1>
           </div>
-          <Link href="/tutor/courses/new" className="btn-primary">+ New Course</Link>
+          <Link href="/tutor/courses/new" className="btn-primary">{t(lang, "newCourse")}</Link>
         </div>
 
         {enriched.length === 0 ? (
           <div className="card text-center py-16">
             <div className="text-5xl mb-4">📚</div>
-            <p className="text-slate-500 mb-4">No courses yet. Create your first course to get started.</p>
-            <Link href="/tutor/courses/new" className="btn-primary inline-block">Create First Course</Link>
+            <p className="text-slate-500 mb-4">{t(lang, "noCoursesCreate")}</p>
+            <Link href="/tutor/courses/new" className="btn-primary inline-block">{t(lang, "createFirstCourse")}</Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -84,8 +87,8 @@ export default async function TutorCoursesPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 pt-1 border-t border-slate-100">
-                  <span className="badge-blue">{course.moduleCount} module{course.moduleCount !== 1 ? "s" : ""}</span>
-                  <span className="badge-green">{course.studentCount} student{course.studentCount !== 1 ? "s" : ""}</span>
+                  <span className="badge-blue">{course.moduleCount} {t(lang, "modules").toLowerCase()}</span>
+                  <span className="badge-green">{course.studentCount} {t(lang, "students").toLowerCase()}</span>
                 </div>
               </Link>
             ))}

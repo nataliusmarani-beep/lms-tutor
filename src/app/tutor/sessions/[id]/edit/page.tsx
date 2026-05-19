@@ -2,6 +2,8 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import SessionEditForm from "@/components/SessionEditForm";
+import { t } from "@/lib/i18n";
+import { getLang } from "@/lib/getLang";
 
 export default async function EditSessionPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -10,6 +12,8 @@ export default async function EditSessionPage({ params }: { params: { id: string
 
   const { data: tutor } = await supabase.from("profiles").select("*").eq("id", user.id).single();
   if (!tutor || tutor.role !== "tutor") redirect("/login");
+
+  const lang = getLang();
 
   const { data: session } = await supabase
     .from("learning_sessions")
@@ -43,14 +47,14 @@ export default async function EditSessionPage({ params }: { params: { id: string
     <div className="min-h-screen">
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
         <div className="flex items-center gap-2 text-sm text-slate-400">
-          <Link href={`/tutor/students/${session.student_id}`}>← Back to {student?.name ?? "Student"}</Link>
+          <Link href={`/tutor/students/${session.student_id}`}>← {lang === "id" ? "Kembali ke" : "Back to"} {student?.name ?? t(lang, "studentLabel")}</Link>
         </div>
 
-        <h1 className="text-xl font-bold text-slate-800">✏️ Edit Session</h1>
+        <h1 className="text-xl font-bold text-slate-800">✏️ {lang === "id" ? "Edit Sesi" : "Edit Session"}</h1>
 
         <div className="card space-y-4">
           <div className="text-sm text-slate-500">
-            Student: <span className="font-medium text-slate-700">{student?.name}</span>
+            {t(lang, "studentLabel")}: <span className="font-medium text-slate-700">{student?.name}</span>
           </div>
           <SessionEditForm
             sessionId={params.id}

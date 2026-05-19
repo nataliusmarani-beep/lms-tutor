@@ -4,6 +4,8 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
+import { t } from "@/lib/i18n";
+import type { Lang } from "@/lib/i18n";
 
 interface CourseModule {
   id: string;
@@ -69,7 +71,7 @@ export default function CourseDetailPage() {
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [enrolling, setEnrolling] = useState(false);
 
-  const [lang, setLang] = useState<"en" | "id">("en");
+  const [lang, setLang] = useState<Lang>("en");
   useEffect(() => {
     const m = document.cookie.match(/(?:^|;\s*)lang=([^;]*)/);
     setLang(m?.[1] === "id" ? "id" : "en");
@@ -242,9 +244,9 @@ export default function CourseDetailPage() {
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm text-slate-400">
-            <Link href="/tutor" className="hover:text-slate-600">Dashboard</Link>
+            <Link href="/tutor" className="hover:text-slate-600">{t(lang, "dashboard").replace("← ", "")}</Link>
             <span>›</span>
-            <Link href="/tutor/courses" className="hover:text-slate-600">Courses</Link>
+            <Link href="/tutor/courses" className="hover:text-slate-600">{t(lang, "courses")}</Link>
             <span>›</span>
             <span className="text-slate-600">{course.title}</span>
           </div>
@@ -252,17 +254,17 @@ export default function CourseDetailPage() {
             onClick={handleDeleteCourse}
             className="text-sm text-red-400 hover:text-red-600"
           >
-            Delete Course
+            {t(lang, "deleteCourse")}
           </button>
         </div>
 
         {/* Course Info */}
         <form onSubmit={handleSaveCourse} className="card space-y-4">
-          <h2 className="font-semibold text-slate-700">Course Information</h2>
+          <h2 className="font-semibold text-slate-700">{t(lang, "courseInformation")}</h2>
 
           {/* Icon */}
           <div>
-            <label className="label">Course Icon Image</label>
+            <label className="label">{t(lang, "courseIconImage")}</label>
             <div className="flex items-center gap-4">
               <div
                 className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 flex items-center justify-center shrink-0 border-2 border-dashed border-slate-300 cursor-pointer hover:border-teal-400 transition-colors"
@@ -280,10 +282,10 @@ export default function CourseDetailPage() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => iconFileRef.current?.click()} className="btn-secondary text-xs py-1.5 px-3">
-                    {iconPreview || courseIconUrl ? "Replace" : "Upload Image"}
+                    {iconPreview || courseIconUrl ? (lang === "id" ? "Ganti" : "Replace") : (lang === "id" ? "Upload Gambar" : "Upload Image")}
                   </button>
                   {(iconPreview || courseIconUrl) && (
-                    <button type="button" onClick={removeIconImage} className="text-xs text-red-500 hover:text-red-700">Remove</button>
+                    <button type="button" onClick={removeIconImage} className="text-xs text-red-500 hover:text-red-700">{t(lang, "remove")}</button>
                   )}
                 </div>
                 <p className="text-xs text-slate-400">PNG or JPG, max 2 MB</p>
@@ -293,33 +295,33 @@ export default function CourseDetailPage() {
           </div>
 
           <div>
-            <label className="label">Title *</label>
+            <label className="label">{lang === "id" ? "Judul *" : "Title *"}</label>
             <input className="input" value={courseTitle} onChange={(e) => setCourseTitle(e.target.value)} required />
           </div>
           <div>
-            <label className="label">Description</label>
+            <label className="label">{lang === "id" ? "Deskripsi" : "Description"}</label>
             <textarea
               className="input resize-none"
               rows={2}
               value={courseDesc}
               onChange={(e) => setCourseDesc(e.target.value)}
-              placeholder="Course description..."
+              placeholder={lang === "id" ? "Deskripsi kursus..." : "Course description..."}
             />
           </div>
           <button type="submit" className="btn-primary" disabled={savingCourse}>
-            {savingCourse ? "Saving..." : "Save Changes"}
+            {savingCourse ? t(lang, "saving") : t(lang, "saveChanges")}
           </button>
         </form>
 
         {/* Modules Section */}
         <div className="card space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-slate-700">Modules</h2>
-            <span className="badge-blue">{modules.length} module{modules.length !== 1 ? "s" : ""}</span>
+            <h2 className="font-semibold text-slate-700">{t(lang, "modules")}</h2>
+            <span className="badge-blue">{modules.length} {t(lang, "modules").toLowerCase()}</span>
           </div>
 
           {modules.length === 0 ? (
-            <p className="text-sm text-slate-400 italic">No modules yet. Add the first one below.</p>
+            <p className="text-sm text-slate-400 italic">{t(lang, "noModulesAdd")}</p>
           ) : (
             <ul className="space-y-2">
               {modules.map((mod) => (
@@ -335,7 +337,7 @@ export default function CourseDetailPage() {
                       </p>
                     )}
                     {mod.week_number && (
-                      <span className="badge-gray text-xs mt-1 inline-block">Week {mod.week_number}</span>
+                      <span className="badge-gray text-xs mt-1 inline-block">{t(lang, "week")} {mod.week_number}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
@@ -343,13 +345,13 @@ export default function CourseDetailPage() {
                       href={`/tutor/courses/${courseId}/modules/${mod.id}/edit`}
                       className="text-blue-500 hover:text-blue-700 text-sm"
                     >
-                      Edit
+                      {t(lang, "edit")}
                     </Link>
                     <button
                       onClick={() => handleDeleteModule(mod.id)}
                       className="text-red-400 hover:text-red-600 text-sm"
                     >
-                      Delete
+                      {t(lang, "delete")}
                     </button>
                   </div>
                 </li>
@@ -359,10 +361,10 @@ export default function CourseDetailPage() {
 
           {/* Add Module Form */}
           <form onSubmit={handleAddModule} className="border-t border-slate-200 pt-4 space-y-3">
-            <h3 className="text-sm font-medium text-slate-600">Add New Module</h3>
+            <h3 className="text-sm font-medium text-slate-600">{t(lang, "addNewModule")}</h3>
             <div className="flex gap-3">
               <div className="w-20">
-                <label className="label text-xs">Icon</label>
+                <label className="label text-xs">{lang === "id" ? "Ikon" : "Icon"}</label>
                 <input
                   className="input text-xl text-center py-1.5"
                   value={newModIcon}
@@ -371,17 +373,17 @@ export default function CourseDetailPage() {
                 />
               </div>
               <div className="flex-1">
-                <label className="label text-xs">Title *</label>
+                <label className="label text-xs">{lang === "id" ? "Judul *" : "Title *"}</label>
                 <input
                   className="input"
                   value={newModTitle}
                   onChange={(e) => setNewModTitle(e.target.value)}
-                  placeholder="Module title"
+                  placeholder={lang === "id" ? "Judul modul" : "Module title"}
                   required
                 />
               </div>
               <div className="w-24">
-                <label className="label text-xs">Week</label>
+                <label className="label text-xs">{t(lang, "week")}</label>
                 <input
                   className="input"
                   type="number"
@@ -393,16 +395,16 @@ export default function CourseDetailPage() {
               </div>
             </div>
             <div>
-              <label className="label text-xs">Focus / Description</label>
+              <label className="label text-xs">{t(lang, "focusDescription")}</label>
               <input
                 className="input"
                 value={newModFocus}
                 onChange={(e) => setNewModFocus(e.target.value)}
-                placeholder="What this module covers..."
+                placeholder={lang === "id" ? "Apa yang dicakup modul ini..." : "What this module covers..."}
               />
             </div>
             <button type="submit" className="btn-primary text-sm" disabled={addingModule}>
-              {addingModule ? "Adding..." : "+ Add Module"}
+              {addingModule ? (lang === "id" ? "Menambahkan..." : "Adding...") : `+ ${t(lang, "addNewModule")}`}
             </button>
           </form>
         </div>
@@ -410,12 +412,12 @@ export default function CourseDetailPage() {
         {/* Enrolled Students Section */}
         <div className="card space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-slate-700">Enrolled Students</h2>
-            <span className="badge-green">{enrolled.length} student{enrolled.length !== 1 ? "s" : ""}</span>
+            <h2 className="font-semibold text-slate-700">{t(lang, "enrolledStudents")}</h2>
+            <span className="badge-green">{enrolled.length} {t(lang, "students").toLowerCase()}</span>
           </div>
 
           {enrolled.length === 0 ? (
-            <p className="text-sm text-slate-400 italic">No students enrolled yet.</p>
+            <p className="text-sm text-slate-400 italic">{t(lang, "noStudentsEnrolled")}</p>
           ) : (
             <ul className="space-y-2">
               {enrolled.map((enrollment) => (
@@ -430,7 +432,7 @@ export default function CourseDetailPage() {
                     onClick={() => handleRemoveEnrollment(enrollment.id)}
                     className="text-red-400 hover:text-red-600 text-xs"
                   >
-                    Remove
+                    {t(lang, "remove")}
                   </button>
                 </li>
               ))}
@@ -444,13 +446,13 @@ export default function CourseDetailPage() {
                 value={selectedStudentId}
                 onChange={(e) => setSelectedStudentId(e.target.value)}
               >
-                <option value="">Select a student to enroll...</option>
+                <option value="">{t(lang, "selectStudentEnroll")}</option>
                 {unenrolledStudents.map((s) => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </select>
               <button type="submit" className="btn-primary shrink-0" disabled={enrolling}>
-                {enrolling ? "Enrolling..." : "Enroll"}
+                {enrolling ? t(lang, "enrolling") : t(lang, "enroll")}
               </button>
             </form>
           )}

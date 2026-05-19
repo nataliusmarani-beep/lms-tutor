@@ -1,9 +1,11 @@
 "use client";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
+import { t } from "@/lib/i18n";
+import type { Lang } from "@/lib/i18n";
 
 export default function NewCoursePage() {
   const router  = useRouter();
@@ -14,6 +16,11 @@ export default function NewCoursePage() {
   const [title,       setTitle]       = useState("");
   const [description, setDescription] = useState("");
   const [loading,     setLoading]     = useState(false);
+  const [lang, setLang] = useState<Lang>("en");
+  useEffect(() => {
+    const m = document.cookie.match(/(?:^|;\s*)lang=([^;]*)/);
+    setLang(m?.[1] === "id" ? "id" : "en");
+  }, []);
 
   function handleIconFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -73,19 +80,19 @@ export default function NewCoursePage() {
     <div className="min-h-screen">
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
         <div className="flex items-center gap-2 text-sm text-slate-400">
-          <Link href="/tutor" className="hover:text-slate-600">Dashboard</Link>
+          <Link href="/tutor" className="hover:text-slate-600">{t(lang, "dashboard").replace("← ", "")}</Link>
           <span>›</span>
-          <Link href="/tutor/courses" className="hover:text-slate-600">Courses</Link>
+          <Link href="/tutor/courses" className="hover:text-slate-600">{t(lang, "courses")}</Link>
           <span>›</span>
-          <span className="text-slate-600">New Course</span>
+          <span className="text-slate-600">{t(lang, "createNewCourse")}</span>
         </div>
 
-        <h1 className="text-2xl font-bold text-slate-800">Create New Course</h1>
+        <h1 className="text-2xl font-bold text-slate-800">{t(lang, "createNewCourse")}</h1>
 
         <form onSubmit={handleSubmit} className="card space-y-5">
 
           <div>
-            <label className="label">Course Icon Image</label>
+            <label className="label">{t(lang, "courseIconImage")}</label>
             <div className="flex items-center gap-4">
               <div
                 className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 flex items-center justify-center shrink-0 border-2 border-dashed border-slate-300 cursor-pointer hover:border-teal-400 transition-colors"
@@ -100,10 +107,10 @@ export default function NewCoursePage() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => fileRef.current?.click()} className="btn-secondary text-xs py-1.5 px-3">
-                    {iconPreview ? "Replace" : "Upload Image"}
+                    {iconPreview ? (lang === "id" ? "Ganti" : "Replace") : (lang === "id" ? "Upload Gambar" : "Upload Image")}
                   </button>
                   {iconPreview && (
-                    <button type="button" onClick={removeIconImage} className="text-xs text-red-500 hover:text-red-700">Remove</button>
+                    <button type="button" onClick={removeIconImage} className="text-xs text-red-500 hover:text-red-700">{t(lang, "remove")}</button>
                   )}
                 </div>
                 <p className="text-xs text-slate-400">PNG or JPG, max 2 MB</p>
@@ -113,23 +120,23 @@ export default function NewCoursePage() {
           </div>
 
           <div>
-            <label className="label">Title *</label>
+            <label className="label">{lang === "id" ? "Judul *" : "Title *"}</label>
             <input className="input" value={title} onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Microsoft Apps Fundamental to Advance" required />
           </div>
 
           <div>
-            <label className="label">Description</label>
+            <label className="label">{lang === "id" ? "Deskripsi" : "Description"}</label>
             <textarea className="input resize-none" rows={3} value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="What will students learn in this course?" />
+              placeholder={lang === "id" ? "Apa yang akan dipelajari siswa?" : "What will students learn in this course?"} />
           </div>
 
           <div className="flex gap-3 pt-2">
             <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? "Creating…" : "Create Course"}
+              {loading ? (lang === "id" ? "Membuat…" : "Creating…") : (lang === "id" ? "Buat Kursus" : "Create Course")}
             </button>
-            <Link href="/tutor/courses" className="btn-secondary">Cancel</Link>
+            <Link href="/tutor/courses" className="btn-secondary">{t(lang, "cancel")}</Link>
           </div>
         </form>
       </div>

@@ -227,21 +227,21 @@ export default async function TutorDashboard() {
           {enrichedCourses.length === 0 ? (
             <div className="card text-center py-10">
               <div className="text-4xl mb-3">📚</div>
-              <p className="text-slate-500 mb-3">No courses yet.</p>
-              <Link href="/tutor/courses/new" className="btn-primary inline-block">Create First Course</Link>
+              <p className="text-slate-500 mb-3">{t(lang, "noCourses")}</p>
+              <Link href="/tutor/courses/new" className="btn-primary inline-block">{t(lang, "createFirstCourse")}</Link>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {enrichedCourses.map((course, idx) => {
-                const t = cardThemes[idx % cardThemes.length];
+                const theme = cardThemes[idx % cardThemes.length];
                 return (
                 <Link
                   key={course.id}
                   href={`/tutor/courses/${course.id}`}
-                  className={`${t.bg} block rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex items-stretch gap-0 overflow-hidden p-0`}
+                  className={`${theme.bg} block rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex items-stretch gap-0 overflow-hidden p-0`}
                 >
                   {/* Color accent bar */}
-                  <div className={`w-1.5 rounded-l-2xl bg-gradient-to-b ${t.bar} shrink-0`} />
+                  <div className={`w-1.5 rounded-l-2xl bg-gradient-to-b ${theme.bar} shrink-0`} />
                   <div className="flex items-center gap-3 p-4 flex-1 min-w-0">
                     {course.icon_url
                       ? <div className="w-10 h-10 rounded-2xl overflow-hidden shrink-0"><img src={course.icon_url} alt={course.title} className="w-full h-full object-cover" /></div>
@@ -252,8 +252,8 @@ export default async function TutorDashboard() {
                         <p className="text-xs text-slate-500 mt-0.5 truncate">{course.description}</p>
                       )}
                       <div className="flex gap-2 mt-1">
-                        <span className="badge-blue text-xs">{course.moduleCount} modules</span>
-                        <span className="badge-green text-xs">{course.studentCount} students</span>
+                        <span className="badge-blue text-xs">{course.moduleCount} {t(lang, "modules").toLowerCase()}</span>
+                        <span className="badge-green text-xs">{course.studentCount} {t(lang, "students").toLowerCase()}</span>
                       </div>
                     </div>
                     <span className="text-slate-300 shrink-0">›</span>
@@ -275,9 +275,9 @@ export default async function TutorDashboard() {
           {studentList.length === 0 ? (
             <div className="card text-center py-12">
               <div className="text-4xl mb-3">👤</div>
-              <p className="text-slate-500">No students yet.</p>
+              <p className="text-slate-500">{t(lang, "noStudentsYet")}</p>
               <Link href="/tutor/students/new" className="btn-primary mt-4 inline-block">
-                Add First Student
+                {t(lang, "addFirstStudent")}
               </Link>
             </div>
           ) : (
@@ -326,7 +326,7 @@ export default async function TutorDashboard() {
                     <div className="flex items-center gap-3 mt-3">
                       <div className="flex flex-col items-center shrink-0">
                         <ProgressRing percent={p.overallPct} size={52} strokeWidth={5} />
-                        <span className="text-[10px] text-slate-400 mt-0.5 leading-none">overall</span>
+                        <span className="text-[10px] text-slate-400 mt-0.5 leading-none">{t(lang, "overall").toLowerCase()}</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">

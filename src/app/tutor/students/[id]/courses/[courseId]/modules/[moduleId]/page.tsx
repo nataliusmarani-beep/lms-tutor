@@ -78,7 +78,7 @@ export default async function TutorCourseModuleDetailPage({
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-slate-400 flex-wrap">
-          <Link href="/tutor" className="hover:text-slate-600">Dashboard</Link>
+          <Link href="/tutor" className="hover:text-slate-600">{t(lang, "dashboard").replace("← ", "")}</Link>
           <span>›</span>
           <Link href={`/tutor/students/${params.id}`} className="hover:text-slate-600">{student.name}</Link>
           <span>›</span>
@@ -91,7 +91,7 @@ export default async function TutorCourseModuleDetailPage({
             <span className="text-3xl">{mod.icon}</span>
             <div className="flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                {mod.week_number && <span className="badge-blue">Week {mod.week_number}</span>}
+                {mod.week_number && <span className="badge-blue">{t(lang, "week")} {mod.week_number}</span>}
                 <span className="badge-gray">{course.icon} {course.title}</span>
               </div>
               <h1 className="text-xl font-bold text-slate-800 mt-1">
@@ -103,14 +103,14 @@ export default async function TutorCourseModuleDetailPage({
                 </p>
               )}
               <p className="text-sm text-slate-500 mt-2">
-                Student: <strong>{student.name}</strong>
+                {t(lang, "studentLabel")}: <strong>{student.name}</strong>
               </p>
             </div>
             <Link
               href={`/tutor/courses/${params.courseId}/modules/${params.moduleId}/edit`}
               className="btn-secondary text-sm py-1.5 shrink-0"
             >
-              Edit Module
+              {t(lang, "editModule")}
             </Link>
           </div>
         </div>
@@ -118,16 +118,16 @@ export default async function TutorCourseModuleDetailPage({
         {/* Sessions */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-slate-700">Sessions</h2>
+            <h2 className="text-lg font-semibold text-slate-700">{t(lang, "sessionsLabel")}</h2>
             <Link
               href={`/tutor/sessions/new?student=${params.id}&courseModule=${params.moduleId}`}
               className="btn-primary text-sm py-1.5"
             >
-              + Log Session
+              + {t(lang, "logSession")}
             </Link>
           </div>
           {!sessions || sessions.length === 0 ? (
-            <p className="text-slate-400 text-sm italic">No sessions for this module yet.</p>
+            <p className="text-slate-400 text-sm italic">{t(lang, "noSessionsForModule")}</p>
           ) : (
             <div className="space-y-2">
               {sessions.map((s: {
@@ -143,18 +143,18 @@ export default async function TutorCourseModuleDetailPage({
                       <span className="text-sm font-medium text-slate-700">
                         {format(new Date(s.date), "EEEE, MMMM d, yyyy")}
                       </span>
-                      <span className="badge-blue shrink-0">{s.duration_minutes} min</span>
+                      <span className="badge-blue shrink-0">{s.duration_minutes} {t(lang, "min")}</span>
                     </div>
                     <SessionActions sessionId={s.id} />
                   </div>
                   {s.tutor_notes && (
                     <p className="text-sm text-slate-600 mt-1">
-                      <span className="text-slate-400 text-xs">Tutor: </span>{s.tutor_notes}
+                      <span className="text-slate-400 text-xs">{t(lang, "tutorLabel")}: </span>{s.tutor_notes}
                     </p>
                   )}
                   {s.student_notes && (
                     <p className="text-sm text-slate-600 mt-1">
-                      <span className="text-slate-400 text-xs">Student: </span>{s.student_notes}
+                      <span className="text-slate-400 text-xs">{t(lang, "studentLabel")}: </span>{s.student_notes}
                     </p>
                   )}
                 </div>
@@ -178,7 +178,7 @@ export default async function TutorCourseModuleDetailPage({
         {/* Quiz Results */}
         {quizzes && quizzes.length > 0 && (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-slate-700">Quiz Results</h2>
+            <h2 className="text-lg font-semibold text-slate-700">{t(lang, "quizResults")}</h2>
             {(quizzes as { id: string; title: string }[]).map((quiz) => (
               <div key={quiz.id} className="card space-y-3">
                 <div className="flex items-center gap-2">

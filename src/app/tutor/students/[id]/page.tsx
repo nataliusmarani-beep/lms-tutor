@@ -5,6 +5,7 @@ import SessionActions from "@/components/SessionActions";
 import AvatarUpload from "@/components/AvatarUpload";
 import { format } from "date-fns";
 import { getLang } from "@/lib/getLang";
+import { t } from "@/lib/i18n";
 
 interface CourseModule {
   id: string;
@@ -153,7 +154,7 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
     <div className="min-h-screen">
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
         <div className="flex items-center gap-3">
-          <Link href="/tutor" className="text-slate-400 hover:text-slate-600 text-sm">← Dashboard</Link>
+          <Link href="/tutor" className="text-slate-400 hover:text-slate-600 text-sm">{t(lang, "dashboard")}</Link>
         </div>
 
         {/* Student card */}
@@ -171,7 +172,7 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
           </div>
           <div className="text-right shrink-0">
             <div className="text-2xl font-bold text-teal-600">{overallPct}%</div>
-            <div className="text-xs text-slate-500">Overall progress</div>
+            <div className="text-xs text-slate-500">{t(lang, "overallProgress")}</div>
           </div>
         </div>
 
@@ -179,15 +180,15 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
         <div className="grid grid-cols-3 gap-4">
           <div className="card text-center">
             <div className="text-2xl font-bold text-blue-600">{sessionList.length}</div>
-            <div className="text-sm text-slate-500">Sessions</div>
+            <div className="text-sm text-slate-500">{t(lang, "sessions")}</div>
           </div>
           <div className="card text-center">
             <div className="text-2xl font-bold text-blue-600">{totalHours}h</div>
-            <div className="text-sm text-slate-500">Total time</div>
+            <div className="text-sm text-slate-500">{t(lang, "totalTime")}</div>
           </div>
           <div className="card text-center">
             <div className="text-2xl font-bold text-blue-600">{completedModules}</div>
-            <div className="text-sm text-slate-500">Modules done</div>
+            <div className="text-sm text-slate-500">{t(lang, "modulesDone")}</div>
           </div>
         </div>
 
@@ -195,7 +196,7 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
         {enrolledCourses.length === 0 ? (
           <div className="card text-center py-10">
             <div className="text-4xl mb-3">📚</div>
-            <p className="text-slate-500">Not enrolled in any courses yet.</p>
+            <p className="text-slate-500">{t(lang, "notEnrolledCourses")}</p>
           </div>
         ) : (
           enrolledCourses.map((course) => (
@@ -209,12 +210,12 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
                   href={`/tutor/sessions/new?student=${params.id}`}
                   className="btn-primary text-sm py-1.5"
                 >
-                  + Log Session
+                  + {t(lang, "logSession")}
                 </Link>
               </div>
 
               {course.modules.length === 0 ? (
-                <p className="text-sm text-slate-400 italic ml-10 mb-4">No modules in this course yet.</p>
+                <p className="text-sm text-slate-400 italic ml-10 mb-4">{t(lang, "noModulesInCourse")}</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                   {course.modules.map((mod) => {
@@ -228,7 +229,7 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
                         <span className="text-2xl mt-0.5">{mod.icon}</span>
                         <div className="flex-1 min-w-0">
                           {mod.week_number && (
-                            <span className="badge-gray text-xs">Week {mod.week_number}</span>
+                            <span className="badge-gray text-xs">{t(lang, "week")} {mod.week_number}</span>
                           )}
                           <div className="font-medium text-slate-800 text-sm leading-tight mt-0.5">
                             {(lang === "id" && mod.title_id) ? mod.title_id : mod.title}
@@ -241,7 +242,7 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
                           <div className="mt-2">
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-xs text-slate-400">
-                                {mp.completed}/{mp.total} items
+                                {mp.completed}/{mp.total} {t(lang, "items")}
                               </span>
                               <span
                                 className={`text-xs font-semibold ${
@@ -277,15 +278,15 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
 
         {/* Recent Sessions */}
         <div>
-          <h2 className="text-lg font-semibold text-slate-700 mb-4">Recent Sessions</h2>
+          <h2 className="text-lg font-semibold text-slate-700 mb-4">{t(lang, "recentSessions")}</h2>
           {sessionList.length === 0 ? (
             <div className="card text-center py-8">
-              <p className="text-slate-400">No sessions recorded yet.</p>
+              <p className="text-slate-400">{t(lang, "noSessionsRecorded")}</p>
               <Link
                 href={`/tutor/sessions/new?student=${params.id}`}
                 className="btn-primary mt-3 inline-block text-sm"
               >
-                Log First Session
+                {t(lang, "logFirstSession")}
               </Link>
             </div>
           ) : (
@@ -305,7 +306,7 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
                         <div className="text-xs text-slate-500 mt-0.5 line-clamp-1">{s.tutor_notes}</div>
                       )}
                       <div className="text-xs text-slate-400 mt-0.5">
-                        {s.duration_minutes} min · {format(new Date(s.date), "MMM d, yyyy")}
+                        {s.duration_minutes} {t(lang, "min")} · {format(new Date(s.date), "MMM d, yyyy")}
                       </div>
                     </div>
                     {s.photo_url && (

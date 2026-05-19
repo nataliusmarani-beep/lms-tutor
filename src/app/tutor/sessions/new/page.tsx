@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import SessionForm from "@/components/SessionForm";
+import { t } from "@/lib/i18n";
+import { getLang } from "@/lib/getLang";
 
 export default async function NewSessionPage({
   searchParams,
@@ -14,6 +16,8 @@ export default async function NewSessionPage({
 
   const { data: tutor } = await supabase.from("profiles").select("*").eq("id", user.id).single();
   if (!tutor || tutor.role !== "tutor") redirect("/login");
+
+  const lang = getLang();
 
   const { data: students } = await supabase
     .from("profiles")
@@ -50,15 +54,15 @@ export default async function NewSessionPage({
     <div className="min-h-screen">
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
         <div className="flex items-center gap-2 text-sm text-slate-400">
-          <Link href="/tutor">← Dashboard</Link>
+          <Link href="/tutor">{t(lang, "dashboard")}</Link>
         </div>
 
-        <h1 className="text-xl font-bold text-slate-800">⏱️ Log Learning Session</h1>
-        <p className="text-slate-500 text-sm">Record a 60–90 minute learning session.</p>
+        <h1 className="text-xl font-bold text-slate-800">⏱️ {t(lang, "logLearningSession")}</h1>
+        <p className="text-slate-500 text-sm">{t(lang, "record6090")}</p>
 
         <div className="card space-y-4">
           <div>
-            <label className="label">Student</label>
+            <label className="label">{t(lang, "studentLabel")}</label>
             <div className="text-sm font-medium text-slate-700 bg-slate-50 rounded-lg px-3 py-2">
               {students?.find((s: { id: string; name: string }) => s.id === selectedStudent)?.name ?? "Select a student"}
             </div>
@@ -83,7 +87,7 @@ export default async function NewSessionPage({
               }[]}
             />
           ) : (
-            <p className="text-sm text-slate-400 italic">No students found. Add a student first.</p>
+            <p className="text-sm text-slate-400 italic">{lang === "id" ? "Belum ada siswa. Tambahkan siswa terlebih dahulu." : "No students found. Add a student first."}</p>
           )}
         </div>
       </div>

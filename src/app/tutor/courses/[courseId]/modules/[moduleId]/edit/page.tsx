@@ -7,6 +7,8 @@ import toast from "react-hot-toast";
 import ResourcePanel from "@/components/ResourcePanel";
 import QuizBuilder from "@/components/QuizBuilder";
 import TranslateQuizButton from "@/components/TranslateQuizButton";
+import { t } from "@/lib/i18n";
+import type { Lang } from "@/lib/i18n";
 
 interface ChecklistItem {
   id: string;
@@ -31,6 +33,11 @@ export default function EditCourseModulePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [course, setCourse] = useState<CourseInfo | null>(null);
+  const [lang, setLang] = useState<Lang>("en");
+  useEffect(() => {
+    const m = document.cookie.match(/(?:^|;\s*)lang=([^;]*)/);
+    setLang(m?.[1] === "id" ? "id" : "en");
+  }, []);
   const [title, setTitle] = useState("");
   const [focus, setFocus] = useState("");
   const [icon, setIcon] = useState("📚");
@@ -141,8 +148,8 @@ export default function EditCourseModulePage() {
             }}
             autoFocus
           />
-          <button onClick={() => handleUpdateItem(item.id)} className="btn-primary text-xs py-1 px-2">Save</button>
-          <button onClick={() => setEditingId(null)} className="text-slate-400 text-xs">Cancel</button>
+          <button onClick={() => handleUpdateItem(item.id)} className="btn-primary text-xs py-1 px-2">{lang === "id" ? "Simpan" : "Save"}</button>
+          <button onClick={() => setEditingId(null)} className="text-slate-400 text-xs">{t(lang, "cancel")}</button>
         </div>
       ) : (
         <>
@@ -152,13 +159,13 @@ export default function EditCourseModulePage() {
               onClick={() => { setEditingId(item.id); setEditingLabel(item.label); }}
               className="text-blue-400 hover:text-blue-600 text-xs"
             >
-              Edit
+              {t(lang, "edit")}
             </button>
             <button
               onClick={() => handleDeleteItem(item.id)}
               className="text-red-400 hover:text-red-600 text-xs"
             >
-              Remove
+              {t(lang, "remove")}
             </button>
           </div>
         </>
@@ -184,31 +191,31 @@ export default function EditCourseModulePage() {
 
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
         <div className="flex items-center gap-2 text-sm text-slate-400 flex-wrap">
-          <Link href="/tutor" className="hover:text-slate-600">Dashboard</Link>
+          <Link href="/tutor" className="hover:text-slate-600">{t(lang, "dashboard").replace("← ", "")}</Link>
           <span>›</span>
-          <Link href="/tutor/courses" className="hover:text-slate-600">Courses</Link>
+          <Link href="/tutor/courses" className="hover:text-slate-600">{t(lang, "courses")}</Link>
           <span>›</span>
           <Link href={`/tutor/courses/${courseId}`} className="hover:text-slate-600">
-            {course?.title ?? "Course"}
+            {course?.title ?? t(lang, "courses")}
           </Link>
           <span>›</span>
-          <span className="text-slate-600">Edit Module</span>
+          <span className="text-slate-600">{t(lang, "editModule")}</span>
         </div>
 
         <div className="flex items-center gap-3">
           <span className="text-3xl">{icon}</span>
           <div>
-            {weekNumber !== "" && <span className="badge-blue text-xs">Week {weekNumber}</span>}
-            <h1 className="text-xl font-bold text-slate-800 mt-1">Edit Module</h1>
+            {weekNumber !== "" && <span className="badge-blue text-xs">{t(lang, "week")} {weekNumber}</span>}
+            <h1 className="text-xl font-bold text-slate-800 mt-1">{t(lang, "editModule")}</h1>
           </div>
         </div>
 
         {/* Module Info Form */}
         <form onSubmit={handleSave} className="card space-y-4">
-          <h2 className="font-semibold text-slate-700">Module Information</h2>
+          <h2 className="font-semibold text-slate-700">{t(lang, "moduleInformation")}</h2>
           <div className="flex gap-3">
             <div className="w-24">
-              <label className="label">Icon</label>
+              <label className="label">{lang === "id" ? "Ikon" : "Icon"}</label>
               <input
                 className="input text-2xl text-center"
                 value={icon}
@@ -217,7 +224,7 @@ export default function EditCourseModulePage() {
               />
             </div>
             <div className="w-24">
-              <label className="label">Week</label>
+              <label className="label">{t(lang, "week")}</label>
               <input
                 className="input"
                 type="number"
@@ -229,43 +236,43 @@ export default function EditCourseModulePage() {
             </div>
           </div>
           <div>
-            <label className="label">Title</label>
+            <label className="label">{lang === "id" ? "Judul" : "Title"}</label>
             <input
               className="input"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Module title"
+              placeholder={lang === "id" ? "Judul modul" : "Module title"}
               required
             />
           </div>
           <div>
-            <label className="label">Focus / Description</label>
+            <label className="label">{t(lang, "focusDescription")}</label>
             <textarea
               className="input resize-none"
               rows={3}
               value={focus}
               onChange={(e) => setFocus(e.target.value)}
-              placeholder="What this module covers..."
+              placeholder={lang === "id" ? "Apa yang dicakup modul ini..." : "What this module covers..."}
             />
           </div>
           <div className="flex gap-3">
             <button type="submit" className="btn-primary" disabled={saving}>
-              {saving ? "Saving..." : "Save Changes"}
+              {saving ? t(lang, "saving") : t(lang, "saveChanges")}
             </button>
-            <Link href={`/tutor/courses/${courseId}`} className="btn-secondary">Cancel</Link>
+            <Link href={`/tutor/courses/${courseId}`} className="btn-secondary">{t(lang, "cancel")}</Link>
           </div>
         </form>
 
         {/* Student Checklist Items */}
         <div className="card space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-slate-700">👤 Student Checklist</h2>
-            <span className="badge-green text-xs">{studentItems.length} items</span>
+            <h2 className="font-semibold text-slate-700">👤 {t(lang, "studentChecklist")}</h2>
+            <span className="badge-green text-xs">{studentItems.length} {t(lang, "items")}</span>
           </div>
           {studentItems.length > 0 ? (
             <ul className="space-y-2">{studentItems.map(renderItem)}</ul>
           ) : (
-            <p className="text-sm text-slate-400 italic">No student items yet.</p>
+            <p className="text-sm text-slate-400 italic">{t(lang, "noStudentItemsYet")}</p>
           )}
           <div className="flex gap-2 pt-1 border-t border-slate-100">
             <input
@@ -273,7 +280,7 @@ export default function EditCourseModulePage() {
               value={newType === "student" ? newLabel : ""}
               onChange={(e) => { setNewType("student"); setNewLabel(e.target.value); }}
               onFocus={() => setNewType("student")}
-              placeholder="Add student checklist item..."
+              placeholder={t(lang, "addStudentItem")}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && newType === "student") {
                   e.preventDefault();
@@ -286,7 +293,7 @@ export default function EditCourseModulePage() {
               className="btn-primary shrink-0"
               onClick={() => { setNewType("student"); setTimeout(handleAddItem, 0); }}
             >
-              Add
+              {t(lang, "add")}
             </button>
           </div>
         </div>
@@ -294,13 +301,13 @@ export default function EditCourseModulePage() {
         {/* Teacher Checklist Items */}
         <div className="card space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-slate-700">👩‍🏫 Teacher Checklist</h2>
-            <span className="badge-blue text-xs">{teacherItems.length} items</span>
+            <h2 className="font-semibold text-slate-700">👩‍🏫 {t(lang, "teacherChecklistLabel")}</h2>
+            <span className="badge-blue text-xs">{teacherItems.length} {t(lang, "items")}</span>
           </div>
           {teacherItems.length > 0 ? (
             <ul className="space-y-2">{teacherItems.map(renderItem)}</ul>
           ) : (
-            <p className="text-sm text-slate-400 italic">No teacher items yet.</p>
+            <p className="text-sm text-slate-400 italic">{t(lang, "noTeacherItemsYet")}</p>
           )}
           <div className="flex gap-2 pt-1 border-t border-slate-100">
             <input
@@ -308,7 +315,7 @@ export default function EditCourseModulePage() {
               value={newType === "teacher" ? newLabel : ""}
               onChange={(e) => { setNewType("teacher"); setNewLabel(e.target.value); }}
               onFocus={() => setNewType("teacher")}
-              placeholder="Add teacher checklist item..."
+              placeholder={t(lang, "addTeacherItem")}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && newType === "teacher") {
                   e.preventDefault();
@@ -321,7 +328,7 @@ export default function EditCourseModulePage() {
               className="btn-primary shrink-0"
               onClick={() => { setNewType("teacher"); setTimeout(handleAddItem, 0); }}
             >
-              Add
+              {t(lang, "add")}
             </button>
           </div>
         </div>
