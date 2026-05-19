@@ -158,9 +158,9 @@ export default async function StudentCoursePage({ params }: { params: { courseId
         <div className="flex items-center gap-2 text-sm text-slate-400 flex-wrap">
           <Link href="/student" className="hover:text-slate-600">{t(lang, "dashboard").replace("← ", "")}</Link>
           <span>›</span>
-          <Link href="/student/courses" className="hover:text-slate-600">My Courses</Link>
+          <Link href="/student/courses" className="hover:text-slate-600">{t(lang, "courses")}</Link>
           <span>›</span>
-          <span className="text-slate-600">{course.icon} {course.title}</span>
+          <span className="text-slate-600">{course.icon} {courseTitle}</span>
         </div>
 
         {/* Course header banner */}
@@ -184,7 +184,7 @@ export default async function StudentCoursePage({ params }: { params: { courseId
                       ? <img src={tutor.avatar_url} alt={tutor.name} className="w-full h-full object-cover" />
                       : <span className="text-[10px] font-bold text-white">{tutor.name.charAt(0).toUpperCase()}</span>}
                   </div>
-                  <span className="text-xs text-white/70">Teacher:</span>
+                  <span className="text-xs text-white/70">{lang === "id" ? "Guru:" : "Teacher:"}</span>
                   <span className="text-xs font-semibold text-white">{tutor.name}</span>
                 </div>
               )}
@@ -317,7 +317,7 @@ export default async function StudentCoursePage({ params }: { params: { courseId
         {modules.length === 0 ? (
           <div className="card text-center py-10">
             <div className="text-4xl mb-3">📚</div>
-            <p className="text-slate-500">No modules in this course yet.</p>
+            <p className="text-slate-500">{t(lang, "noModulesYet")}</p>
           </div>
         ) : (
           <StudentCourseAccordion modules={moduleData} lang={lang} studentId={user.id} tutor={tutor} />

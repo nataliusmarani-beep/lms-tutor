@@ -19,6 +19,7 @@ interface SessionRow {
 interface CourseModule {
   id: string;
   title: string;
+  title_id?: string | null;
   icon: string;
   course_id: string;
 }
@@ -45,7 +46,7 @@ export default async function StudentSessionsPage() {
   const moduleIds = Array.from(new Set(sessionList.map((s) => s.course_module_id).filter((x): x is string => x !== null)));
   const { data: modules } = await supabase
     .from("course_modules")
-    .select("id, title, icon, course_id")
+    .select("id, title, title_id, icon, course_id")
     .in("id", moduleIds.length > 0 ? moduleIds : ["__none__"]);
   const moduleMap: Record<string, CourseModule> = {};
   for (const m of (modules ?? []) as CourseModule[]) moduleMap[m.id] = m;
@@ -86,7 +87,7 @@ export default async function StudentSessionsPage() {
         <div className="card text-center">
           <div className="text-2xl mb-1">📆</div>
           <div className="text-2xl font-bold text-teal-600">{Object.keys(grouped).length}</div>
-          <div className="text-sm text-slate-500">Months</div>
+          <div className="text-sm text-slate-500">{lang === "id" ? "Bulan" : "Months"}</div>
         </div>
       </div>
 
@@ -111,7 +112,9 @@ export default async function StudentSessionsPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-semibold text-slate-800">
-                          {mod ? mod.title : s.module_id ? `Module ${s.module_id}` : "Session"}
+                          {mod
+                            ? ((lang === "id" && mod.title_id) ? mod.title_id : mod.title)
+                            : s.module_id ? `${t(lang, "modules")} ${s.module_id}` : t(lang, "sessions")}
                         </div>
                         <div className="text-xs text-slate-400 mt-0.5">{s.duration_minutes} min · {format(new Date(s.date), "MMM d, yyyy")}</div>
                       </div>
