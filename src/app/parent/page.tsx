@@ -220,7 +220,7 @@ export default async function ParentDashboard() {
           {enrolledCourses.length === 0 ? (
             <div className="card text-center py-12">
               <div className="text-4xl mb-3">📚</div>
-              <p className="text-slate-500 text-sm">Not enrolled in any courses yet.</p>
+              <p className="text-slate-500 text-sm">{t(lang, "noCoursesYet")}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -255,7 +255,7 @@ export default async function ParentDashboard() {
                           </span>
                         </div>
                         <p className="text-xs text-slate-400 mt-1">
-                          {cp.completedModules} / {cp.totalModules} {t(lang, "modules").toLowerCase()} {t(lang, "modulesDone").toLowerCase()}
+                          {cp.completedModules} / {cp.totalModules} {t(lang, "modulesDone")}
                         </p>
                       </div>
                       <span className="text-slate-300 shrink-0 ml-1">›</span>
@@ -297,7 +297,7 @@ export default async function ParentDashboard() {
                       <div className="text-sm font-semibold text-slate-800 leading-tight">
                         {mod
                           ? ((lang === "id" && mod.title_id) ? mod.title_id : mod.title)
-                          : s.module_id ? `Module ${s.module_id}` : t(lang, "sessions")}
+                          : s.module_id ? `${t(lang, "modules")} ${s.module_id}` : t(lang, "sessions")}
                       </div>
                       {s.tutor_notes && (
                         <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{s.tutor_notes}</p>

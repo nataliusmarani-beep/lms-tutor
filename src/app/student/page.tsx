@@ -167,7 +167,7 @@ export default async function StudentDashboard() {
               {totalSessions} {t(lang, "sessions").toLowerCase()} · {totalHours}h {t(lang, "learningTime").toLowerCase()}
             </p>
           </div>
-          <ProgressRing percent={overallPct} size={60} strokeWidth={6} label="Overall" />
+          <ProgressRing percent={overallPct} size={60} strokeWidth={6} label={t(lang, "overall")} />
         </div>
 
         {/* My Courses */}
@@ -216,7 +216,7 @@ export default async function StudentDashboard() {
                           </span>
                         </div>
                         <p className="text-xs text-slate-400 mt-1">
-                          {cp.completedModules} / {cp.totalModules} {t(lang, "modules").toLowerCase()} {t(lang, "modulesDone").toLowerCase()}
+                          {cp.completedModules} / {cp.totalModules} {t(lang, "modulesDone")}
                         </p>
                       </div>
                       <span className="text-slate-300 shrink-0 ml-1">›</span>
@@ -258,7 +258,7 @@ export default async function StudentDashboard() {
                     {/* Details */}
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold text-slate-800 leading-tight">
-                        {mod ? mod.title : s.module_id ? `Module ${s.module_id}` : t(lang, "sessions")}
+                        {mod ? mod.title : s.module_id ? `${t(lang, "modules")} ${s.module_id}` : t(lang, "sessions")}
                       </div>
                       {s.tutor_notes && (
                         <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{s.tutor_notes}</p>
