@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 
 interface SidebarProps {
   name: string;
-  role: "tutor" | "student" | "parent";
+  role: "tutor" | "student" | "parent" | "guardian";
   avatarUrl?: string | null;
 }
 
@@ -30,11 +30,16 @@ const navByRole: Record<string, NavItem[]> = {
     { href: "/parent/courses",  icon: "📚", labelEn: "Courses",   labelId: "Kursus"                 },
     { href: "/parent/sessions", icon: "📋", labelEn: "Sessions",  labelId: "Sesi"                   },
   ],
+  guardian: [
+    { href: "/parent",          icon: "🏠", labelEn: "Dashboard", labelId: "Beranda",   exact: true },
+    { href: "/parent/courses",  icon: "📚", labelEn: "Courses",   labelId: "Kursus"                 },
+    { href: "/parent/sessions", icon: "📋", labelEn: "Sessions",  labelId: "Sesi"                   },
+  ],
 };
 
 const roleLabel: Record<string, Record<string, string>> = {
-  en: { tutor: "Tutor", student: "Student", parent: "Parent" },
-  id: { tutor: "Tutor", student: "Siswa",   parent: "Orang Tua" },
+  en: { tutor: "Tutor", student: "Student", parent: "Guardian", guardian: "Guardian" },
+  id: { tutor: "Tutor", student: "Siswa",   parent: "Wali",     guardian: "Wali" },
 };
 
 function getCookieLang(): "en" | "id" {

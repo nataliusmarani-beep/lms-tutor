@@ -46,7 +46,7 @@ export async function POST(req: Request) {
   // Send password reset email so the user can set their own password and is notified of their account
   await adminSupabase.auth.resetPasswordForEmail(email);
 
-  if (role === "parent" && parentEmail) {
+  if ((role === "guardian" || role === "parent") && parentEmail) {
     const { data: studentProfile } = await adminSupabase
       .from("profiles")
       .select("id")

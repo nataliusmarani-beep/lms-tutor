@@ -10,7 +10,7 @@ export default function NewStudentPage() {
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<{ name: string; role: string } | null>(null);
   const [form, setForm] = useState({
-    name: "", email: "", password: "", role: "student" as "student" | "parent",
+    name: "", email: "", password: "", role: "student" as "student" | "guardian",
     parentEmail: "",
   });
 
@@ -56,9 +56,9 @@ export default function NewStudentPage() {
             <div>
               <label className="label">Account Type</label>
               <select className="input" value={form.role}
-                onChange={(e) => setForm({ ...form, role: e.target.value as "student" | "parent" })}>
+                onChange={(e) => setForm({ ...form, role: e.target.value as "student" | "guardian" })}>
                 <option value="student">Student</option>
-                <option value="parent">Parent / Guardian</option>
+                <option value="guardian">Guardian</option>
               </select>
             </div>
             <div>
@@ -71,7 +71,7 @@ export default function NewStudentPage() {
               <label className="label">Email *</label>
               <input type="email" className="input" required value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder={form.role === "parent" ? "parent@email.com" : "student@email.com"} />
+                placeholder={form.role === "guardian" ? "guardian@email.com" : "student@email.com"} />
             </div>
             <div>
               <label className="label">Password *</label>
@@ -79,13 +79,13 @@ export default function NewStudentPage() {
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 placeholder="Min 6 characters" minLength={6} />
             </div>
-            {form.role === "parent" && (
+            {form.role === "guardian" && (
               <div>
                 <label className="label">Student Email to Link</label>
                 <input type="email" className="input" value={form.parentEmail}
                   onChange={(e) => setForm({ ...form, parentEmail: e.target.value })}
                   placeholder="student@email.com" />
-                <p className="text-xs text-slate-400 mt-1">Parent will be able to see this student's progress.</p>
+                <p className="text-xs text-slate-400 mt-1">Guardian will be able to see this student's progress.</p>
               </div>
             )}
             <button className="btn-primary w-full py-2.5" type="submit" disabled={loading}>

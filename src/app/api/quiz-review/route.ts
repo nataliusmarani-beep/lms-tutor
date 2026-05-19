@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  if (role === "parent") {
+  if (role === "parent" || role === "guardian") {
     const { data: link } = await supabase
       .from("parent_student")
       .select("student_id")

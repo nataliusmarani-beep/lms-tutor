@@ -31,7 +31,7 @@ export default async function ParentCoursesPage() {
   if (!user) redirect("/login");
 
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-  if (!profile || profile.role !== "parent") redirect("/login");
+  if (!profile || !["parent", "guardian"].includes(profile.role)) redirect("/login");
 
   const lang = getLang();
 

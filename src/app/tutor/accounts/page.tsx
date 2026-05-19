@@ -24,7 +24,7 @@ export default async function AccountsPage() {
 
   const [{ data: students }, { data: parents }, { data: links }] = await Promise.all([
     supabase.from("profiles").select("*").eq("role", "student").order("name"),
-    supabase.from("profiles").select("*").eq("role", "parent").order("name"),
+    supabase.from("profiles").select("*").in("role", ["parent", "guardian"]).order("name"),
     supabase.from("parent_student").select("*"),
   ]);
 
@@ -94,7 +94,7 @@ export default async function AccountsPage() {
                       <div className="text-xs text-slate-400 truncate">ID: {s.id}</div>
                       {theirParents.length > 0 && (
                         <div className="text-xs text-slate-500 mt-0.5">
-                          Parent: {theirParents.join(", ")}
+                          Guardian: {theirParents.join(", ")}
                         </div>
                       )}
                     </div>
@@ -114,16 +114,16 @@ export default async function AccountsPage() {
           )}
         </div>
 
-        {/* Parents */}
+        {/* Guardians */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <h2 className="text-lg font-semibold text-slate-700">Parents</h2>
+            <h2 className="text-lg font-semibold text-slate-700">Guardians</h2>
             <span className="badge-blue">{parentList.length}</span>
           </div>
           {parentList.length === 0 ? (
             <div className="card text-center py-10">
-              <p className="text-slate-400">No parent accounts yet.</p>
-              <Link href="/tutor/students/new" className="btn-primary mt-3 inline-block text-sm">Add Parent</Link>
+              <p className="text-slate-400">No guardian accounts yet.</p>
+              <Link href="/tutor/students/new" className="btn-primary mt-3 inline-block text-sm">Add Guardian</Link>
             </div>
           ) : (
             <div className="space-y-2">
@@ -146,7 +146,7 @@ export default async function AccountsPage() {
                       )}
                     </div>
                     <div className="shrink-0">
-                      <span className="badge-yellow">Parent</span>
+                      <span className="badge-yellow">Guardian</span>
                     </div>
                   </div>
                 );

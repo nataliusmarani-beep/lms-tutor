@@ -8,7 +8,7 @@ export const translations = {
     // Roles
     roletutor: "Tutor",
     rolestudent: "Student",
-    roleparent: "Parent",
+    roleparent: "Guardian",
     // Common stats
     sessions: "Sessions",
     totalTime: "Total time",
@@ -112,7 +112,7 @@ export const translations = {
     langToggle: "EN",
     roletutor: "Tutor",
     rolestudent: "Siswa",
-    roleparent: "Orang Tua",
+    roleparent: "Wali",
     sessions: "Sesi",
     totalTime: "Total waktu",
     learningTime: "Waktu belajar",

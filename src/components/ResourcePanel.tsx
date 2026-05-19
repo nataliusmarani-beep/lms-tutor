@@ -16,7 +16,7 @@ interface Resource {
 
 interface ResourcePanelProps {
   courseModuleId: string;
-  currentUserRole: "tutor" | "student" | "parent";
+  currentUserRole: "tutor" | "student" | "parent" | "guardian";
 }
 
 const typeIcon: Record<string, string> = {

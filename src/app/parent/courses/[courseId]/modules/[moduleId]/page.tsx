@@ -27,7 +27,7 @@ export default async function ParentModulePage({ params }: { params: PageParams 
   if (!user) redirect("/login");
 
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-  if (!profile || profile.role !== "parent") redirect("/login");
+  if (!profile || !["parent", "guardian"].includes(profile.role)) redirect("/login");
 
   // Get linked student
   const { data: links } = await supabase

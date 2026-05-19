@@ -16,7 +16,7 @@ export default async function RootPage() {
 
   if (profile.role === "tutor") redirect("/tutor");
   if (profile.role === "student") redirect("/student");
-  if (profile.role === "parent") redirect("/parent");
+  if (profile.role === "parent" || profile.role === "guardian") redirect("/parent");
 
   redirect("/login");
 }
