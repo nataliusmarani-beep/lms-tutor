@@ -57,7 +57,7 @@ interface QuizOption {
 
 interface QuizQuestion {
   id: string;
-  question_type: "single_choice" | "multiple_choice" | "fill_blank";
+  question_type: "single_choice" | "multiple_choice" | "fill_blank" | "homework_upload";
   question_text: string;
   question_text_id?: string | null;
   sort_order: number;
@@ -136,6 +136,36 @@ const TABS: { id: Tab; icon: string; labelEn: string; labelId: string }[] = [
   { id: "quizzes",   icon: "📝", labelEn: "Quizzes",   labelId: "Kuis" },
 ];
 
+async function compressImage(file: File, maxKB: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 800;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w >= h) { h = Math.round((h * MAX) / w); w = MAX; }
+        else        { w = Math.round((w * MAX) / h); h = MAX; }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      let quality = 0.85;
+      function attempt() {
+        canvas.toBlob((blob) => {
+          if (!blob) { reject(new Error("Compression failed")); return; }
+          if (blob.size <= maxKB * 1024 || quality <= 0.05) { resolve(blob); }
+          else { quality = Math.max(0.05, quality - 0.1); attempt(); }
+        }, "image/jpeg", quality);
+      }
+      attempt();
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Image load failed")); };
+    img.src = url;
+  });
+}
+
 function QuizPlayer({
   quiz, studentId, lang, onClose, onComplete,
 }: {
@@ -146,6 +176,8 @@ function QuizPlayer({
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [loading, setLoading]     = useState(true);
   const [answers, setAnswers]     = useState<Record<string, string>>({});
+  const [uploadPreviews, setUploadPreviews] = useState<Record<string, string>>({});
+  const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore]         = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -172,22 +204,64 @@ function QuizPlayer({
     })();
   }, [quiz.id]);
 
+  async function handleFileUpload(questionId: string, file: File) {
+    const isImage = file.type.startsWith("image/");
+    const isPdf   = file.type === "application/pdf";
+    if (!isImage && !isPdf) { alert("Only images or PDF files are allowed."); return; }
+    if (isPdf && file.size > 500 * 1024) { alert("PDF must be under 500 KB."); return; }
+
+    setUploading((p) => ({ ...p, [questionId]: true }));
+    const supabase = createClient();
+    try {
+      let uploadFile: File | Blob = file;
+      let ext = isPdf ? "pdf" : "jpg";
+      if (isImage) {
+        uploadFile = await compressImage(file, 200);
+        ext = "jpg";
+      }
+      const path = `${studentId}/${questionId}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("homework-submissions")
+        .upload(path, uploadFile, { upsert: true });
+      if (upErr) { alert("Upload failed: " + upErr.message); return; }
+      const { data } = supabase.storage.from("homework-submissions").getPublicUrl(path);
+      setAnswers((p) => ({ ...p, [questionId]: data.publicUrl }));
+      setUploadPreviews((p) => ({ ...p, [questionId]: isImage ? URL.createObjectURL(uploadFile as Blob) : "pdf" }));
+    } finally {
+      setUploading((p) => ({ ...p, [questionId]: false }));
+    }
+  }
+
   async function handleSubmit() {
     setSubmitting(true);
+    const supabase = createClient();
+    const scorableQuestions = questions.filter((q) => q.question_type !== "homework_upload");
     let s = 0;
-    for (const q of questions) {
+    for (const q of scorableQuestions) {
       const correct = q.options.find((o) => o.is_correct);
       if (correct && answers[q.id] === correct.id) s++;
     }
-    const supabase = createClient();
+    // Save homework submissions
+    const hwQuestions = questions.filter((q) => q.question_type === "homework_upload");
+    for (const q of hwQuestions) {
+      if (answers[q.id]) {
+        await supabase.from("homework_submissions").insert({
+          student_id: studentId,
+          question_id: q.id,
+          quiz_id: quiz.id,
+          file_url: answers[q.id],
+          file_type: answers[q.id].endsWith(".pdf") ? "pdf" : "image",
+        });
+      }
+    }
     await supabase.from("quiz_attempts").insert({
       quiz_id: quiz.id, student_id: studentId,
-      score: s, max_score: questions.length, answers,
+      score: s, max_score: scorableQuestions.length, answers,
     });
     setScore(s);
     setSubmitted(true);
     setSubmitting(false);
-    onComplete(s, questions.length);
+    onComplete(s, scorableQuestions.length);
   }
 
   if (loading) return <p className="text-sm text-slate-400 text-center py-6">Loading quiz…</p>;
@@ -247,25 +321,74 @@ function QuizPlayer({
         {questions.map((q, i) => (
           <div key={q.id} className="bg-slate-50 rounded-xl px-4 py-4 space-y-3">
             <p className="text-sm font-semibold text-slate-800">{i + 1}. {(lang === "id" && q.question_text_id) ? q.question_text_id : q.question_text}</p>
-            <div className="space-y-2">
-              {q.options.map((o) => (
-                <label key={o.id} className={`flex items-center gap-3 cursor-pointer rounded-lg px-3 py-2.5 border transition-colors ${
-                  answers[q.id] === o.id ? "bg-teal-50 border-teal-400" : "bg-white border-slate-200 hover:bg-slate-50"
-                }`}>
-                  <input
-                    type="radio" name={q.id} value={o.id}
-                    checked={answers[q.id] === o.id}
-                    onChange={() => setAnswers((prev) => ({ ...prev, [q.id]: o.id }))}
-                    className="accent-teal-600 shrink-0"
-                  />
-                  <span className="text-sm text-slate-700">{(lang === "id" && o.option_text_id) ? o.option_text_id : o.option_text}</span>
-                </label>
-              ))}
-            </div>
+
+            {q.question_type === "homework_upload" ? (
+              <div>
+                {answers[q.id] ? (
+                  <div className="space-y-2">
+                    {uploadPreviews[q.id] === "pdf" ? (
+                      <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2">
+                        <span className="text-xl">📄</span>
+                        <span className="text-sm text-slate-700 flex-1 truncate">PDF uploaded</span>
+                        <a href={answers[q.id]} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 shrink-0">View</a>
+                      </div>
+                    ) : (
+                      <img src={uploadPreviews[q.id]} alt="homework" className="w-full max-w-xs rounded-xl border border-slate-200 object-cover" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAnswers((p) => { const n = {...p}; delete n[q.id]; return n; });
+                        setUploadPreviews((p) => { const n = {...p}; delete n[q.id]; return n; });
+                      }}
+                      className="text-xs text-red-400 hover:text-red-600"
+                    >
+                      {lang === "id" ? "Ganti file" : "Change file"}
+                    </button>
+                  </div>
+                ) : (
+                  <label className={`flex flex-col items-center gap-2 border-2 border-dashed rounded-xl p-5 cursor-pointer transition-colors ${uploading[q.id] ? "border-slate-200 opacity-50" : "border-slate-200 hover:border-teal-400 hover:bg-teal-50"}`}>
+                    <span className="text-2xl">{uploading[q.id] ? "⏳" : "📎"}</span>
+                    <span className="text-sm font-medium text-slate-600">
+                      {uploading[q.id]
+                        ? (lang === "id" ? "Mengunggah…" : "Uploading…")
+                        : (lang === "id" ? "Klik untuk unggah PDF atau gambar" : "Click to upload PDF or image")}
+                    </span>
+                    <span className="text-xs text-slate-400">PDF ≤ 500 KB · Image auto-compressed to ≤ 200 KB</span>
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      className="hidden"
+                      disabled={uploading[q.id]}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleFileUpload(q.id, f);
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {q.options.map((o) => (
+                  <label key={o.id} className={`flex items-center gap-3 cursor-pointer rounded-lg px-3 py-2.5 border transition-colors ${
+                    answers[q.id] === o.id ? "bg-teal-50 border-teal-400" : "bg-white border-slate-200 hover:bg-slate-50"
+                  }`}>
+                    <input
+                      type="radio" name={q.id} value={o.id}
+                      checked={answers[q.id] === o.id}
+                      onChange={() => setAnswers((prev) => ({ ...prev, [q.id]: o.id }))}
+                      className="accent-teal-600 shrink-0"
+                    />
+                    <span className="text-sm text-slate-700">{(lang === "id" && o.option_text_id) ? o.option_text_id : o.option_text}</span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>
-      <button onClick={handleSubmit} disabled={!allAnswered || submitting} className="btn-primary w-full">
+      <button onClick={handleSubmit} disabled={!allAnswered || submitting || Object.values(uploading).some(Boolean)} className="btn-primary w-full">
         {submitting ? (lang === "id" ? "Mengirim…" : "Submitting…") : (lang === "id" ? "Kirim Jawaban" : "Submit Quiz")}
       </button>
       {!allAnswered && (

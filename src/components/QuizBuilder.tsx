@@ -22,7 +22,7 @@ interface QuizOption {
 interface QuizQuestion {
   id: string;
   quiz_id: string;
-  question_type: "single_choice" | "multiple_choice" | "fill_blank";
+  question_type: "single_choice" | "multiple_choice" | "fill_blank" | "homework_upload";
   question_text: string;
   sort_order: number;
   options: QuizOption[];
@@ -36,12 +36,14 @@ const questionTypeLabel: Record<string, string> = {
   single_choice: "Single",
   multiple_choice: "Multiple",
   fill_blank: "Fill in",
+  homework_upload: "Homework Upload",
 };
 
 const questionTypeBadge: Record<string, string> = {
   single_choice: "badge-blue",
   multiple_choice: "badge-yellow",
   fill_blank: "badge-green",
+  homework_upload: "badge-purple",
 };
 
 export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
@@ -158,7 +160,9 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
       toast.error("Question text is required");
       return;
     }
-    if (newQType !== "fill_blank") {
+    if (newQType === "homework_upload") {
+      // no options needed — instruction text is sufficient
+    } else if (newQType !== "fill_blank") {
       const validOptions = newOptions.filter((o) => o.text.trim());
       if (validOptions.length < 2) {
         toast.error("Add at least 2 options");
@@ -192,7 +196,9 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
     if (qError) { toast.error(qError.message); setSavingQ(false); return; }
 
     let opts: QuizOption[] = [];
-    if (newQType !== "fill_blank") {
+    if (newQType === "homework_upload") {
+      // no options for homework upload
+    } else if (newQType !== "fill_blank") {
       const validOptions = newOptions.filter((o) => o.text.trim());
       const optInserts = validOptions.map((o, i) => ({
         question_id: qData.id,
@@ -393,6 +399,7 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
                     <option value="single_choice">Single Choice (one correct)</option>
                     <option value="multiple_choice">Multiple Choice (many correct)</option>
                     <option value="fill_blank">Fill in the Blank</option>
+                    <option value="homework_upload">Homework Upload (PDF / Image)</option>
                   </select>
                 </div>
 
@@ -407,7 +414,11 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
                   />
                 </div>
 
-                {newQType !== "fill_blank" ? (
+                {newQType === "homework_upload" ? (
+                  <p className="text-xs text-slate-400 bg-purple-50 border border-purple-100 rounded-lg px-3 py-2">
+                    📎 Students will upload a PDF (≤500 KB) or image (auto-compressed to ≤200 KB) as their answer.
+                  </p>
+                ) : newQType !== "fill_blank" ? (
                   <div className="space-y-2">
                     <label className="label">Answer Options</label>
                     {newOptions.map((opt, i) => (
