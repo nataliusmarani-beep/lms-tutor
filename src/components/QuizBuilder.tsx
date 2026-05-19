@@ -60,6 +60,7 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
   const [editingTitle, setEditingTitle] = useState<Record<string, boolean>>({});
   const [titleDraft, setTitleDraft] = useState<Record<string, string>>({});
   const [showAddQuestion, setShowAddQuestion] = useState<Record<string, boolean>>({});
+  const [movingQuestion, setMovingQuestion] = useState<string | null>(null); // question id
 
   // Add-question form state (one open at a time, keyed by quizId)
   const [activeQuizId, setActiveQuizId] = useState<string | null>(null);
@@ -231,6 +232,41 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
       [quizId]: (prev[quizId] ?? []).filter((q) => q.id !== qId),
     }));
     toast.success("Question removed");
+  }
+
+  async function handleMoveQuestion(fromQuizId: string, qId: string, toQuizId: string) {
+    const targetQuiz = quizzes.find((q) => q.id === toQuizId);
+    if (!targetQuiz) return;
+    const targetQuestions = questionsMap[toQuizId] ?? [];
+    const newOrder = targetQuestions.reduce((m, q) => Math.max(m, q.sort_order), 0) + 1;
+    const { error } = await supabase
+      .from("quiz_questions")
+      .update({ quiz_id: toQuizId, sort_order: newOrder })
+      .eq("id", qId);
+    if (error) { toast.error(error.message); return; }
+    const question = (questionsMap[fromQuizId] ?? []).find((q) => q.id === qId);
+    if (!question) return;
+    const moved = { ...question, quiz_id: toQuizId, sort_order: newOrder };
+    setQuestionsMap((prev) => ({
+      ...prev,
+      [fromQuizId]: (prev[fromQuizId] ?? []).filter((q) => q.id !== qId),
+      [toQuizId]: [...(prev[toQuizId] ?? []), moved],
+    }));
+    toast.success(`Moved to "${targetQuiz.title}"`);
+  }
+
+  async function handleMoveToNewQuiz(fromQuizId: string, qId: string) {
+    const maxOrder = quizzes.reduce((m, q) => Math.max(m, q.sort_order ?? 0), 0);
+    const { data: newQuiz, error } = await supabase
+      .from("module_quizzes")
+      .insert({ course_module_id: courseModuleId, title: `Quiz ${quizzes.length + 1}`, sort_order: maxOrder + 1 })
+      .select()
+      .single();
+    if (error) { toast.error(error.message); return; }
+    const quiz = newQuiz as Quiz;
+    setQuizzes((prev) => [...prev, quiz]);
+    setQuestionsMap((prev) => ({ ...prev, [quiz.id]: [] }));
+    await handleMoveQuestion(fromQuizId, qId, quiz.id);
   }
 
   function openAddQuestion(quizId: string) {
@@ -472,12 +508,45 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
                               )}
                             </div>
                           </div>
-                          <button
-                            onClick={() => handleDeleteQuestion(quiz.id, q.id)}
-                            className="text-xs text-red-400 hover:text-red-600 transition-colors shrink-0"
-                          >
-                            Delete
-                          </button>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            {/* Move dropdown */}
+                            {quizzes.length > 1 && (
+                              <div className="relative">
+                                <button
+                                  onClick={() => setMovingQuestion(movingQuestion === q.id ? null : q.id)}
+                                  className="text-xs text-indigo-400 hover:text-indigo-600 transition-colors"
+                                >
+                                  Move ↗
+                                </button>
+                                {movingQuestion === q.id && (
+                                  <div className="absolute right-0 top-5 z-20 bg-white border border-slate-200 rounded-xl shadow-lg py-1 min-w-[140px]">
+                                    <p className="text-xs text-slate-400 px-3 py-1 border-b border-slate-100">Move to…</p>
+                                    {quizzes.filter((tq) => tq.id !== quiz.id).map((tq) => (
+                                      <button
+                                        key={tq.id}
+                                        onClick={() => { handleMoveQuestion(quiz.id, q.id, tq.id); setMovingQuestion(null); }}
+                                        className="w-full text-left text-xs text-slate-700 hover:bg-indigo-50 px-3 py-1.5 truncate"
+                                      >
+                                        {tq.title}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            <button
+                              onClick={() => { handleMoveToNewQuiz(quiz.id, q.id); setMovingQuestion(null); }}
+                              className="text-xs text-teal-400 hover:text-teal-600 transition-colors"
+                            >
+                              → New Quiz
+                            </button>
+                            <button
+                              onClick={() => handleDeleteQuestion(quiz.id, q.id)}
+                              className="text-xs text-red-400 hover:text-red-600 transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
