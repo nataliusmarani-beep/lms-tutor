@@ -30,8 +30,17 @@ export async function POST(req: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
+    // Fetch all quizzes for this module, then all their questions
+    const { data: quizzes } = await supabase
+      .from("module_quizzes")
+      .select("id")
+      .eq("course_module_id", moduleId);
+
+    const quizIds = (quizzes ?? []).map((q: { id: string }) => q.id);
+    if (quizIds.length === 0) return NextResponse.json({ ok: true, translated: 0 });
+
     const [{ data: questions }, { data: options }] = await Promise.all([
-      supabase.from("quiz_questions").select("id, question_text, question_text_id").eq("course_module_id", moduleId),
+      supabase.from("quiz_questions").select("id, question_text, question_text_id").in("quiz_id", quizIds),
       supabase.from("quiz_options").select("id, option_text, option_text_id, question_id"),
     ]);
 
