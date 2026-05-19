@@ -6,6 +6,7 @@ import SessionActions from "@/components/SessionActions";
 import QuizReview from "@/components/QuizReview";
 import { format } from "date-fns";
 import { getLang } from "@/lib/getLang";
+import { t } from "@/lib/i18n";
 
 interface PageParams {
   id: string;        // student id
