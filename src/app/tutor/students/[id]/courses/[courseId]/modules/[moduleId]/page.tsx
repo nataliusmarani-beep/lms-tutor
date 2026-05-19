@@ -136,6 +136,7 @@ export default async function TutorCourseModuleDetailPage({
                 date: string;
                 duration_minutes: number;
                 tutor_notes: string | null;
+                tutor_notes_id: string | null;
                 student_notes: string | null;
               }) => (
                 <div key={s.id} className="card py-3">
@@ -148,9 +149,10 @@ export default async function TutorCourseModuleDetailPage({
                     </div>
                     <SessionActions sessionId={s.id} lang={lang} />
                   </div>
-                  {s.tutor_notes && (
+                  {(s.tutor_notes || s.tutor_notes_id) && (
                     <p className="text-sm text-slate-600 mt-1">
-                      <span className="text-slate-400 text-xs">{t(lang, "tutorLabel")}: </span>{s.tutor_notes}
+                      <span className="text-slate-400 text-xs">{t(lang, "tutorLabel")}: </span>
+                      {(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
                     </p>
                   )}
                   {s.student_notes && (

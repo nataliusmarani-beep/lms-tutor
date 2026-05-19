@@ -140,7 +140,7 @@ export default async function TutorDashboard() {
   const { data: recentSessionsRaw } = studentIds.length > 0
     ? await supabase
         .from("learning_sessions")
-        .select("id, date, duration_minutes, tutor_notes, student_id, course_module_id, photo_url")
+        .select("id, date, duration_minutes, tutor_notes, tutor_notes_id, student_id, course_module_id, photo_url")
         .in("student_id", studentIds)
         .order("date", { ascending: false })
         .limit(8)
@@ -148,7 +148,7 @@ export default async function TutorDashboard() {
 
   const recentSessions = (recentSessionsRaw ?? []) as {
     id: string; date: string; duration_minutes: number;
-    tutor_notes: string | null; student_id: string;
+    tutor_notes: string | null; tutor_notes_id: string | null; student_id: string;
     course_module_id: string | null; photo_url: string | null;
   }[];
 
@@ -399,8 +399,10 @@ export default async function TutorDashboard() {
                           </span>
                         )}
                       </div>
-                      {s.tutor_notes && (
-                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{s.tutor_notes}</p>
+                      {(s.tutor_notes || s.tutor_notes_id) && (
+                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                          {(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
+                        </p>
                       )}
                       <p className="text-xs text-slate-400 mt-0.5">
                         {s.duration_minutes} {lang === "id" ? "mnt" : "min"} · {new Date(s.date).toLocaleDateString(lang === "id" ? "id-ID" : "en-GB", { day: "numeric", month: "short", year: "numeric" })}
