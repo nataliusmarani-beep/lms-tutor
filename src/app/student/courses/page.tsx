@@ -36,12 +36,12 @@ export default async function StudentCoursesPage() {
 
   const { data: enrollments } = await supabase
     .from("course_enrollments")
-    .select("course_id, courses(id, title, icon, icon_url, description, created_by)")
+    .select("course_id, courses(id, title, title_id, icon, icon_url, description, description_id, created_by)")
     .eq("student_id", user.id);
 
   const rawCourses = (enrollments ?? []).map(
     (e: { course_id: string; courses: unknown }) => e.courses
-  ) as Array<{ id: string; title: string; icon: string; icon_url?: string | null; description: string | null; created_by?: string | null }>;
+  ) as Array<{ id: string; title: string; title_id?: string | null; icon: string; icon_url?: string | null; description: string | null; description_id?: string | null; created_by?: string | null }>;
 
   // Fetch module ids per course
   const courseWithModules = await Promise.all(
@@ -94,10 +94,9 @@ export default async function StudentCoursesPage() {
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
 
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">My Courses</h1>
+        <h1 className="text-2xl font-bold text-slate-800">{t(lang, "courses")}</h1>
         <p className="text-slate-500 text-sm mt-1">
           {courseWithModules.length} {t(lang, "coursesEnrolled")}
-          {courseWithModules.length > 0 && " · Keep it up!"}
         </p>
       </div>
 
@@ -132,9 +131,13 @@ export default async function StudentCoursesPage() {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <h2 className="text-lg font-bold text-white truncate">{course.title}</h2>
-                    {course.description && (
-                      <p className="text-white/70 text-sm mt-0.5 line-clamp-1">{course.description}</p>
+                    <h2 className="text-lg font-bold text-white truncate">
+                      {(lang === "id" && course.title_id) ? course.title_id : course.title}
+                    </h2>
+                    {(course.description || course.description_id) && (
+                      <p className="text-white/70 text-sm mt-0.5 line-clamp-1">
+                        {(lang === "id" && course.description_id) ? course.description_id : course.description}
+                      </p>
                     )}
                     <div className="mt-2 flex items-center gap-2 flex-wrap">
                       <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">
