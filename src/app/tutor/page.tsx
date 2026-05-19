@@ -10,7 +10,9 @@ import { getLang } from "@/lib/getLang";
 interface CourseRow {
   id: string;
   title: string;
+  title_id?: string | null;
   description: string | null;
+  description_id?: string | null;
   icon: string;
   icon_url?: string | null;
 }
@@ -248,8 +250,10 @@ export default async function TutorDashboard() {
                       : <span className="text-3xl shrink-0">{course.icon}</span>}
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-slate-800 truncate">{course.title}</div>
-                      {course.description && (
-                        <p className="text-xs text-slate-500 mt-0.5 truncate">{course.description}</p>
+                      {(course.description || course.description_id) && (
+                        <p className="text-xs text-slate-500 mt-0.5 truncate">
+                          {(lang === "id" && course.description_id) ? course.description_id : course.description}
+                        </p>
                       )}
                       <div className="flex gap-2 mt-1">
                         <span className="badge-blue text-xs">{course.moduleCount} {t(lang, "modules").toLowerCase()}</span>

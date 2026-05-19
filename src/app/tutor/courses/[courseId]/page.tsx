@@ -34,6 +34,7 @@ interface Course {
   id: string;
   title: string;
   description: string | null;
+  description_id?: string | null;
   icon: string;
   icon_url?: string | null;
 }
@@ -53,6 +54,7 @@ export default function CourseDetailPage() {
   // Course edit state
   const [courseTitle,    setCourseTitle]    = useState("");
   const [courseDesc,     setCourseDesc]     = useState("");
+  const [courseDescId,   setCourseDescId]   = useState("");
   const [courseIcon,     setCourseIcon]     = useState("");
   const [courseIconUrl,  setCourseIconUrl]  = useState<string | null>(null);
   const [iconFile,       setIconFile]       = useState<File | null>(null);
@@ -92,6 +94,7 @@ export default function CourseDetailPage() {
       setCourse(courseData);
       setCourseTitle(courseData.title);
       setCourseDesc(courseData.description ?? "");
+      setCourseDescId(courseData.description_id ?? "");
       setCourseIcon(courseData.icon);
       setCourseIconUrl(courseData.icon_url ?? null);
     }
@@ -151,8 +154,19 @@ export default function CourseDetailPage() {
     const { error } = await supabase.from("courses").update(updatePayload).eq("id", courseId);
     setSavingCourse(false);
     if (error) { toast.error(error.message); return; }
-    toast.success("Course saved!");
+    toast.success(lang === "id" ? "Kursus disimpan!" : "Course saved!");
     setCourse((prev) => prev ? { ...prev, title: courseTitle, description: courseDesc || null, icon: courseIcon, icon_url: newIconUrl ?? prev.icon_url } : prev);
+
+    // Auto-translate description to Indonesian in the background
+    if (courseDesc.trim()) {
+      fetch("/api/translate-courses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ courseId, description: courseDesc.trim() }),
+      }).then((r) => r.json()).then((data) => {
+        if (data.translated) setCourseDescId(data.translated);
+      }).catch(() => {});
+    }
   }
 
   async function handleAddModule(e: React.FormEvent) {
@@ -299,15 +313,27 @@ export default function CourseDetailPage() {
             <input className="input" value={courseTitle} onChange={(e) => setCourseTitle(e.target.value)} required />
           </div>
           <div>
-            <label className="label">{lang === "id" ? "Deskripsi" : "Description"}</label>
+            <label className="label">{lang === "id" ? "Deskripsi (EN)" : "Description (EN)"}</label>
             <textarea
               className="input resize-none"
               rows={2}
               value={courseDesc}
               onChange={(e) => setCourseDesc(e.target.value)}
-              placeholder={lang === "id" ? "Deskripsi kursus..." : "Course description..."}
+              placeholder="Course description..."
             />
           </div>
+          {lang === "id" && (
+            <div>
+              <label className="label">Deskripsi (ID) — terjemahan otomatis</label>
+              <textarea
+                className="input resize-none bg-slate-50"
+                rows={2}
+                value={courseDescId}
+                onChange={(e) => setCourseDescId(e.target.value)}
+                placeholder="Akan diterjemahkan otomatis saat menyimpan..."
+              />
+            </div>
+          )}
           <button type="submit" className="btn-primary" disabled={savingCourse}>
             {savingCourse ? t(lang, "saving") : t(lang, "saveChanges")}
           </button>
