@@ -64,14 +64,14 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: false }),
   ]);
 
-  const questionList = qs ?? [];
-  let questions = questionList;
+  const questionList = (qs ?? []) as Array<Record<string, unknown>>;
+  let questions: Array<Record<string, unknown>> = questionList;
 
   if (questionList.length > 0) {
     const { data: opts } = await admin
       .from("quiz_options")
       .select("id, question_id, option_text, option_text_id, is_correct, sort_order")
-      .in("question_id", questionList.map((q: { id: string }) => q.id))
+      .in("question_id", questionList.map((q) => q.id as string))
       .order("sort_order");
 
     const optsByQ: Record<string, unknown[]> = {};
@@ -79,9 +79,9 @@ export async function GET(req: NextRequest) {
       if (!optsByQ[o.question_id]) optsByQ[o.question_id] = [];
       optsByQ[o.question_id].push(o);
     }
-    questions = questionList.map((q: { id: string }) => ({
+    questions = questionList.map((q) => ({
       ...q,
-      options: optsByQ[q.id] ?? [],
+      options: optsByQ[q.id as string] ?? [],
     }));
   }
 
