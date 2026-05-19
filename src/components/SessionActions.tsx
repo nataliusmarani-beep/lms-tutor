@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -12,9 +12,15 @@ interface Props {
 export default function SessionActions({ sessionId }: Props) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
+  const [lang, setLang] = useState<"en" | "id">("en");
+
+  useEffect(() => {
+    const m = document.cookie.match(/(?:^|;\s*)lang=([^;]*)/);
+    setLang(m?.[1] === "id" ? "id" : "en");
+  }, []);
 
   async function handleDelete() {
-    if (!confirm("Delete this session? This cannot be undone.")) return;
+    if (!confirm(lang === "id" ? "Hapus sesi ini? Tidak dapat dibatalkan." : "Delete this session? This cannot be undone.")) return;
     setDeleting(true);
     const supabase = createClient();
     const { error } = await supabase.from("learning_sessions").delete().eq("id", sessionId);
@@ -23,7 +29,7 @@ export default function SessionActions({ sessionId }: Props) {
       setDeleting(false);
       return;
     }
-    toast.success("Session deleted");
+    toast.success(lang === "id" ? "Sesi dihapus" : "Session deleted");
     router.refresh();
   }
 
@@ -33,14 +39,14 @@ export default function SessionActions({ sessionId }: Props) {
         href={`/tutor/sessions/${sessionId}/edit`}
         className="text-sm text-blue-500 hover:text-blue-700 font-medium"
       >
-        Edit
+        {lang === "id" ? "Edit" : "Edit"}
       </Link>
       <button
         onClick={handleDelete}
         disabled={deleting}
         className="text-sm text-red-400 hover:text-red-600 font-medium disabled:opacity-50"
       >
-        {deleting ? "..." : "Delete"}
+        {deleting ? "..." : (lang === "id" ? "Hapus" : "Delete")}
       </button>
     </div>
   );

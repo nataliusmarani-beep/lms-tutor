@@ -10,14 +10,15 @@ interface NavbarProps {
 }
 
 const roleLabel: Record<string, Record<string, string>> = {
-  en: { tutor: "Tutor", student: "Student", parent: "Parent" },
-  id: { tutor: "Tutor", student: "Siswa", parent: "Orang Tua" },
+  en: { tutor: "Tutor", student: "Student", parent: "Guardian", guardian: "Guardian" },
+  id: { tutor: "Tutor", student: "Siswa", parent: "Wali", guardian: "Wali" },
 };
 
 const roleBadgeClass: Record<string, string> = {
   tutor: "badge-blue",
   student: "badge-green",
   parent: "badge-yellow",
+  guardian: "badge-yellow",
 };
 
 function getCookieLang(): "en" | "id" {
