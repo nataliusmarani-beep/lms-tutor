@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
 import type { Lang } from "@/lib/i18n";
 
 interface QuizOption {
@@ -56,54 +55,14 @@ export default function QuizReview({ quizId, studentId, lang, accentColor = "blu
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const supabase = createClient();
-      const [{ data: qs }, { data: att }, { data: hw }] = await Promise.all([
-        supabase
-          .from("quiz_questions")
-          .select("id, question_type, question_text, question_text_id, attachment_url, attachment_type, sort_order")
-          .eq("quiz_id", quizId)
-          .order("sort_order"),
-        supabase
-          .from("quiz_attempts")
-          .select("score, max_score, completed_at, answers")
-          .eq("quiz_id", quizId)
-          .eq("student_id", studentId)
-          .order("completed_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from("homework_submissions")
-          .select("question_id, file_url, file_type")
-          .eq("quiz_id", quizId)
-          .eq("student_id", studentId)
-          .order("created_at", { ascending: false }),
-      ]);
-
+      const res = await fetch(`/api/quiz-review?quizId=${encodeURIComponent(quizId)}&studentId=${encodeURIComponent(studentId)}`);
       if (cancelled) return;
-
-      const questionList = (qs ?? []) as Omit<QuizQuestion, "options">[];
-      if (questionList.length > 0) {
-        const { data: opts } = await supabase
-          .from("quiz_options")
-          .select("id, question_id, option_text, option_text_id, is_correct, sort_order")
-          .in("question_id", questionList.map((q) => q.id))
-          .order("sort_order");
-
-        const optsByQ: Record<string, QuizOption[]> = {};
-        for (const o of (opts ?? []) as QuizOption[]) {
-          if (!optsByQ[o.question_id]) optsByQ[o.question_id] = [];
-          optsByQ[o.question_id].push(o);
-        }
-        setQuestions(questionList.map((q) => ({ ...q, options: optsByQ[q.id] ?? [] })));
-      }
-
-      // Deduplicate homework: keep latest per question
-      const hwMap: Record<string, HomeworkSubmission> = {};
-      for (const h of (hw ?? []) as HomeworkSubmission[]) {
-        if (!hwMap[h.question_id]) hwMap[h.question_id] = h;
-      }
-      setHomework(Object.values(hwMap));
-      setAttempt(att ? (att as Attempt) : null);
+      if (!res.ok) { setLoading(false); return; }
+      const data = await res.json();
+      if (cancelled) return;
+      setQuestions((data.questions ?? []) as QuizQuestion[]);
+      setAttempt(data.attempt ?? null);
+      setHomework((data.homework ?? []) as HomeworkSubmission[]);
       setLoading(false);
     })();
     return () => { cancelled = true; };

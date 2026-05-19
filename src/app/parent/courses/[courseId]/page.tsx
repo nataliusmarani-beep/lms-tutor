@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import ParentCourseAccordion from "@/components/ParentCourseAccordion";
 import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/getLang";
@@ -75,10 +76,14 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
         .order("sort_order")
     : { data: [] };
 
-  // All quiz attempts for student
+  // All quiz attempts for student — use admin client to bypass RLS
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
   const quizIds = (allQuizzes ?? []).map((q: { id: string }) => q.id);
   const { data: allAttempts } = quizIds.length > 0
-    ? await supabase
+    ? await supabaseAdmin
         .from("quiz_attempts")
         .select("quiz_id, score, max_score, completed_at")
         .eq("student_id", studentId)
