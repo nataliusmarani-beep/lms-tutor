@@ -408,7 +408,7 @@ export default async function TutorDashboard() {
                       </a>
                     )}
                     <div className="flex items-center gap-3 shrink-0">
-                      <SessionActions sessionId={s.id} />
+                      <SessionActions sessionId={s.id} lang={lang} />
                       <Link href={`/tutor/students/${s.student_id}`} className="text-sm text-slate-400 hover:text-slate-600 font-medium">
                         {lang === "id" ? "Detail" : "View"}
                       </Link>

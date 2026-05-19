@@ -146,7 +146,7 @@ export default async function TutorCourseModuleDetailPage({
                       </span>
                       <span className="badge-blue shrink-0">{s.duration_minutes} {t(lang, "min")}</span>
                     </div>
-                    <SessionActions sessionId={s.id} />
+                    <SessionActions sessionId={s.id} lang={lang} />
                   </div>
                   {s.tutor_notes && (
                     <p className="text-sm text-slate-600 mt-1">

@@ -314,7 +314,7 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
                         <img src={s.photo_url} alt="doc" className="w-14 h-10 object-cover rounded-lg border border-slate-200 hover:opacity-80 transition-opacity" />
                       </a>
                     )}
-                    <SessionActions sessionId={s.id} />
+                    <SessionActions sessionId={s.id} lang={lang} />
                   </div>
                 );
               })}

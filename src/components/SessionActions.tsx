@@ -1,23 +1,19 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
+import type { Lang } from "@/lib/i18n";
 
 interface Props {
   sessionId: string;
+  lang: Lang;
 }
 
-export default function SessionActions({ sessionId }: Props) {
+export default function SessionActions({ sessionId, lang }: Props) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
-  const [lang, setLang] = useState<"en" | "id">("en");
-
-  useEffect(() => {
-    const m = document.cookie.match(/(?:^|;\s*)lang=([^;]*)/);
-    setLang(m?.[1] === "id" ? "id" : "en");
-  }, []);
 
   async function handleDelete() {
     if (!confirm(lang === "id" ? "Hapus sesi ini? Tidak dapat dibatalkan." : "Delete this session? This cannot be undone.")) return;
