@@ -87,7 +87,7 @@ export default async function ParentSessionsPage() {
         <div className="card text-center">
           <div className="text-2xl mb-1">📆</div>
           <div className="text-2xl font-bold text-teal-600">{Object.keys(grouped).length}</div>
-          <div className="text-sm text-slate-500">Months</div>
+          <div className="text-sm text-slate-500">{lang === "id" ? "Bulan" : "Months"}</div>
         </div>
       </div>
 
@@ -105,7 +105,7 @@ export default async function ParentSessionsPage() {
                 const mod = s.course_module_id ? moduleMap[s.course_module_id] : null;
                 const title = mod
                   ? ((lang === "id" && mod.title_id) ? mod.title_id : mod.title)
-                  : s.module_id ? `Module ${s.module_id}` : "Session";
+                  : s.module_id ? `${t(lang, "modules")} ${s.module_id}` : t(lang, "sessions");
                 return (
                   <div key={s.id} className="card py-3 space-y-2">
                     {/* Top row: icon + title + duration/date */}

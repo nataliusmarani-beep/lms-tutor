@@ -16,6 +16,7 @@ interface ChecklistItem {
   id: string;
   item_key: string;
   label: string;
+  label_id?: string | null;
   item_type: string;
   sort_order: number;
 }
@@ -38,7 +39,7 @@ export default async function ParentModulePage({ params }: { params: PageParams 
 
   const { data: course } = await supabase
     .from("courses")
-    .select("id, title, icon")
+    .select("id, title, title_id, icon")
     .eq("id", params.courseId)
     .single();
   if (!course) notFound();
@@ -87,7 +88,7 @@ export default async function ParentModulePage({ params }: { params: PageParams 
   const [{ data: sessions }, { data: checks }, { data: checklistItems }, { data: quizzes }] = await Promise.all([
     supabase
       .from("learning_sessions")
-      .select("id, date, duration_minutes, tutor_notes, student_notes")
+      .select("id, date, duration_minutes, tutor_notes, tutor_notes_id, student_notes, student_notes_id")
       .eq("student_id", studentId)
       .or(sessionFilter)
       .order("date", { ascending: false }),
@@ -141,9 +142,9 @@ export default async function ParentModulePage({ params }: { params: PageParams 
         <div className="flex items-center gap-2 text-sm text-slate-400 flex-wrap">
           <Link href="/parent" className="hover:text-slate-600">{t(lang, "dashboard").replace("← ", "")}</Link>
           <span>›</span>
-          <span className="text-slate-500">{course.icon} {course.title}</span>
+          <span className="text-slate-500">{course.icon} {(lang === "id" && (course as {title_id?: string|null}).title_id) ? (course as {title_id: string}).title_id : course.title}</span>
           <span>›</span>
-          <span className="text-slate-600">{mod.title}</span>
+          <span className="text-slate-600">{(lang === "id" && mod.title_id) ? mod.title_id : mod.title}</span>
         </div>
 
         {/* Module Header */}
@@ -155,8 +156,14 @@ export default async function ParentModulePage({ params }: { params: PageParams 
                 {mod.week_number && <span className="badge-blue">{t(lang, "week")} {mod.week_number}</span>}
                 <span className="badge-gray">{course.icon} {course.title}</span>
               </div>
-              <h1 className="text-xl font-bold text-slate-800">{mod.title}</h1>
-              {mod.focus && <p className="text-slate-500 text-sm mt-1">{mod.focus}</p>}
+              <h1 className="text-xl font-bold text-slate-800">
+                {(lang === "id" && mod.title_id) ? mod.title_id : mod.title}
+              </h1>
+              {(mod.focus || mod.focus_id) && (
+                <p className="text-slate-500 text-sm mt-1">
+                  {(lang === "id" && mod.focus_id) ? mod.focus_id : mod.focus}
+                </p>
+              )}
             </div>
             <div className="text-right shrink-0">
               <div className={`text-2xl font-bold ${pct >= 100 ? "text-green-600" : "text-blue-600"}`}>{pct}%</div>
@@ -228,7 +235,7 @@ export default async function ParentModulePage({ params }: { params: PageParams 
             <p className="text-sm text-slate-400 italic">{t(lang, "noSessionsModule")}</p>
           ) : (
             <div className="space-y-2">
-              {sessions.map((s: { id: string; date: string; duration_minutes: number; tutor_notes: string | null; student_notes?: string | null }) => (
+              {sessions.map((s: { id: string; date: string; duration_minutes: number; tutor_notes: string | null; tutor_notes_id?: string | null; student_notes?: string | null; student_notes_id?: string | null }) => (
                 <div key={s.id} className="card py-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-slate-700">
@@ -236,14 +243,16 @@ export default async function ParentModulePage({ params }: { params: PageParams 
                     </span>
                     <span className="badge-blue">{s.duration_minutes} {t(lang, "min")}</span>
                   </div>
-                  {s.tutor_notes && (
+                  {(s.tutor_notes || s.tutor_notes_id) && (
                     <p className="text-xs text-slate-600 mt-1">
-                      <span className="text-slate-400">{lang === "id" ? "Catatan tutor: " : "Tutor notes: "}</span>{s.tutor_notes}
+                      <span className="text-slate-400">{t(lang, "tutorNotes")} </span>
+                      {(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
                     </p>
                   )}
-                  {s.student_notes && (
+                  {(s.student_notes || s.student_notes_id) && (
                     <p className="text-xs text-slate-600 mt-0.5">
-                      <span className="text-slate-400">{lang === "id" ? "Catatan siswa: " : "Student notes: "}</span>{s.student_notes}
+                      <span className="text-slate-400">{t(lang, "studentNotes")} </span>
+                      {(lang === "id" && s.student_notes_id) ? s.student_notes_id : s.student_notes}
                     </p>
                   )}
                 </div>
@@ -271,14 +280,14 @@ export default async function ParentModulePage({ params }: { params: PageParams 
                           {completed && <span className="text-white text-xs">✓</span>}
                         </div>
                         <span className={`text-sm ${completed ? "text-slate-700 line-through" : "text-slate-600"}`}>
-                          {item.label}
+                          {(lang === "id" && item.label_id) ? item.label_id : item.label}
                         </span>
                       </div>
                     );
                   })}
                 </div>
                 <div className="mt-3 text-xs text-slate-400">
-                  {studentItems.filter((i) => allChecks.some((c: { item_key: string }) => c.item_key === i.item_key)).length}/{studentItems.length} completed
+                  {studentItems.filter((i) => allChecks.some((c: { item_key: string }) => c.item_key === i.item_key)).length}/{studentItems.length} {t(lang, "completed")}
                 </div>
               </div>
             )}
@@ -298,14 +307,14 @@ export default async function ParentModulePage({ params }: { params: PageParams 
                           {completed && <span className="text-white text-xs">✓</span>}
                         </div>
                         <span className={`text-sm ${completed ? "text-slate-700 line-through" : "text-slate-600"}`}>
-                          {item.label}
+                          {(lang === "id" && item.label_id) ? item.label_id : item.label}
                         </span>
                       </div>
                     );
                   })}
                 </div>
                 <div className="mt-3 text-xs text-slate-400">
-                  {teacherItems.filter((i) => allChecks.some((c: { item_key: string }) => c.item_key === i.item_key)).length}/{teacherItems.length} completed
+                  {teacherItems.filter((i) => allChecks.some((c: { item_key: string }) => c.item_key === i.item_key)).length}/{teacherItems.length} {t(lang, "completed")}
                 </div>
               </div>
             )}

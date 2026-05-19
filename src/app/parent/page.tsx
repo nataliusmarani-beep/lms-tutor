@@ -22,9 +22,11 @@ interface CourseModule {
 interface EnrolledCourse {
   id: string;
   title: string;
+  title_id?: string | null;
   icon: string;
   icon_url?: string | null;
   description: string | null;
+  description_id?: string | null;
   modules: CourseModule[];
 }
 
@@ -33,6 +35,7 @@ interface SessionRow {
   date: string;
   duration_minutes: number;
   tutor_notes: string | null;
+  tutor_notes_id?: string | null;
   photo_url: string | null;
   course_module_id: string | null;
   module_id: number | null;
@@ -89,11 +92,11 @@ export default async function ParentDashboard() {
   // Enrolled courses
   const { data: enrollments } = await supabase
     .from("course_enrollments")
-    .select("course_id, courses(id, title, icon, icon_url, description)")
+    .select("course_id, courses(id, title, title_id, icon, icon_url, description, description_id)")
     .eq("student_id", studentId);
 
   const rawCourses = (enrollments ?? []).map((e: { course_id: string; courses: unknown }) => e.courses) as Array<{
-    id: string; title: string; icon: string; icon_url?: string | null; description: string | null;
+    id: string; title: string; title_id?: string | null; icon: string; icon_url?: string | null; description: string | null; description_id?: string | null;
   }>;
 
   const enrolledCourses: EnrolledCourse[] = await Promise.all(
@@ -111,7 +114,7 @@ export default async function ParentDashboard() {
   const [{ data: sessions }, { data: checks }] = await Promise.all([
     supabase
       .from("learning_sessions")
-      .select("id, date, duration_minutes, tutor_notes, photo_url, course_module_id, module_id")
+      .select("id, date, duration_minutes, tutor_notes, tutor_notes_id, photo_url, course_module_id, module_id")
       .eq("student_id", studentId)
       .order("date", { ascending: false }),
     supabase
@@ -239,9 +242,13 @@ export default async function ParentDashboard() {
                         ? <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0"><img src={course.icon_url} alt={course.title} className="w-full h-full object-cover" /></div>
                         : <span className="text-3xl shrink-0">{course.icon}</span>}
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-slate-800 leading-tight">{course.title}</div>
-                        {course.description && (
-                          <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{course.description}</p>
+                        <div className="font-semibold text-slate-800 leading-tight">
+                          {(lang === "id" && course.title_id) ? course.title_id : course.title}
+                        </div>
+                        {(course.description || course.description_id) && (
+                          <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+                            {(lang === "id" && course.description_id) ? course.description_id : course.description}
+                          </p>
                         )}
                         <div className="mt-2 flex items-center gap-2">
                           <div className="flex-1 bg-slate-100 rounded-full h-1.5">
@@ -299,8 +306,10 @@ export default async function ParentDashboard() {
                           ? ((lang === "id" && mod.title_id) ? mod.title_id : mod.title)
                           : s.module_id ? `${t(lang, "modules")} ${s.module_id}` : t(lang, "sessions")}
                       </div>
-                      {s.tutor_notes && (
-                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{s.tutor_notes}</p>
+                      {(s.tutor_notes || s.tutor_notes_id) && (
+                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+                          {(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
+                        </p>
                       )}
                     </div>
                     <div className="text-right shrink-0">
