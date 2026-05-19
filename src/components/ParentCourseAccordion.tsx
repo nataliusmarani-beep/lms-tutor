@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { format } from "date-fns";
 import { t } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n";
+import QuizReview from "@/components/QuizReview";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -74,6 +75,7 @@ interface TutorInfo {
 interface Props {
   modules: ModuleData[];
   lang: Lang;
+  studentId: string;
   tutor?: TutorInfo | null;
 }
 
@@ -127,9 +129,10 @@ const TABS: { id: Tab; icon: string; labelEn: string; labelId: string }[] = [
 
 // ─── Single module panel ──────────────────────────────────────────────────────
 
-function ModulePanel({ mod, lang, defaultOpen, tutor }: { mod: ModuleData; lang: Lang; defaultOpen: boolean; tutor?: TutorInfo | null }) {
+function ModulePanel({ mod, lang, studentId, defaultOpen, tutor }: { mod: ModuleData; lang: Lang; studentId: string; defaultOpen: boolean; tutor?: TutorInfo | null }) {
   const [open, setOpen]   = useState(defaultOpen);
   const [tab, setTab]     = useState<Tab>("sessions");
+  const [expandedQuiz, setExpandedQuiz] = useState<string | null>(null);
   const { resources, loading: resLoading } = useResources(mod.id, open && tab === "resources");
 
   const isDone = (key: string) => mod.completedKeys.includes(key);
@@ -411,27 +414,45 @@ function ModulePanel({ mod, lang, defaultOpen, tutor }: { mod: ModuleData; lang:
                   {mod.quizzes.map((quiz) => {
                     const best = quiz.bestAttempt;
                     const pct = best ? Math.round((best.score / best.max_score) * 100) : null;
+                    const isExpanded = expandedQuiz === quiz.id;
                     return (
-                      <div key={quiz.id} className="flex items-center gap-3 bg-slate-50 rounded-xl px-4 py-3">
-                        <span className="text-2xl shrink-0">📝</span>
-                        <div className="flex-1">
-                          <div className="text-sm font-semibold text-slate-800">{quiz.title}</div>
-                          {quiz.description && <p className="text-xs text-slate-500 mt-0.5">{quiz.description}</p>}
+                      <div key={quiz.id} className="bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
+                        <div className="flex items-center gap-3 px-4 py-3">
+                          <span className="text-2xl shrink-0">📝</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold text-slate-800">{quiz.title}</div>
+                            {quiz.description && <p className="text-xs text-slate-500 mt-0.5">{quiz.description}</p>}
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <div className="text-right">
+                              {best ? (
+                                <>
+                                  <div className={`text-base font-bold ${pct! >= 80 ? "text-green-600" : pct! >= 50 ? "text-blue-600" : "text-amber-500"}`}>
+                                    {best.score}/{best.max_score}
+                                  </div>
+                                  <div className="text-xs text-slate-400">{pct}%</div>
+                                </>
+                              ) : (
+                                <span className="text-xs text-slate-400 italic">
+                                  {t(lang, "notAttempted")}
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => setExpandedQuiz(isExpanded ? null : quiz.id)}
+                              className="text-xs text-blue-500 hover:text-blue-700 font-medium whitespace-nowrap"
+                            >
+                              {isExpanded
+                                ? (lang === "id" ? "Tutup ▲" : "Hide ▲")
+                                : (lang === "id" ? "Lihat Jawaban ▼" : "View Answers ▼")}
+                            </button>
+                          </div>
                         </div>
-                        <div className="text-right shrink-0">
-                          {best ? (
-                            <>
-                              <div className={`text-base font-bold ${pct! >= 80 ? "text-green-600" : pct! >= 50 ? "text-blue-600" : "text-amber-500"}`}>
-                                {best.score}/{best.max_score}
-                              </div>
-                              <div className="text-xs text-slate-400">{pct}%</div>
-                            </>
-                          ) : (
-                            <span className="text-xs text-slate-400 italic">
-                              {t(lang, "notAttempted")}
-                            </span>
-                          )}
-                        </div>
+                        {isExpanded && (
+                          <div className="border-t border-slate-200 px-4 py-3">
+                            <QuizReview quizId={quiz.id} studentId={studentId} lang={lang} accentColor="blue" />
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -448,11 +469,11 @@ function ModulePanel({ mod, lang, defaultOpen, tutor }: { mod: ModuleData; lang:
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 
-export default function ParentCourseAccordion({ modules, lang, tutor }: Props) {
+export default function ParentCourseAccordion({ modules, lang, studentId, tutor }: Props) {
   return (
     <div className="space-y-3">
       {modules.map((mod, i) => (
-        <ModulePanel key={mod.id} mod={mod} lang={lang} defaultOpen={i === 0} tutor={tutor} />
+        <ModulePanel key={mod.id} mod={mod} lang={lang} studentId={studentId} defaultOpen={i === 0} tutor={tutor} />
       ))}
     </div>
   );

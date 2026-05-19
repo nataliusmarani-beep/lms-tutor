@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import ChecklistSection from "@/components/ChecklistSection";
 import SessionActions from "@/components/SessionActions";
+import QuizReview from "@/components/QuizReview";
 import { format } from "date-fns";
 import { getLang } from "@/lib/getLang";
 
@@ -48,7 +49,7 @@ export default async function TutorCourseModuleDetailPage({
     ? `course_module_id.eq.${params.moduleId},module_id.eq.${legacyModuleId}`
     : `course_module_id.eq.${params.moduleId}`;
 
-  const [{ data: sessions }, { data: checks }, { data: checklistItems }] = await Promise.all([
+  const [{ data: sessions }, { data: checks }, { data: checklistItems }, { data: quizzes }] = await Promise.all([
     supabase
       .from("learning_sessions")
       .select("*")
@@ -63,6 +64,11 @@ export default async function TutorCourseModuleDetailPage({
     supabase
       .from("module_checklist_items")
       .select("*")
+      .eq("course_module_id", params.moduleId)
+      .order("sort_order"),
+    supabase
+      .from("module_quizzes")
+      .select("id, title")
       .eq("course_module_id", params.moduleId)
       .order("sort_order"),
   ]);
@@ -169,11 +175,21 @@ export default async function TutorCourseModuleDetailPage({
           lang={lang}
         />
 
-        {/* Assignments placeholder */}
-        <div className="card">
-          <h3 className="font-semibold text-slate-700 mb-2">Assignments</h3>
-          <p className="text-sm text-slate-400 italic">Assignments for course-based modules coming soon.</p>
-        </div>
+        {/* Quiz Results */}
+        {quizzes && quizzes.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-slate-700">Quiz Results</h2>
+            {(quizzes as { id: string; title: string }[]).map((quiz) => (
+              <div key={quiz.id} className="card space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">📝</span>
+                  <h3 className="font-semibold text-slate-800">{quiz.title}</h3>
+                </div>
+                <QuizReview quizId={quiz.id} studentId={params.id} lang={lang} accentColor="blue" />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

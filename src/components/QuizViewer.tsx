@@ -7,6 +7,7 @@ interface QuizOption {
   id: string;
   question_id: string;
   option_text: string;
+  option_text_id?: string | null;
   is_correct: boolean;
   sort_order: number;
 }
@@ -14,8 +15,11 @@ interface QuizOption {
 interface QuizQuestion {
   id: string;
   quiz_id: string;
-  question_type: "single_choice" | "multiple_choice" | "fill_blank";
+  question_type: "single_choice" | "multiple_choice" | "fill_blank" | "homework_upload";
   question_text: string;
+  question_text_id?: string | null;
+  attachment_url: string | null;
+  attachment_type: "image" | "pdf" | null;
   sort_order: number;
   options: QuizOption[];
 }
@@ -24,10 +28,10 @@ interface Quiz {
   id: string;
   title: string;
   description: string | null;
+  sort_order: number;
 }
 
 interface QuizAttempt {
-  id: string;
   score: number;
   max_score: number;
   completed_at: string;
@@ -38,349 +42,317 @@ interface QuizViewerProps {
   studentId: string;
 }
 
-export default function QuizViewer({ courseModuleId, studentId }: QuizViewerProps) {
+async function compressImage(file: File, maxKB: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 800;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w >= h) { h = Math.round((h * MAX) / w); w = MAX; }
+        else        { w = Math.round((w * MAX) / h); h = MAX; }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      let quality = 0.85;
+      function attempt() {
+        canvas.toBlob((blob) => {
+          if (!blob) { reject(new Error("Compression failed")); return; }
+          if (blob.size <= maxKB * 1024 || quality <= 0.05) { resolve(blob); }
+          else { quality = Math.max(0.05, quality - 0.1); attempt(); }
+        }, "image/jpeg", quality);
+      }
+      attempt();
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Load failed")); };
+    img.src = url;
+  });
+}
+
+// ── Single quiz card (questions + submit) ──────────────────────────────────────
+function QuizCard({
+  quiz, studentId, initialAttempt,
+}: {
+  quiz: Quiz; studentId: string; initialAttempt: QuizAttempt | null;
+}) {
   const supabase = createClient();
-  const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [lastAttempt, setLastAttempt] = useState<QuizAttempt | null>(null);
-  const [retaking, setRetaking] = useState(false);
-
-  // Quiz state
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [uploadPreviews, setUploadPreviews] = useState<Record<string, string>>({});
+  const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<{ score: number; maxScore: number } | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const [score, setScore] = useState(0);
+  const [attempt, setAttempt] = useState<QuizAttempt | null>(initialAttempt);
 
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [courseModuleId, studentId]);
-
-  async function load() {
+  async function loadQuestions() {
+    if (questions.length > 0) return;
     setLoading(true);
-    // Fetch quiz for this module
-    const { data: quizData } = await supabase
-      .from("module_quizzes")
-      .select("id, title, description")
-      .eq("course_module_id", courseModuleId)
-      .order("sort_order")
-      .limit(1)
-      .maybeSingle();
-
-    if (!quizData) {
-      setLoading(false);
-      return;
-    }
-
-    setQuiz(quizData as Quiz);
-
-    // Check for existing attempt
-    const { data: attemptData } = await supabase
-      .from("quiz_attempts")
-      .select("id, score, max_score, completed_at")
-      .eq("quiz_id", quizData.id)
-      .eq("student_id", studentId)
-      .order("completed_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (attemptData) {
-      setLastAttempt(attemptData as QuizAttempt);
-    }
-
-    // Fetch questions + options
-    const { data: qData } = await supabase
+    const { data: qs } = await supabase
       .from("quiz_questions")
-      .select("*")
-      .eq("quiz_id", quizData.id)
+      .select("id, quiz_id, question_type, question_text, question_text_id, attachment_url, attachment_type, sort_order")
+      .eq("quiz_id", quiz.id)
       .order("sort_order");
-
-    if (!qData || qData.length === 0) {
-      setLoading(false);
-      return;
-    }
-
-    const qIds = qData.map((q: { id: string }) => q.id);
-    const { data: optData } = await supabase
+    if (!qs?.length) { setLoading(false); return; }
+    const { data: opts } = await supabase
       .from("quiz_options")
-      .select("*")
-      .in("question_id", qIds)
+      .select("id, question_id, option_text, option_text_id, is_correct, sort_order")
+      .in("question_id", qs.map((q) => q.id))
       .order("sort_order");
-
-    const optsByQuestion: Record<string, QuizOption[]> = {};
-    for (const opt of (optData ?? []) as QuizOption[]) {
-      if (!optsByQuestion[opt.question_id]) optsByQuestion[opt.question_id] = [];
-      optsByQuestion[opt.question_id].push(opt);
-    }
-
-    setQuestions(
-      (qData as Omit<QuizQuestion, "options">[]).map((q) => ({
-        ...q,
-        options: optsByQuestion[q.id] ?? [],
-      }))
-    );
-
+    setQuestions(qs.map((q) => ({
+      ...q,
+      options: (opts ?? []).filter((o) => o.question_id === q.id),
+    })) as QuizQuestion[]);
     setLoading(false);
   }
 
-  function handleStartRetake() {
-    setLastAttempt(null);
-    setResult(null);
-    setCurrentIdx(0);
-    setAnswers({});
-    setRetaking(true);
+  function handleOpen() {
+    setOpen(true);
+    loadQuestions();
   }
 
-  function handleSingleChoice(questionId: string, optionId: string) {
-    setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
-  }
-
-  function handleMultipleChoice(questionId: string, optionId: string, checked: boolean) {
-    setAnswers((prev) => {
-      const current = (prev[questionId] as string[]) ?? [];
-      if (checked) {
-        return { ...prev, [questionId]: [...current, optionId] };
-      } else {
-        return { ...prev, [questionId]: current.filter((id) => id !== optionId) };
-      }
-    });
-  }
-
-  function handleFillBlank(questionId: string, value: string) {
-    setAnswers((prev) => ({ ...prev, [questionId]: value }));
-  }
-
-  function isAnswered(q: QuizQuestion): boolean {
-    const ans = answers[q.id];
-    if (!ans) return false;
-    if (Array.isArray(ans)) return ans.length > 0;
-    return ans.trim() !== "";
+  async function handleFileUpload(questionId: string, file: File) {
+    const isImage = file.type.startsWith("image/");
+    const isPdf   = file.type === "application/pdf";
+    if (!isImage && !isPdf) { toast.error("Only images or PDF files allowed."); return; }
+    if (isPdf && file.size > 500 * 1024) { toast.error("PDF must be under 500 KB."); return; }
+    setUploading((p) => ({ ...p, [questionId]: true }));
+    try {
+      let uploadFile: File | Blob = file;
+      const ext = isPdf ? "pdf" : "jpg";
+      if (isImage) uploadFile = await compressImage(file, 200);
+      const path = `${studentId}/${questionId}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("homework-submissions")
+        .upload(path, uploadFile, { upsert: true });
+      if (upErr) { toast.error("Upload failed: " + upErr.message); return; }
+      const { data } = supabase.storage.from("homework-submissions").getPublicUrl(path);
+      setAnswers((p) => ({ ...p, [questionId]: data.publicUrl }));
+      setUploadPreviews((p) => ({ ...p, [questionId]: isImage ? URL.createObjectURL(uploadFile as Blob) : "pdf" }));
+    } finally {
+      setUploading((p) => ({ ...p, [questionId]: false }));
+    }
   }
 
   async function handleSubmit() {
-    if (!quiz) return;
     setSubmitting(true);
-
-    let score = 0;
-    const maxScore = questions.length;
-
-    for (const q of questions) {
-      const ans = answers[q.id];
-      if (q.question_type === "single_choice") {
-        const chosen = ans as string | undefined;
-        const correct = q.options.find((o) => o.is_correct);
-        if (chosen && correct && chosen === correct.id) score++;
-      } else if (q.question_type === "multiple_choice") {
-        const chosen = (ans as string[] | undefined) ?? [];
-        const correctIds = q.options.filter((o) => o.is_correct).map((o) => o.id);
-        const isCorrect =
-          chosen.length === correctIds.length &&
-          chosen.every((id) => correctIds.includes(id)) &&
-          correctIds.every((id) => chosen.includes(id));
-        if (isCorrect) score++;
-      } else if (q.question_type === "fill_blank") {
-        const typed = ((ans as string) ?? "").trim().toLowerCase();
-        const correctOpt = q.options.find((o) => o.is_correct);
-        if (correctOpt && typed === correctOpt.option_text.trim().toLowerCase()) score++;
+    const scorableQs = questions.filter((q) => q.question_type !== "homework_upload");
+    let s = 0;
+    for (const q of scorableQs) {
+      const correct = q.options.find((o) => o.is_correct);
+      if (correct && answers[q.id] === correct.id) s++;
+    }
+    // Save homework submissions
+    for (const q of questions.filter((q) => q.question_type === "homework_upload")) {
+      if (answers[q.id]) {
+        await supabase.from("homework_submissions").insert({
+          student_id: studentId, question_id: q.id, quiz_id: quiz.id,
+          file_url: answers[q.id],
+          file_type: answers[q.id].endsWith(".pdf") ? "pdf" : "image",
+        });
       }
     }
-
-    const { error } = await supabase.from("quiz_attempts").insert({
-      quiz_id: quiz.id,
-      student_id: studentId,
-      score,
-      max_score: maxScore,
-      answers: answers,
+    await supabase.from("quiz_attempts").insert({
+      quiz_id: quiz.id, student_id: studentId,
+      score: s, max_score: scorableQs.length, answers,
     });
-
+    setScore(s);
+    setAttempt({ score: s, max_score: scorableQs.length, completed_at: new Date().toISOString() });
+    setSubmitted(true);
     setSubmitting(false);
-
-    if (error) {
-      toast.error("Failed to save attempt: " + error.message);
-      return;
-    }
-
-    setResult({ score, maxScore });
-    setRetaking(false);
     toast.success("Quiz submitted!");
   }
+
+  const allAnswered = questions.length > 0 && questions.every((q) => answers[q.id]);
+  const pct = attempt ? (attempt.max_score > 0 ? Math.round((attempt.score / attempt.max_score) * 100) : null) : null;
+
+  return (
+    <div className="card space-y-3">
+      {/* Quiz header + score */}
+      <div className="flex items-center gap-3">
+        <span className="text-xl shrink-0">🧠</span>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-slate-800 text-sm">{quiz.title}</h3>
+          {quiz.description && <p className="text-xs text-slate-500 mt-0.5">{quiz.description}</p>}
+        </div>
+        {attempt && !open && (
+          <div className="text-right shrink-0">
+            <div className={`text-base font-bold ${pct !== null && pct >= 80 ? "text-green-600" : pct !== null && pct >= 50 ? "text-teal-600" : "text-amber-500"}`}>
+              {attempt.score}/{attempt.max_score}
+            </div>
+            {pct !== null && <div className="text-xs text-slate-400">{pct}%</div>}
+          </div>
+        )}
+      </div>
+
+      {/* Submitted result */}
+      {submitted && (
+        <div className={`rounded-xl p-4 text-center border ${score / questions.filter(q => q.question_type !== "homework_upload").length >= 0.8 ? "bg-green-50 border-green-200" : "bg-teal-50 border-teal-200"}`}>
+          <div className="text-3xl font-bold text-slate-800">{score}/{questions.filter(q => q.question_type !== "homework_upload").length}</div>
+          <div className="text-sm text-slate-500 mt-1">Quiz submitted!</div>
+        </div>
+      )}
+
+      {/* Open / retake button */}
+      {!open && !submitted && (
+        <button
+          onClick={handleOpen}
+          className={`w-full text-sm font-semibold py-2 rounded-lg transition-colors ${
+            attempt
+              ? "bg-white border border-teal-300 text-teal-600 hover:bg-teal-50"
+              : "bg-teal-500 text-white hover:bg-teal-600"
+          }`}
+        >
+          {attempt ? "Retake Quiz" : "Start Quiz"}
+        </button>
+      )}
+
+      {/* Questions */}
+      {open && !submitted && (
+        <div className="space-y-3">
+          {loading ? (
+            <p className="text-sm text-slate-400 text-center py-4">Loading questions…</p>
+          ) : questions.length === 0 ? (
+            <p className="text-sm text-slate-400 italic text-center">No questions yet.</p>
+          ) : (
+            <>
+              {questions.map((q, i) => (
+                <div key={q.id} className="bg-slate-50 rounded-xl px-4 py-3 space-y-2">
+                  <p className="text-sm font-semibold text-slate-800">{i + 1}. {q.question_text}</p>
+
+                  {q.attachment_url && (
+                    q.attachment_type === "image" ? (
+                      <a href={q.attachment_url} target="_blank" rel="noopener noreferrer">
+                        <img src={q.attachment_url} alt="question" className="w-full rounded-xl border border-slate-200 object-cover hover:opacity-90" />
+                      </a>
+                    ) : (
+                      <a href={q.attachment_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 hover:bg-slate-50 text-sm text-blue-600">
+                        <span>📄</span> Open question PDF ↗
+                      </a>
+                    )
+                  )}
+
+                  {q.question_type === "homework_upload" ? (
+                    answers[q.id] ? (
+                      <div className="space-y-1">
+                        {uploadPreviews[q.id] === "pdf" ? (
+                          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm">
+                            <span>📄</span><span className="flex-1">PDF uploaded</span>
+                            <a href={answers[q.id]} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500">View</a>
+                          </div>
+                        ) : (
+                          <img src={uploadPreviews[q.id]} alt="homework" className="max-w-xs w-full rounded-xl border border-slate-200 object-cover" />
+                        )}
+                        <button type="button" onClick={() => { setAnswers((p) => { const n = {...p}; delete n[q.id]; return n; }); setUploadPreviews((p) => { const n = {...p}; delete n[q.id]; return n; }); }} className="text-xs text-red-400 hover:text-red-600">Change file</button>
+                      </div>
+                    ) : (
+                      <label className={`flex flex-col items-center gap-2 border-2 border-dashed rounded-xl p-4 cursor-pointer transition-colors ${uploading[q.id] ? "border-slate-200 opacity-50" : "border-slate-200 hover:border-teal-400 hover:bg-teal-50"}`}>
+                        <span className="text-2xl">{uploading[q.id] ? "⏳" : "📎"}</span>
+                        <span className="text-sm font-medium text-slate-600">{uploading[q.id] ? "Uploading…" : "Click to upload PDF or image"}</span>
+                        <span className="text-xs text-slate-400">PDF ≤ 500 KB · Image auto-compressed to ≤ 200 KB</span>
+                        <input type="file" accept="image/*,.pdf" className="hidden" disabled={uploading[q.id]} onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(q.id, f); }} />
+                      </label>
+                    )
+                  ) : (
+                    <div className="space-y-2">
+                      {q.options.map((o) => (
+                        <label key={o.id} className={`flex items-center gap-3 cursor-pointer rounded-lg px-3 py-2.5 border transition-colors ${answers[q.id] === o.id ? "bg-teal-50 border-teal-400" : "bg-white border-slate-200 hover:bg-slate-50"}`}>
+                          <input type="radio" name={q.id} value={o.id} checked={answers[q.id] === o.id} onChange={() => setAnswers((p) => ({ ...p, [q.id]: o.id }))} className="accent-teal-600 shrink-0" />
+                          <span className="text-sm text-slate-700">{o.option_text}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={handleSubmit}
+                  disabled={!allAnswered || submitting || Object.values(uploading).some(Boolean)}
+                  className="btn-primary flex-1 disabled:opacity-50"
+                >
+                  {submitting ? "Submitting…" : "Submit Quiz"}
+                </button>
+                <button onClick={() => setOpen(false)} className="btn-secondary text-sm px-4">Cancel</button>
+              </div>
+              {!allAnswered && <p className="text-xs text-slate-400 text-center">Answer all questions to submit.</p>}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main exported component ───────────────────────────────────────────────────
+export default function QuizViewer({ courseModuleId, studentId }: QuizViewerProps) {
+  const supabase = createClient();
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [attempts, setAttempts] = useState<Record<string, QuizAttempt | null>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const { data: quizData } = await supabase
+        .from("module_quizzes")
+        .select("id, title, description, sort_order")
+        .eq("course_module_id", courseModuleId)
+        .order("sort_order");
+
+      const loaded = (quizData ?? []) as Quiz[];
+      setQuizzes(loaded);
+
+      if (loaded.length > 0) {
+        const { data: attData } = await supabase
+          .from("quiz_attempts")
+          .select("quiz_id, score, max_score, completed_at")
+          .eq("student_id", studentId)
+          .in("quiz_id", loaded.map((q) => q.id))
+          .order("completed_at", { ascending: false });
+
+        const attMap: Record<string, QuizAttempt | null> = {};
+        for (const quiz of loaded) attMap[quiz.id] = null;
+        for (const a of (attData ?? []) as (QuizAttempt & { quiz_id: string })[]) {
+          if (attMap[a.quiz_id] === null) {
+            attMap[a.quiz_id] = { score: a.score, max_score: a.max_score, completed_at: a.completed_at };
+          }
+        }
+        setAttempts(attMap);
+      }
+      setLoading(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseModuleId, studentId]);
 
   if (loading) {
     return (
       <div className="card">
-        <p className="text-sm text-slate-400">Loading quiz…</p>
+        <p className="text-sm text-slate-400">Loading quizzes…</p>
       </div>
     );
   }
 
-  // No quiz for this module
-  if (!quiz) return null;
-
-  // No questions yet
-  if (questions.length === 0) {
-    return (
-      <div className="card">
-        <h2 className="font-semibold text-slate-700 mb-1 flex items-center gap-2">
-          <span>🧠</span> {quiz.title}
-        </h2>
-        <p className="text-sm text-slate-400">No questions added yet.</p>
-      </div>
-    );
-  }
-
-  // Show result or last attempt
-  if ((lastAttempt && !retaking) || result) {
-    const score = result?.score ?? lastAttempt!.score;
-    const maxScore = result?.maxScore ?? lastAttempt!.max_score;
-    const pct = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
-    const badgeClass = pct >= 80 ? "badge-green" : pct >= 50 ? "badge-yellow" : "badge-red";
-    const message = pct >= 80 ? "Great work!" : pct >= 50 ? "Good effort!" : "Keep practicing!";
-
-    return (
-      <div className="card space-y-4">
-        <h2 className="font-semibold text-slate-700 flex items-center gap-2">
-          <span>🧠</span> {quiz.title}
-        </h2>
-        <div className="text-center py-4 space-y-3">
-          <div className="text-4xl font-bold text-slate-800">
-            {score}/{maxScore}
-          </div>
-          <span className={`${badgeClass} text-sm px-3 py-1`}>{pct}% — {message}</span>
-          {!result && lastAttempt && (
-            <p className="text-xs text-slate-400">
-              Last attempt: {new Date(lastAttempt.completed_at).toLocaleDateString()}
-            </p>
-          )}
-        </div>
-        <button onClick={handleStartRetake} className="btn-secondary text-sm w-full">
-          Retake Quiz
-        </button>
-      </div>
-    );
-  }
-
-  // Quiz in progress
-  const currentQuestion = questions[currentIdx];
-  const total = questions.length;
-  const isLast = currentIdx === total - 1;
-  const answered = isAnswered(currentQuestion);
+  if (quizzes.length === 0) return null;
 
   return (
-    <div className="card space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-slate-700 flex items-center gap-2">
-          <span>🧠</span> {quiz.title}
-        </h2>
-        <span className="badge-gray">
-          Question {currentIdx + 1}/{total}
-        </span>
-      </div>
-
-      {/* Progress bar */}
-      <div className="w-full bg-slate-200 rounded-full h-1.5">
-        <div
-          className="h-1.5 rounded-full bg-indigo-500 transition-all"
-          style={{ width: `${((currentIdx + 1) / total) * 100}%` }}
+    <div className="space-y-3">
+      <h2 className="font-semibold text-slate-700 flex items-center gap-2">
+        <span>🧠</span> Quizzes
+      </h2>
+      {quizzes.map((quiz) => (
+        <QuizCard
+          key={quiz.id}
+          quiz={quiz}
+          studentId={studentId}
+          initialAttempt={attempts[quiz.id] ?? null}
         />
-      </div>
-
-      {/* Question */}
-      <div className="space-y-3">
-        <p className="text-slate-800 font-medium">{currentQuestion.question_text}</p>
-
-        {currentQuestion.question_type === "single_choice" && (
-          <div className="space-y-2">
-            {currentQuestion.options.map((opt) => (
-              <label
-                key={opt.id}
-                className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
-                  answers[currentQuestion.id] === opt.id
-                    ? "border-indigo-400 bg-indigo-50"
-                    : "border-slate-200 hover:bg-slate-50"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name={`q_${currentQuestion.id}`}
-                  value={opt.id}
-                  checked={answers[currentQuestion.id] === opt.id}
-                  onChange={() => handleSingleChoice(currentQuestion.id, opt.id)}
-                  className="shrink-0"
-                />
-                <span className="text-sm text-slate-700">{opt.option_text}</span>
-              </label>
-            ))}
-          </div>
-        )}
-
-        {currentQuestion.question_type === "multiple_choice" && (
-          <div className="space-y-2">
-            <p className="text-xs text-slate-400">Select all that apply.</p>
-            {currentQuestion.options.map((opt) => {
-              const selected = ((answers[currentQuestion.id] as string[]) ?? []).includes(opt.id);
-              return (
-                <label
-                  key={opt.id}
-                  className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
-                    selected ? "border-indigo-400 bg-indigo-50" : "border-slate-200 hover:bg-slate-50"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    value={opt.id}
-                    checked={selected}
-                    onChange={(e) =>
-                      handleMultipleChoice(currentQuestion.id, opt.id, e.target.checked)
-                    }
-                    className="shrink-0"
-                  />
-                  <span className="text-sm text-slate-700">{opt.option_text}</span>
-                </label>
-              );
-            })}
-          </div>
-        )}
-
-        {currentQuestion.question_type === "fill_blank" && (
-          <input
-            className="input"
-            value={(answers[currentQuestion.id] as string) ?? ""}
-            onChange={(e) => handleFillBlank(currentQuestion.id, e.target.value)}
-            placeholder="Type your answer…"
-          />
-        )}
-      </div>
-
-      {/* Navigation */}
-      <div className="flex justify-between items-center pt-1">
-        <button
-          onClick={() => setCurrentIdx((i) => Math.max(0, i - 1))}
-          disabled={currentIdx === 0}
-          className="btn-secondary text-sm disabled:opacity-40"
-        >
-          ← Back
-        </button>
-
-        {isLast ? (
-          <button
-            onClick={handleSubmit}
-            disabled={submitting || !answered}
-            className="btn-primary text-sm disabled:opacity-40"
-          >
-            {submitting ? "Submitting…" : "Submit Quiz"}
-          </button>
-        ) : (
-          <button
-            onClick={() => setCurrentIdx((i) => Math.min(total - 1, i + 1))}
-            disabled={!answered}
-            className="btn-primary text-sm disabled:opacity-40"
-          >
-            Next →
-          </button>
-        )}
-      </div>
+      ))}
     </div>
   );
 }
