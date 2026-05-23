@@ -187,11 +187,27 @@ function QuizPlayer({
   useEffect(() => {
     (async () => {
       const supabase = createClient();
-      const { data: qs } = await supabase
-        .from("quiz_questions")
-        .select("id, question_type, question_text, question_text_id, attachment_url, attachment_type, sort_order")
-        .eq("quiz_id", quiz.id)
-        .order("sort_order");
+      const [{ data: qs }, { data: existingHw }, { data: existingAttempt }] = await Promise.all([
+        supabase
+          .from("quiz_questions")
+          .select("id, question_type, question_text, question_text_id, attachment_url, attachment_type, sort_order")
+          .eq("quiz_id", quiz.id)
+          .order("sort_order"),
+        supabase
+          .from("homework_submissions")
+          .select("question_id, file_url, file_type")
+          .eq("quiz_id", quiz.id)
+          .eq("student_id", studentId)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("quiz_attempts")
+          .select("answers")
+          .eq("quiz_id", quiz.id)
+          .eq("student_id", studentId)
+          .order("completed_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
       if (!qs?.length) { setLoading(false); return; }
       const { data: opts } = await supabase
         .from("quiz_options")
@@ -202,9 +218,23 @@ function QuizPlayer({
         ...q,
         options: (opts ?? []).filter((o) => o.question_id === q.id),
       })) as QuizQuestion[]);
+
+      // Pre-populate answers from previous attempt and homework submissions
+      const preAnswers: Record<string, string> = { ...(existingAttempt?.answers ?? {}) };
+      const prePreviews: Record<string, string> = {};
+      const hwSeen = new Set<string>();
+      for (const hw of (existingHw ?? []) as { question_id: string; file_url: string; file_type: string }[]) {
+        if (!hwSeen.has(hw.question_id)) {
+          preAnswers[hw.question_id] = hw.file_url;
+          prePreviews[hw.question_id] = hw.file_type === "image" ? hw.file_url : "pdf";
+          hwSeen.add(hw.question_id);
+        }
+      }
+      if (Object.keys(preAnswers).length > 0) setAnswers(preAnswers);
+      if (Object.keys(prePreviews).length > 0) setUploadPreviews(prePreviews);
       setLoading(false);
     })();
-  }, [quiz.id]);
+  }, [quiz.id, studentId]);
 
   async function handleFileUpload(questionId: string, file: File) {
     const isImage = file.type.startsWith("image/");
