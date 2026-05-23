@@ -406,13 +406,27 @@ function QuizPlayer({
                 {answers[q.id] ? (
                   <div className="space-y-2">
                     {uploadPreviews[q.id] === "pdf" ? (
-                      <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2">
+                      <a href={answers[q.id]} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 hover:bg-slate-50">
                         <span className="text-xl">📄</span>
-                        <span className="text-sm text-slate-700 flex-1 truncate">PDF uploaded</span>
-                        <a href={answers[q.id]} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 shrink-0">View</a>
-                      </div>
+                        <span className="text-sm text-blue-600 flex-1 truncate">{lang === "id" ? "Lihat file PDF" : "View PDF file"}</span>
+                        <span className="text-xs text-slate-400">↗</span>
+                      </a>
                     ) : (
-                      <img src={uploadPreviews[q.id]} alt="homework" className="w-full max-w-xs rounded-xl border border-slate-200 object-cover" />
+                      <a href={answers[q.id]} target="_blank" rel="noopener noreferrer" className="block">
+                        <img
+                          src={uploadPreviews[q.id]}
+                          alt="homework"
+                          className="w-full max-w-xs rounded-xl border border-slate-200 object-cover hover:opacity-90"
+                          onError={(e) => {
+                            // If image fails to load, replace with a file link
+                            const parent = (e.target as HTMLImageElement).closest("a");
+                            if (parent) {
+                              parent.innerHTML = `<div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2"><span>📎</span><span class="text-sm text-blue-600">${lang === "id" ? "Lihat file jawaban" : "View submitted file"}</span><span class="text-xs text-slate-400">↗</span></div>`;
+                            }
+                          }}
+                        />
+                      </a>
                     )}
                     <button
                       type="button"
