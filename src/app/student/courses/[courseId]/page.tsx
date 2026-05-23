@@ -61,7 +61,7 @@ export default async function StudentCoursePage({ params }: { params: { courseId
   const { data: allQuizzes } = moduleIds.length > 0
     ? await supabase
         .from("module_quizzes")
-        .select("id, title, description, course_module_id")
+        .select("id, title, description, course_module_id, max_attempts")
         .in("course_module_id", moduleIds)
         .order("sort_order")
     : { data: [] };
@@ -129,12 +129,15 @@ export default async function StudentCoursePage({ params }: { params: { courseId
       studentDone,
       tutorDone,
       completedKeys: modCompletions.map((c: { item_key: string }) => c.item_key),
-      quizzes: modQuizzes.map((q: { id: string; title: string; description: string | null }) => ({
-        ...q,
-        bestAttempt: (modAttempts as Array<{ quiz_id: string; score: number; max_score: number; completed_at: string }>)
-          .filter((a) => a.quiz_id === q.id)
-          .sort((a, b) => b.score - a.score)[0] ?? null,
-      })),
+      quizzes: modQuizzes.map((q: { id: string; title: string; description: string | null; max_attempts: number | null }) => {
+        const qAttempts = (modAttempts as Array<{ quiz_id: string; score: number; max_score: number; completed_at: string }>)
+          .filter((a) => a.quiz_id === q.id);
+        return {
+          ...q,
+          attempt_count: qAttempts.length,
+          bestAttempt: qAttempts.sort((a, b) => b.score - a.score)[0] ?? null,
+        };
+      }),
     };
   });
 

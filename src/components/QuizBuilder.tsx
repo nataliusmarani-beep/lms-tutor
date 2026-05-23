@@ -9,6 +9,7 @@ interface Quiz {
   title: string;
   description: string | null;
   sort_order: number;
+  max_attempts: number | null;
 }
 
 interface QuizOption {
@@ -65,6 +66,7 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
   const [titleDraft, setTitleDraft] = useState<Record<string, string>>({});
   const [showAddQuestion, setShowAddQuestion] = useState<Record<string, boolean>>({});
   const [movingQuestion, setMovingQuestion] = useState<string | null>(null); // question id
+  const [maxAttemptsDraft, setMaxAttemptsDraft] = useState<Record<string, string>>({});
 
   // Add-question form state (one open at a time, keyed by quizId)
   const [activeQuizId, setActiveQuizId] = useState<string | null>(null);
@@ -228,6 +230,19 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
     setQuizzes((prev) => prev.map((q) => (q.id === quizId ? { ...q, title: draft.trim() } : q)));
     setEditingTitle((prev) => ({ ...prev, [quizId]: false }));
     toast.success("Title updated");
+  }
+
+  async function handleSaveMaxAttempts(quizId: string) {
+    const raw = maxAttemptsDraft[quizId];
+    const val = raw === "" || raw === "0" ? null : parseInt(raw, 10);
+    if (raw !== "" && raw !== "0" && (isNaN(val!) || val! < 1)) return;
+    const { error } = await supabase
+      .from("module_quizzes")
+      .update({ max_attempts: val })
+      .eq("id", quizId);
+    if (error) { toast.error(error.message); return; }
+    setQuizzes((prev) => prev.map((q) => q.id === quizId ? { ...q, max_attempts: val } : q));
+    toast.success(val ? `Retake limit set to ${val}` : "Retake limit removed");
   }
 
   async function handleDeleteQuestion(quizId: string, qId: string) {
@@ -749,6 +764,29 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
                     </div>
                   </div>
                 ) : null}
+
+                {/* Retake limit setting */}
+                <div className="flex items-center gap-3 pt-2 border-t border-slate-100">
+                  <span className="text-xs text-slate-500 font-medium shrink-0">🔁 Retake limit:</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={maxAttemptsDraft[quiz.id] ?? (quiz.max_attempts !== null && quiz.max_attempts !== undefined ? String(quiz.max_attempts) : "")}
+                    onChange={(e) => setMaxAttemptsDraft((p) => ({ ...p, [quiz.id]: e.target.value }))}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleSaveMaxAttempts(quiz.id); }}
+                    placeholder="Unlimited"
+                    className="input w-28 py-1 text-sm"
+                  />
+                  <button
+                    onClick={() => handleSaveMaxAttempts(quiz.id)}
+                    className="text-xs text-indigo-500 hover:text-indigo-700 transition-colors"
+                  >
+                    Save
+                  </button>
+                  <span className="text-xs text-slate-400">
+                    {quiz.max_attempts ? `Students can attempt ${quiz.max_attempts}×` : "No limit"}
+                  </span>
+                </div>
               </>
             )}
           </div>

@@ -36,6 +36,8 @@ interface Quiz {
   title: string;
   description: string | null;
   bestAttempt: QuizAttempt | null;
+  max_attempts: number | null;
+  attempt_count?: number;
 }
 
 interface Resource {
@@ -166,6 +168,81 @@ async function compressImage(file: File, maxKB: number): Promise<Blob> {
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Image load failed")); };
     img.src = url;
   });
+}
+
+function SessionNoteEditor({ sessionId, initialNote, lang }: { sessionId: string; initialNote: string | null; lang: Lang }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(initialNote ?? "");
+  const [saved, setSaved] = useState(!!initialNote);
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+    const supabase = createClient();
+    await supabase
+      .from("learning_sessions")
+      .update({ student_notes: draft.trim() || null })
+      .eq("id", sessionId);
+    setSaving(false);
+    setSaved(true);
+    setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <div className="space-y-1.5 mt-1">
+        <textarea
+          value={draft}
+          onChange={(e) => { setDraft(e.target.value); setSaved(false); }}
+          rows={3}
+          autoFocus
+          placeholder={lang === "id" ? "Tulis catatan sesimu…" : "Write your session notes…"}
+          className="w-full text-xs rounded-lg border border-teal-300 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-300 resize-none"
+        />
+        <div className="flex gap-2">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="text-xs bg-teal-500 text-white px-3 py-1 rounded-lg hover:bg-teal-600 disabled:opacity-50 transition-colors"
+          >
+            {saving ? (lang === "id" ? "Menyimpan…" : "Saving…") : (lang === "id" ? "Simpan" : "Save")}
+          </button>
+          <button
+            onClick={() => { setDraft(initialNote ?? ""); setEditing(false); }}
+            className="text-xs text-slate-400 hover:text-slate-600 px-2 py-1"
+          >
+            {lang === "id" ? "Batal" : "Cancel"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-1">
+      {saved && draft ? (
+        <div className="flex items-start gap-1 group">
+          <p className="text-xs text-teal-700 flex-1 leading-relaxed">
+            <span className="text-slate-400 font-medium">{lang === "id" ? "Catatan saya: " : "My notes: "}</span>
+            {draft}
+          </p>
+          <button
+            onClick={() => setEditing(true)}
+            className="text-xs text-slate-300 hover:text-teal-500 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity ml-1"
+          >
+            ✏️
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => setEditing(true)}
+          className="text-xs text-teal-500 hover:text-teal-700 transition-colors"
+        >
+          + {lang === "id" ? "Tambah catatan" : "Add note"}
+        </button>
+      )}
+    </div>
+  );
 }
 
 function QuizPlayer({
@@ -729,12 +806,11 @@ function ModulePanel({
                             {(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
                           </p>
                         )}
-                        {(s.student_notes || s.student_notes_id) && (
-                          <p className="text-xs text-slate-600">
-                            <span className="text-slate-400 font-medium">{t(lang, "studentNotes")} </span>
-                            {(lang === "id" && s.student_notes_id) ? s.student_notes_id : s.student_notes}
-                          </p>
-                        )}
+                        <SessionNoteEditor
+                          sessionId={s.id}
+                          initialNote={s.student_notes ?? null}
+                          lang={lang}
+                        />
                       </div>
                       {s.photo_url && (
                         <a href={s.photo_url} target="_blank" rel="noopener noreferrer" className="shrink-0">
@@ -898,6 +974,9 @@ function ModulePanel({
                     const best = localBest[quiz.id] ?? quiz.bestAttempt;
                     const isHomeworkOnly = best && best.max_score === 0;
                     const pct  = best && best.max_score > 0 ? Math.round((best.score / best.max_score) * 100) : null;
+                    const attemptsUsed = quiz.attempt_count ?? (best ? 1 : 0);
+                    const attemptsLeft = quiz.max_attempts ? quiz.max_attempts - attemptsUsed : null;
+                    const limitReached = attemptsLeft !== null && attemptsLeft <= 0;
                     return (
                       <div key={quiz.id} className="bg-slate-50 rounded-xl px-4 py-3 space-y-3">
                         <div className="flex items-start gap-3">
@@ -905,6 +984,13 @@ function ModulePanel({
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-semibold text-slate-800">{quiz.title}</div>
                             {quiz.description && <p className="text-xs text-slate-500 mt-0.5">{quiz.description}</p>}
+                            {quiz.max_attempts && (
+                              <p className={`text-xs mt-0.5 font-medium ${limitReached ? "text-red-400" : attemptsLeft === 1 ? "text-amber-500" : "text-slate-400"}`}>
+                                {limitReached
+                                  ? (lang === "id" ? "Batas percobaan tercapai" : "Attempt limit reached")
+                                  : (lang === "id" ? `${attemptsLeft} percobaan tersisa` : `${attemptsLeft} attempt${attemptsLeft !== 1 ? "s" : ""} left`)}
+                              </p>
+                            )}
                           </div>
                           {best && !isHomeworkOnly && (
                             <div className="text-right shrink-0">
@@ -939,9 +1025,12 @@ function ModulePanel({
                           </div>
                         )}
                         <button
-                          onClick={() => setActiveQuizId(quiz.id)}
+                          onClick={() => !limitReached && setActiveQuizId(quiz.id)}
+                          disabled={limitReached && !isHomeworkOnly}
                           className={`w-full text-sm font-semibold py-2 rounded-lg transition-colors ${
-                            best
+                            limitReached && !isHomeworkOnly
+                              ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200"
+                              : best
                               ? "bg-white border border-teal-300 text-teal-600 hover:bg-teal-50"
                               : "bg-teal-500 text-white hover:bg-teal-600"
                           }`}
@@ -949,6 +1038,8 @@ function ModulePanel({
                           {best
                             ? (isHomeworkOnly
                                 ? (lang === "id" ? "Lihat / Unggah Ulang" : "View / Re-upload")
+                                : limitReached
+                                ? (lang === "id" ? "Tidak Bisa Coba Lagi" : "No More Retakes")
                                 : (lang === "id" ? "Coba Lagi" : "Retake Quiz"))
                             : (lang === "id" ? "Mulai Kuis" : "Start Quiz")}
                         </button>
