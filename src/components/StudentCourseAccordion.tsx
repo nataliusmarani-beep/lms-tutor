@@ -273,15 +273,27 @@ function QuizPlayer({
   if (!questions.length) return <p className="text-sm text-slate-400 text-center py-6">No questions found.</p>;
 
   if (submitted) {
-    const pct = Math.round((score / questions.length) * 100);
+    const scorableCount = questions.filter((q) => q.question_type !== "homework_upload").length;
+    const isHomeworkOnly = scorableCount === 0;
+    const pct = scorableCount > 0 ? Math.round((score / scorableCount) * 100) : null;
     return (
       <div className="space-y-4">
-        <div className={`rounded-2xl p-5 text-center ${pct >= 80 ? "bg-green-50 border border-green-200" : pct >= 50 ? "bg-teal-50 border border-teal-200" : "bg-amber-50 border border-amber-200"}`}>
-          <div className={`text-4xl font-bold ${pct >= 80 ? "text-green-600" : pct >= 50 ? "text-teal-600" : "text-amber-500"}`}>{pct}%</div>
-          <div className="text-slate-600 text-sm mt-1">{score}/{questions.length} {lang === "id" ? "benar" : "correct"}</div>
-          <div className="text-slate-400 text-xs mt-1">
-            {pct >= 80 ? (lang === "id" ? "Luar biasa! 🎉" : "Excellent! 🎉") : pct >= 50 ? (lang === "id" ? "Bagus! Terus berlatih." : "Good job! Keep practising.") : (lang === "id" ? "Pelajari lagi materinya ya!" : "Review the material and try again.")}
+        <div className={`rounded-2xl p-5 text-center ${isHomeworkOnly ? "bg-teal-50 border border-teal-200" : pct! >= 80 ? "bg-green-50 border border-green-200" : pct! >= 50 ? "bg-teal-50 border border-teal-200" : "bg-amber-50 border border-amber-200"}`}>
+          {isHomeworkOnly ? (
+            <div className="text-4xl font-bold text-teal-600">✓</div>
+          ) : (
+            <div className={`text-4xl font-bold ${pct! >= 80 ? "text-green-600" : pct! >= 50 ? "text-teal-600" : "text-amber-500"}`}>{pct}%</div>
+          )}
+          <div className="text-slate-600 text-sm mt-1">
+            {isHomeworkOnly
+              ? (lang === "id" ? "File berhasil dikirim!" : "File submitted successfully!")
+              : `${score}/${scorableCount} ${lang === "id" ? "benar" : "correct"}`}
           </div>
+          {!isHomeworkOnly && pct !== null && (
+            <div className="text-slate-400 text-xs mt-1">
+              {pct >= 80 ? (lang === "id" ? "Luar biasa! 🎉" : "Excellent! 🎉") : pct >= 50 ? (lang === "id" ? "Bagus! Terus berlatih." : "Good job! Keep practising.") : (lang === "id" ? "Pelajari lagi materinya ya!" : "Review the material and try again.")}
+            </div>
+          )}
         </div>
         <div className="space-y-3">
           {questions.map((q, i) => {
@@ -769,7 +781,8 @@ function ModulePanel({
                 <div className="space-y-3">
                   {mod.quizzes.map((quiz) => {
                     const best = localBest[quiz.id] ?? quiz.bestAttempt;
-                    const pct  = best ? Math.round((best.score / best.max_score) * 100) : null;
+                    const isHomeworkOnly = best && best.max_score === 0;
+                    const pct  = best && best.max_score > 0 ? Math.round((best.score / best.max_score) * 100) : null;
                     return (
                       <div key={quiz.id} className="bg-slate-50 rounded-xl px-4 py-3 space-y-3">
                         <div className="flex items-start gap-3">
@@ -778,13 +791,18 @@ function ModulePanel({
                             <div className="text-sm font-semibold text-slate-800">{quiz.title}</div>
                             {quiz.description && <p className="text-xs text-slate-500 mt-0.5">{quiz.description}</p>}
                           </div>
-                          {best && (
+                          {best && !isHomeworkOnly && (
                             <div className="text-right shrink-0">
                               <div className={`text-base font-bold ${pct! >= 80 ? "text-green-600" : pct! >= 50 ? "text-teal-600" : "text-amber-500"}`}>
                                 {best.score}/{best.max_score}
                               </div>
                               <div className="text-xs text-slate-400">{pct}%</div>
                             </div>
+                          )}
+                          {isHomeworkOnly && (
+                            <span className="text-xs text-teal-600 font-semibold shrink-0">
+                              {lang === "id" ? "✓ Dikirim" : "✓ Submitted"}
+                            </span>
                           )}
                         </div>
                         <button
@@ -796,7 +814,9 @@ function ModulePanel({
                           }`}
                         >
                           {best
-                            ? (lang === "id" ? "Coba Lagi" : "Retake Quiz")
+                            ? (isHomeworkOnly
+                                ? (lang === "id" ? "Lihat / Unggah Ulang" : "View / Re-upload")
+                                : (lang === "id" ? "Coba Lagi" : "Retake Quiz"))
                             : (lang === "id" ? "Mulai Kuis" : "Start Quiz")}
                         </button>
                       </div>
