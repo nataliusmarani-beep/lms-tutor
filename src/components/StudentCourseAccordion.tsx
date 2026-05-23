@@ -247,13 +247,16 @@ function QuizPlayer({
     const hwQuestions = questions.filter((q) => q.question_type === "homework_upload");
     for (const q of hwQuestions) {
       if (answers[q.id]) {
-        await supabase.from("homework_submissions").insert({
+        const fileUrl = answers[q.id];
+        const isPdfUrl = fileUrl.includes(".pdf") || fileUrl.includes("%2Epdf");
+        const { error: hwErr } = await supabase.from("homework_submissions").insert({
           student_id: studentId,
           question_id: q.id,
           quiz_id: quiz.id,
-          file_url: answers[q.id],
-          file_type: answers[q.id].endsWith(".pdf") ? "pdf" : "image",
+          file_url: fileUrl,
+          file_type: isPdfUrl ? "pdf" : "image",
         });
+        if (hwErr) console.error("homework_submissions insert error:", hwErr.message);
       }
     }
     await supabase.from("quiz_attempts").insert({
