@@ -60,8 +60,7 @@ export async function GET(req: NextRequest) {
       .from("homework_submissions")
       .select("question_id, file_url, file_type")
       .eq("quiz_id", quizId)
-      .eq("student_id", studentId)
-      .order("created_at", { ascending: false }),
+      .eq("student_id", studentId),
   ]);
 
   const questionList = (qs ?? []) as Array<Record<string, unknown>>;

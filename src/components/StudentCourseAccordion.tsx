@@ -197,8 +197,7 @@ function QuizPlayer({
           .from("homework_submissions")
           .select("question_id, file_url, file_type")
           .eq("quiz_id", quiz.id)
-          .eq("student_id", studentId)
-          .order("created_at", { ascending: false }),
+          .eq("student_id", studentId),
         supabase
           .from("quiz_attempts")
           .select("answers")
