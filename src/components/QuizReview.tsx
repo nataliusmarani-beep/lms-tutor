@@ -13,7 +13,7 @@ interface QuizOption {
 
 interface QuizQuestion {
   id: string;
-  question_type: "single_choice" | "multiple_choice" | "fill_blank" | "homework_upload";
+  question_type: "single_choice" | "multiple_choice" | "fill_blank" | "homework_upload" | "yes_no";
   question_text: string;
   question_text_id: string | null;
   attachment_url: string | null;
@@ -291,8 +291,40 @@ export default function QuizReview({ quizId, studentId, lang, accentColor = "blu
                 </div>
               )}
 
+              {/* Yes/No answer */}
+              {q.question_type === "yes_no" && (
+                <div className="ml-7 flex gap-2">
+                  {q.options.map((o) => {
+                    const isSelected = o.id === studentAnswerId;
+                    const isYes = o.option_text === "Yes";
+                    const label = lang === "id" ? (isYes ? "Ya" : "Tidak") : o.option_text;
+                    return (
+                      <div
+                        key={o.id}
+                        className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold border ${
+                          o.is_correct && isSelected
+                            ? "bg-green-100 border-green-400 text-green-700"
+                            : o.is_correct
+                            ? "bg-green-50 border-green-300 text-green-600"
+                            : isSelected
+                            ? "bg-red-100 border-red-400 text-red-600"
+                            : "bg-slate-50 border-slate-200 text-slate-400"
+                        }`}
+                      >
+                        <span>{isYes ? "✅" : "❌"}</span>
+                        <span>{label}</span>
+                        {o.is_correct && <span className="text-xs ml-1">✓</span>}
+                      </div>
+                    );
+                  })}
+                  {!studentAnswerId && (
+                    <p className="text-xs text-slate-400 italic">{lang === "id" ? "Tidak dijawab" : "Not answered"}</p>
+                  )}
+                </div>
+              )}
+
               {/* Choice / fill_blank answer */}
-              {q.question_type !== "homework_upload" && (
+              {q.question_type !== "homework_upload" && q.question_type !== "yes_no" && (
                 <div className="ml-7 space-y-1">
                   {q.options.map((o) => {
                     const isSelected = o.id === studentAnswerId;

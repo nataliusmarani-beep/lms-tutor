@@ -22,7 +22,7 @@ interface QuizOption {
 interface QuizQuestion {
   id: string;
   quiz_id: string;
-  question_type: "single_choice" | "multiple_choice" | "fill_blank" | "homework_upload";
+  question_type: "single_choice" | "multiple_choice" | "fill_blank" | "homework_upload" | "yes_no";
   question_text: string;
   attachment_url: string | null;
   attachment_type: "image" | "pdf" | null;
@@ -39,6 +39,7 @@ const questionTypeLabel: Record<string, string> = {
   multiple_choice: "Multiple",
   fill_blank: "Fill in",
   homework_upload: "Homework Upload",
+  yes_no: "Yes / No",
 };
 
 const questionTypeBadge: Record<string, string> = {
@@ -46,6 +47,7 @@ const questionTypeBadge: Record<string, string> = {
   multiple_choice: "badge-yellow",
   fill_blank: "badge-green",
   homework_upload: "badge-purple",
+  yes_no: "badge-teal",
 };
 
 export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
@@ -296,6 +298,9 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
     }
     if (newQType === "homework_upload") {
       // no options needed
+    } else if (newQType === "yes_no") {
+      // options auto-generated as Yes/No — validate correct answer is set
+      if (!newOptions.some((o) => o.correct)) { toast.error("Mark the correct answer (Yes or No)"); return; }
     } else if (newQType !== "fill_blank") {
       const validOptions = newOptions.filter((o) => o.text.trim());
       if (validOptions.length < 2) { toast.error("Add at least 2 options"); return; }
@@ -338,6 +343,14 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
     let opts: QuizOption[] = [];
     if (newQType === "homework_upload") {
       // no options
+    } else if (newQType === "yes_no") {
+      const yesNo = [
+        { question_id: qData.id, option_text: "Yes", is_correct: newOptions[0]?.correct ?? false, sort_order: 0 },
+        { question_id: qData.id, option_text: "No", is_correct: newOptions[1]?.correct ?? false, sort_order: 1 },
+      ];
+      const { data: optData, error: optError } = await supabase.from("quiz_options").insert(yesNo).select();
+      if (optError) { toast.error(optError.message); setSavingQ(false); return; }
+      opts = (optData ?? []) as QuizOption[];
     } else if (newQType !== "fill_blank") {
       const validOptions = newOptions.filter((o) => o.text.trim());
       const optInserts = validOptions.map((o, i) => ({
@@ -598,6 +611,7 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
                         <option value="multiple_choice">Multiple Choice (many correct)</option>
                         <option value="fill_blank">Fill in the Blank</option>
                         <option value="homework_upload">Homework Upload (PDF / Image)</option>
+                        <option value="yes_no">Yes / No (student picks Yes or No)</option>
                       </select>
                     </div>
 
@@ -640,6 +654,33 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
                       <p className="text-xs text-slate-400 bg-purple-50 border border-purple-100 rounded-lg px-3 py-2">
                         📎 Students will upload a PDF (≤500 KB) or image (auto-compressed to ≤200 KB) as their answer.
                       </p>
+                    ) : newQType === "yes_no" ? (
+                      <div className="space-y-2">
+                        <label className="label">Correct Answer</label>
+                        <div className="flex gap-3">
+                          {["Yes", "No"].map((val, i) => (
+                            <label key={val} className={`flex-1 flex items-center justify-center gap-2 cursor-pointer rounded-xl border-2 py-3 font-semibold transition-colors ${
+                              newOptions[i]?.correct
+                                ? (val === "Yes" ? "bg-green-50 border-green-400 text-green-700" : "bg-red-50 border-red-400 text-red-600")
+                                : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50"
+                            }`}>
+                              <input
+                                type="radio"
+                                name="yes_no_correct"
+                                className="hidden"
+                                checked={!!newOptions[i]?.correct}
+                                onChange={() => setNewOptions([
+                                  { text: "Yes", correct: i === 0 },
+                                  { text: "No", correct: i === 1 },
+                                ])}
+                              />
+                              <span className="text-lg">{val === "Yes" ? "✅" : "❌"}</span>
+                              <span>{val}</span>
+                            </label>
+                          ))}
+                        </div>
+                        <p className="text-xs text-slate-400">Select whether the correct answer is Yes or No.</p>
+                      </div>
                     ) : newQType !== "fill_blank" ? (
                       <div className="space-y-2">
                         <label className="label">Answer Options</label>

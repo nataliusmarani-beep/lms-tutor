@@ -57,7 +57,7 @@ interface QuizOption {
 
 interface QuizQuestion {
   id: string;
-  question_type: "single_choice" | "multiple_choice" | "fill_blank" | "homework_upload";
+  question_type: "single_choice" | "multiple_choice" | "fill_blank" | "homework_upload" | "yes_no";
   question_text: string;
   question_text_id?: string | null;
   attachment_url: string | null;
@@ -485,6 +485,28 @@ function QuizPlayer({
                     />
                   </label>
                 )}
+              </div>
+            ) : q.question_type === "yes_no" ? (
+              <div className="flex gap-3">
+                {q.options.map((o) => {
+                  const isYes = o.option_text === "Yes";
+                  const selected = answers[q.id] === o.id;
+                  return (
+                    <button
+                      key={o.id}
+                      type="button"
+                      onClick={() => setAnswers((prev) => ({ ...prev, [q.id]: o.id }))}
+                      className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border-2 font-semibold text-sm transition-all ${
+                        selected
+                          ? (isYes ? "bg-green-100 border-green-500 text-green-700" : "bg-red-100 border-red-400 text-red-600")
+                          : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50"
+                      }`}
+                    >
+                      <span className="text-xl">{isYes ? "✅" : "❌"}</span>
+                      <span>{lang === "id" ? (isYes ? "Ya" : "Tidak") : o.option_text}</span>
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               <div className="space-y-2">
