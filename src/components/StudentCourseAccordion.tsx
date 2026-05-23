@@ -528,7 +528,31 @@ function ModulePanel({
   const [completedKeys, setCompletedKeys] = useState<string[]>(mod.completedKeys);
   const [activeQuizId, setActiveQuizId]   = useState<string | null>(null);
   const [localBest, setLocalBest]         = useState<Record<string, { score: number; max_score: number }>>({});
+  // quizGrades: quizId -> questionId -> { grade, feedback }
+  const [quizGrades, setQuizGrades]       = useState<Record<string, Record<string, { grade: number | null; feedback: string | null }>>>({});
   const { resources, loading: resLoading } = useResources(mod.id, open && tab === "resources");
+
+  // Load homework grades when quizzes tab is opened
+  useEffect(() => {
+    if (!open || tab !== "quizzes" || mod.quizzes.length === 0) return;
+    const supabase = createClient();
+    const quizIds = mod.quizzes.map((q) => q.id);
+    supabase
+      .from("homework_submissions")
+      .select("quiz_id, question_id, tutor_grade, tutor_feedback")
+      .eq("student_id", studentId)
+      .in("quiz_id", quizIds)
+      .then(({ data }) => {
+        if (!data) return;
+        const map: Record<string, Record<string, { grade: number | null; feedback: string | null }>> = {};
+        for (const row of data as { quiz_id: string; question_id: string; tutor_grade: number | null; tutor_feedback: string | null }[]) {
+          if (!map[row.quiz_id]) map[row.quiz_id] = {};
+          map[row.quiz_id][row.question_id] = { grade: row.tutor_grade, feedback: row.tutor_feedback };
+        }
+        setQuizGrades(map);
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, tab]);
 
   const isDone = (key: string) => completedKeys.includes(key);
 
@@ -874,6 +898,24 @@ function ModulePanel({
                             </span>
                           )}
                         </div>
+                        {/* Tutor grades for homework questions */}
+                        {isHomeworkOnly && quizGrades[quiz.id] && Object.values(quizGrades[quiz.id]).some(g => g.grade !== null) && (
+                          <div className="flex flex-wrap gap-2">
+                            {Object.entries(quizGrades[quiz.id])
+                              .filter(([, g]) => g.grade !== null)
+                              .map(([qId, g]) => (
+                                <div key={qId} className="flex items-center gap-1.5 bg-purple-50 border border-purple-200 rounded-lg px-2.5 py-1">
+                                  <span className="text-xs font-semibold text-purple-700">
+                                    {lang === "id" ? "Nilai" : "Grade"}:
+                                  </span>
+                                  <span className="text-sm font-bold text-purple-800">{g.grade}</span>
+                                  {g.feedback && (
+                                    <span className="text-xs text-slate-500 italic truncate max-w-[140px]">— {g.feedback}</span>
+                                  )}
+                                </div>
+                              ))}
+                          </div>
+                        )}
                         <button
                           onClick={() => setActiveQuizId(quiz.id)}
                           className={`w-full text-sm font-semibold py-2 rounded-lg transition-colors ${
