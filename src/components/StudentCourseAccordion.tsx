@@ -183,6 +183,7 @@ function QuizPlayer({
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore]         = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [homeworkGrades, setHomeworkGrades] = useState<Record<string, { grade: number | null; feedback: string | null }>>({});
 
   useEffect(() => {
     (async () => {
@@ -195,7 +196,7 @@ function QuizPlayer({
           .order("sort_order"),
         supabase
           .from("homework_submissions")
-          .select("question_id, file_url, file_type")
+          .select("question_id, file_url, file_type, tutor_grade, tutor_feedback")
           .eq("quiz_id", quiz.id)
           .eq("student_id", studentId),
         supabase
@@ -222,13 +223,16 @@ function QuizPlayer({
       const preAnswers: Record<string, string> = { ...(existingAttempt?.answers ?? {}) };
       const prePreviews: Record<string, string> = {};
       const hwSeen = new Set<string>();
-      for (const hw of (existingHw ?? []) as { question_id: string; file_url: string; file_type: string }[]) {
+      const hwGrades: Record<string, { grade: number | null; feedback: string | null }> = {};
+      for (const hw of (existingHw ?? []) as { question_id: string; file_url: string; file_type: string; tutor_grade: number | null; tutor_feedback: string | null }[]) {
         if (!hwSeen.has(hw.question_id)) {
           preAnswers[hw.question_id] = hw.file_url;
           prePreviews[hw.question_id] = hw.file_type === "image" ? hw.file_url : "pdf";
+          hwGrades[hw.question_id] = { grade: hw.tutor_grade ?? null, feedback: hw.tutor_feedback ?? null };
           hwSeen.add(hw.question_id);
         }
       }
+      setHomeworkGrades(hwGrades);
       if (Object.keys(preAnswers).length > 0) setAnswers(preAnswers);
       if (Object.keys(prePreviews).length > 0) setUploadPreviews(prePreviews);
       setLoading(false);
@@ -335,7 +339,18 @@ function QuizPlayer({
                   <img src={q.attachment_url} alt="question" className="w-full max-w-xs rounded-lg border border-slate-200 mb-2 object-cover" />
                 )}
                 {q.question_type === "homework_upload" && answers[q.id] && (
-                  <p className="text-xs text-purple-600 mt-1">✓ {lang === "id" ? "File diunggah" : "File submitted"}</p>
+                  <div className="mt-1 space-y-0.5">
+                    <p className="text-xs text-purple-600">✓ {lang === "id" ? "File diunggah" : "File submitted"}</p>
+                    {homeworkGrades[q.id]?.grade !== null && homeworkGrades[q.id]?.grade !== undefined && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-purple-700">{lang === "id" ? "Nilai" : "Grade"}:</span>
+                        <span className="text-sm font-bold text-purple-800">{homeworkGrades[q.id].grade}</span>
+                        {homeworkGrades[q.id].feedback && (
+                          <span className="text-xs text-slate-500 italic">— {homeworkGrades[q.id].feedback}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
                 <div className="space-y-1">
                   {q.options.map((o) => (
@@ -426,6 +441,17 @@ function QuizPlayer({
                           }}
                         />
                       </a>
+                    )}
+                    {homeworkGrades[q.id]?.grade !== null && homeworkGrades[q.id]?.grade !== undefined && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs font-semibold text-purple-700">
+                          {lang === "id" ? "Nilai" : "Grade"}:
+                        </span>
+                        <span className="text-sm font-bold text-purple-800">{homeworkGrades[q.id].grade}</span>
+                        {homeworkGrades[q.id].feedback && (
+                          <span className="text-xs text-slate-500 italic">— {homeworkGrades[q.id].feedback}</span>
+                        )}
+                      </div>
                     )}
                     <button
                       type="button"
