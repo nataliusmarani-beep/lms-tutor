@@ -33,6 +33,8 @@ interface HomeworkSubmission {
   question_id: string;
   file_url: string;
   file_type: "image" | "pdf";
+  tutor_grade: number | null;
+  tutor_feedback: string | null;
 }
 
 interface Props {
@@ -40,9 +42,83 @@ interface Props {
   studentId: string;
   lang: Lang;
   accentColor?: "blue" | "teal";
+  showGrading?: boolean;
 }
 
-export default function QuizReview({ quizId, studentId, lang, accentColor = "blue" }: Props) {
+function GradeForm({
+  quizId,
+  studentId,
+  questionId,
+  initialGrade,
+  initialFeedback,
+  lang,
+}: {
+  quizId: string;
+  studentId: string;
+  questionId: string;
+  initialGrade: number | null;
+  initialFeedback: string | null;
+  lang: Lang;
+}) {
+  const [grade, setGrade] = useState<string>(initialGrade !== null ? String(initialGrade) : "");
+  const [feedback, setFeedback] = useState(initialFeedback ?? "");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(initialGrade !== null);
+
+  async function handleSave() {
+    const gradeNum = Number(grade);
+    if (grade === "" || isNaN(gradeNum) || gradeNum < 0) return;
+    setSaving(true);
+    const res = await fetch("/api/homework-grade", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ questionId, studentId, quizId, grade: gradeNum, feedback: feedback || null }),
+    });
+    setSaving(false);
+    if (res.ok) setSaved(true);
+  }
+
+  return (
+    <div className="ml-7 mt-2 space-y-2">
+      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+        {lang === "id" ? "Penilaian Tutor" : "Tutor Grade"}
+      </p>
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          min={0}
+          value={grade}
+          onChange={(e) => { setGrade(e.target.value); setSaved(false); }}
+          placeholder={lang === "id" ? "Nilai (angka)" : "Score (number)"}
+          className="w-28 rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
+        />
+        {saved && grade !== "" && (
+          <span className="text-xs text-green-600 font-medium">
+            ✓ {lang === "id" ? "Tersimpan" : "Saved"}
+          </span>
+        )}
+      </div>
+      <textarea
+        value={feedback}
+        onChange={(e) => { setFeedback(e.target.value); setSaved(false); }}
+        placeholder={lang === "id" ? "Komentar (opsional)" : "Feedback (optional)"}
+        rows={2}
+        className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none"
+      />
+      <button
+        onClick={handleSave}
+        disabled={saving || grade === "" || isNaN(Number(grade))}
+        className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-700 disabled:opacity-50 transition-colors"
+      >
+        {saving
+          ? (lang === "id" ? "Menyimpan…" : "Saving…")
+          : (lang === "id" ? "Simpan Nilai" : "Save Grade")}
+      </button>
+    </div>
+  );
+}
+
+export default function QuizReview({ quizId, studentId, lang, accentColor = "blue", showGrading = false }: Props) {
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [attempt, setAttempt] = useState<Attempt | null>(null);
@@ -76,7 +152,6 @@ export default function QuizReview({ quizId, studentId, lang, accentColor = "blu
     return <p className="text-xs text-slate-400 italic text-center py-3">{lang === "id" ? "Belum ada soal." : "No questions yet."}</p>;
   }
 
-  // If no attempt but there are homework uploads, still show them
   const hasHomework = homework.length > 0;
   if (!attempt && !hasHomework) {
     return (
@@ -162,31 +237,58 @@ export default function QuizReview({ quizId, studentId, lang, accentColor = "blu
 
               {/* Homework upload answer */}
               {q.question_type === "homework_upload" && (
-                hw ? (
-                  <div className="ml-7">
-                    {hw.file_type === "image" ? (
-                      <a href={hw.file_url} target="_blank" rel="noopener noreferrer">
-                        <img src={hw.file_url} alt="homework" className="max-w-xs w-full rounded-xl border border-purple-200 hover:opacity-90 transition-opacity" />
-                      </a>
-                    ) : (
-                      <a
-                        href={hw.file_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 bg-white border border-purple-200 rounded-xl px-3 py-2 hover:bg-purple-50 transition-colors"
-                      >
-                        <span className="text-lg">📄</span>
-                        <span className="text-sm text-purple-700 font-medium">
-                          {lang === "id" ? "Lihat file jawaban" : "View submitted file"}
-                        </span>
-                        <span className="text-xs text-slate-400">↗</span>
-                      </a>
-                    )}
-                    <p className="text-xs text-purple-600 mt-1">✓ {lang === "id" ? "File diunggah" : "File submitted"}</p>
-                  </div>
-                ) : (
-                  <p className="ml-7 text-xs text-slate-400 italic">{lang === "id" ? "Belum diunggah" : "Not submitted"}</p>
-                )
+                <div>
+                  {hw ? (
+                    <div className="ml-7">
+                      {hw.file_type === "image" ? (
+                        <a href={hw.file_url} target="_blank" rel="noopener noreferrer">
+                          <img src={hw.file_url} alt="homework" className="max-w-xs w-full rounded-xl border border-purple-200 hover:opacity-90 transition-opacity" />
+                        </a>
+                      ) : (
+                        <a
+                          href={hw.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 bg-white border border-purple-200 rounded-xl px-3 py-2 hover:bg-purple-50 transition-colors"
+                        >
+                          <span className="text-lg">📄</span>
+                          <span className="text-sm text-purple-700 font-medium">
+                            {lang === "id" ? "Lihat file jawaban" : "View submitted file"}
+                          </span>
+                          <span className="text-xs text-slate-400">↗</span>
+                        </a>
+                      )}
+                      <p className="text-xs text-purple-600 mt-1">✓ {lang === "id" ? "File diunggah" : "File submitted"}</p>
+
+                      {/* Show existing grade (read-only, for non-tutors or already saved) */}
+                      {!showGrading && hw.tutor_grade !== null && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <span className="text-xs font-semibold text-purple-700">
+                            {lang === "id" ? "Nilai" : "Grade"}:
+                          </span>
+                          <span className="text-sm font-bold text-purple-800">{hw.tutor_grade}</span>
+                          {hw.tutor_feedback && (
+                            <span className="text-xs text-slate-500 italic">— {hw.tutor_feedback}</span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Tutor grading form */}
+                      {showGrading && (
+                        <GradeForm
+                          quizId={quizId}
+                          studentId={studentId}
+                          questionId={q.id}
+                          initialGrade={hw.tutor_grade}
+                          initialFeedback={hw.tutor_feedback}
+                          lang={lang}
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <p className="ml-7 text-xs text-slate-400 italic">{lang === "id" ? "Belum diunggah" : "Not submitted"}</p>
+                  )}
+                </div>
               )}
 
               {/* Choice / fill_blank answer */}

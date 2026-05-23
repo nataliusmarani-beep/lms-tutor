@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
       .maybeSingle(),
     admin
       .from("homework_submissions")
-      .select("question_id, file_url, file_type")
+      .select("question_id, file_url, file_type, tutor_grade, tutor_feedback")
       .eq("quiz_id", quizId)
       .eq("student_id", studentId),
   ]);

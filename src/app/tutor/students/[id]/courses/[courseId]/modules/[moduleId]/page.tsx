@@ -188,7 +188,7 @@ export default async function TutorCourseModuleDetailPage({
                   <span className="text-xl">📝</span>
                   <h3 className="font-semibold text-slate-800">{quiz.title}</h3>
                 </div>
-                <QuizReview quizId={quiz.id} studentId={params.id} lang={lang} accentColor="blue" />
+                <QuizReview quizId={quiz.id} studentId={params.id} lang={lang} accentColor="blue" showGrading={true} />
               </div>
             ))}
           </div>
