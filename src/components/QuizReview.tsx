@@ -76,7 +76,9 @@ export default function QuizReview({ quizId, studentId, lang, accentColor = "blu
     return <p className="text-xs text-slate-400 italic text-center py-3">{lang === "id" ? "Belum ada soal." : "No questions yet."}</p>;
   }
 
-  if (!attempt) {
+  // If no attempt but there are homework uploads, still show them
+  const hasHomework = homework.length > 0;
+  if (!attempt && !hasHomework) {
     return (
       <p className="text-xs text-slate-400 italic text-center py-3">
         {lang === "id" ? "Belum ada percobaan kuis." : "No quiz attempt yet."}
@@ -84,15 +86,15 @@ export default function QuizReview({ quizId, studentId, lang, accentColor = "blu
     );
   }
 
-  const pct = attempt.max_score > 0 ? Math.round((attempt.score / attempt.max_score) * 100) : null;
-  const answers = attempt.answers ?? {};
+  const pct = attempt && attempt.max_score > 0 ? Math.round((attempt.score / attempt.max_score) * 100) : null;
+  const answers = attempt?.answers ?? {};
   const hwByQuestion: Record<string, HomeworkSubmission> = {};
   for (const h of homework) hwByQuestion[h.question_id] = h;
 
   return (
     <div className="space-y-3">
-      {/* Score summary */}
-      <div className={`flex items-center justify-between rounded-xl border px-4 py-2.5 ${accent.badge}`}>
+      {/* Score summary — only shown when a formal quiz attempt exists */}
+      {attempt && <div className={`flex items-center justify-between rounded-xl border px-4 py-2.5 ${accent.badge}`}>
         <div className="flex items-center gap-2">
           <span className="text-base">📊</span>
           <span className="text-sm font-semibold">
@@ -108,7 +110,7 @@ export default function QuizReview({ quizId, studentId, lang, accentColor = "blu
             <span className="text-sm text-slate-400">{attempt.score}/{attempt.max_score}</span>
           )}
         </div>
-      </div>
+      </div>}
 
       {/* Per-question breakdown */}
       <div className="space-y-2">
