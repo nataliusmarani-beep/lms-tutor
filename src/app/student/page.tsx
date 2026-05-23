@@ -268,11 +268,18 @@ export default async function StudentDashboard() {
                     )}
                     {/* Details */}
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-slate-800 leading-tight">
-                        {mod
-                          ? ((lang === "id" && mod.title_id) ? mod.title_id : mod.title)
-                          : s.module_id ? `${t(lang, "modules")} ${s.module_id}` : t(lang, "sessions")}
-                      </div>
+                      {mod ? (
+                        <Link
+                          href={`/student/courses/${mod.course_id}/modules/${mod.id}`}
+                          className="text-sm font-semibold text-slate-800 leading-tight hover:text-teal-600 transition-colors"
+                        >
+                          {(lang === "id" && mod.title_id) ? mod.title_id : mod.title}
+                        </Link>
+                      ) : (
+                        <div className="text-sm font-semibold text-slate-800 leading-tight">
+                          {s.module_id ? `${t(lang, "modules")} ${s.module_id}` : t(lang, "sessions")}
+                        </div>
+                      )}
                       {(s.tutor_notes || s.tutor_notes_id) && (
                         <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
                           {(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
