@@ -181,7 +181,7 @@ export default async function ParentModulePage({ params }: { params: PageParams 
                   )}
                   {(s.student_notes || s.student_notes_id) && (
                     <p className="text-xs text-teal-700 mt-0.5">
-                      <span className="text-slate-400 font-medium">{lang === "id" ? "Catatan siswa: " : "Student notes: "}</span>
+                      <span className="text-slate-400 font-medium">{t(lang, "studentNotes")} </span>
                       {(lang === "id" && s.student_notes_id) ? s.student_notes_id : s.student_notes}
                     </p>
                   )}
