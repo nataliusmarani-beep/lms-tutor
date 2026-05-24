@@ -292,9 +292,14 @@ function ModulePanel({ mod, lang, studentId, defaultOpen, tutor }: { mod: Module
                           </p>
                         )}
                         {(s.student_notes || s.student_notes_id) && (
-                          <p className="text-xs text-slate-600">
-                            <span className="text-slate-400 font-medium">{t(lang, "studentNotes")} </span>
+                          <p className="text-xs text-teal-700 leading-relaxed">
+                            <span className="text-slate-400 font-medium">{lang === "id" ? "Catatan siswa: " : "Student notes: "}</span>
                             {(lang === "id" && s.student_notes_id) ? s.student_notes_id : s.student_notes}
+                          </p>
+                        )}
+                        {!s.student_notes && !s.student_notes_id && (
+                          <p className="text-xs text-slate-300 italic">
+                            {lang === "id" ? "Belum ada catatan dari siswa" : "No student notes yet"}
                           </p>
                         )}
                       </div>

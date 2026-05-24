@@ -36,6 +36,8 @@ interface SessionRow {
   duration_minutes: number;
   tutor_notes: string | null;
   tutor_notes_id?: string | null;
+  student_notes?: string | null;
+  student_notes_id?: string | null;
   photo_url: string | null;
   course_module_id: string | null;
   module_id: number | null;
@@ -114,7 +116,7 @@ export default async function ParentDashboard() {
   const [{ data: sessions }, { data: checks }] = await Promise.all([
     supabase
       .from("learning_sessions")
-      .select("id, date, duration_minutes, tutor_notes, tutor_notes_id, photo_url, course_module_id, module_id")
+      .select("id, date, duration_minutes, tutor_notes, tutor_notes_id, student_notes, student_notes_id, photo_url, course_module_id, module_id")
       .eq("student_id", studentId)
       .order("date", { ascending: false }),
     supabase
@@ -309,6 +311,12 @@ export default async function ParentDashboard() {
                       {(s.tutor_notes || s.tutor_notes_id) && (
                         <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
                           {(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
+                        </p>
+                      )}
+                      {(s.student_notes || s.student_notes_id) && (
+                        <p className="text-xs text-teal-700 mt-0.5 line-clamp-1">
+                          <span className="text-slate-400 font-medium">{lang === "id" ? "Catatan siswa: " : "Student notes: "}</span>
+                          {(lang === "id" && s.student_notes_id) ? s.student_notes_id : s.student_notes}
                         </p>
                       )}
                     </div>
