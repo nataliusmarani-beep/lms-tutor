@@ -166,14 +166,14 @@ export default async function ParentModulePage({ params }: { params: PageParams 
               )}
             </div>
             <div className="text-right shrink-0">
-              <div className={`text-2xl font-bold ${pct >= 100 ? "text-green-600" : "text-blue-600"}`}>{pct}%</div>
+              <div className={`text-2xl font-bold ${pct >= 100 ? "text-green-600" : "text-teal-600"}`}>{pct}%</div>
               <div className="text-xs text-slate-400">{t(lang, "complete")}</div>
             </div>
           </div>
           <div className="mt-3">
             <div className="w-full bg-slate-200 rounded-full h-2">
               <div
-                className={`h-2 rounded-full ${pct >= 100 ? "bg-green-500" : "bg-blue-500"}`}
+                className={`h-2 rounded-full ${pct >= 100 ? "bg-green-500" : "bg-teal-500"}`}
                 style={{ width: `${pct}%` }}
               />
             </div>
@@ -193,19 +193,19 @@ export default async function ParentModulePage({ params }: { params: PageParams 
         )}
 
         {/* Module Overview */}
-        <div className="card bg-indigo-50 border-indigo-100">
-          <h2 className="font-semibold text-indigo-800 mb-3 flex items-center gap-2">
+        <div className="card bg-teal-50 border-teal-100">
+          <h2 className="font-semibold text-teal-800 mb-3 flex items-center gap-2">
             <span>📋</span>
             {lang === "id" ? "Gambaran Umum Modul" : "Module Overview"}
           </h2>
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div className="bg-white rounded-xl p-3">
               <div className="text-xs text-slate-400 mb-1">{lang === "id" ? "Total Sesi" : "Total Sessions"}</div>
-              <div className="text-2xl font-bold text-indigo-600">{sessions?.length ?? 0}</div>
+              <div className="text-2xl font-bold text-teal-600">{sessions?.length ?? 0}</div>
             </div>
             <div className="bg-white rounded-xl p-3">
               <div className="text-xs text-slate-400 mb-1">{lang === "id" ? "Waktu Belajar" : "Learning Time"}</div>
-              <div className="text-2xl font-bold text-indigo-600">
+              <div className="text-2xl font-bold text-teal-600">
                 {Math.round(((sessions ?? []).reduce((a: number, s: { duration_minutes: number }) => a + s.duration_minutes, 0) / 60) * 10) / 10}h
               </div>
             </div>
@@ -213,13 +213,13 @@ export default async function ParentModulePage({ params }: { params: PageParams 
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-white rounded-xl p-3">
               <div className="text-xs text-slate-400 mb-1">{lang === "id" ? "Checklist Siswa" : "Student Checklist"}</div>
-              <div className="text-lg font-bold text-indigo-600">
+              <div className="text-lg font-bold text-teal-600">
                 {studentItems.filter((i) => allChecks.some((c: { item_key: string }) => c.item_key === i.item_key)).length}/{studentItems.length}
               </div>
             </div>
             <div className="bg-white rounded-xl p-3">
               <div className="text-xs text-slate-400 mb-1">{lang === "id" ? "Checklist Tutor" : "Tutor Checklist"}</div>
-              <div className="text-lg font-bold text-indigo-600">
+              <div className="text-lg font-bold text-teal-600">
                 {teacherItems.filter((i) => allChecks.some((c: { item_key: string }) => c.item_key === i.item_key)).length}/{teacherItems.length}
               </div>
             </div>
@@ -302,7 +302,7 @@ export default async function ParentModulePage({ params }: { params: PageParams 
                     return (
                       <div key={item.id} className="flex items-center gap-2">
                         <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
-                          completed ? "bg-indigo-500" : "bg-slate-200"
+                          completed ? "bg-teal-500" : "bg-slate-200"
                         }`}>
                           {completed && <span className="text-white text-xs">✓</span>}
                         </div>
@@ -348,7 +348,7 @@ export default async function ParentModulePage({ params }: { params: PageParams 
                     <div className="text-right shrink-0">
                       {best ? (
                         <>
-                          <div className={`text-lg font-bold ${scorePct! >= 80 ? "text-green-600" : scorePct! >= 50 ? "text-blue-600" : "text-amber-500"}`}>
+                          <div className={`text-lg font-bold ${scorePct! >= 80 ? "text-green-600" : scorePct! >= 50 ? "text-teal-600" : "text-amber-500"}`}>
                             {best.score}/{best.max_score}
                           </div>
                           <div className="text-xs text-slate-400">{scorePct}%</div>

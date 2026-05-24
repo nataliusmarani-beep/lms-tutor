@@ -87,7 +87,7 @@ export default function CurriculumAccordion({
               <button
                 onClick={() => setOpenId(isOpen ? null : m.id)}
                 className={`w-full flex items-center gap-3 py-3 px-2 text-left rounded-xl transition-colors ${
-                  isOpen && isCurrent ? "bg-indigo-50" : isOpen ? "bg-slate-50" : "hover:bg-slate-50"
+                  isOpen && isCurrent ? "bg-teal-50" : isOpen ? "bg-slate-50" : "hover:bg-slate-50"
                 }`}
               >
                 {/* Chevron */}
@@ -104,18 +104,18 @@ export default function CurriculumAccordion({
                   <div className="flex items-center gap-2 flex-wrap">
                     {m.week_number && (
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        isCurrent ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-500"
+                        isCurrent ? "bg-teal-100 text-teal-700" : "bg-slate-100 text-slate-500"
                       }`}>
                         {t(lang, "week")} {m.week_number}
                       </span>
                     )}
                     {isCurrent && (
-                      <span className="text-xs font-semibold text-indigo-500">
+                      <span className="text-xs font-semibold text-teal-500">
                         {t(lang, "currentModule")}
                       </span>
                     )}
                   </div>
-                  <div className={`text-sm font-medium leading-tight mt-0.5 ${isCurrent ? "text-indigo-800" : "text-slate-700"}`}>
+                  <div className={`text-sm font-medium leading-tight mt-0.5 ${isCurrent ? "text-teal-800" : "text-slate-700"}`}>
                     {m.title}
                   </div>
                   {/* Focus always visible */}
@@ -128,7 +128,7 @@ export default function CurriculumAccordion({
 
                 {pct !== null && (
                   <span className={`text-xs font-bold shrink-0 ${
-                    pct >= 100 ? "text-green-600" : pct > 0 ? "text-blue-600" : "text-slate-400"
+                    pct >= 100 ? "text-green-600" : pct > 0 ? "text-teal-600" : "text-slate-400"
                   }`}>
                     {pct}%
                   </span>
@@ -142,7 +142,7 @@ export default function CurriculumAccordion({
                   {pct !== null && (
                     <div className="w-full bg-slate-200 rounded-full h-1.5">
                       <div
-                        className={`h-1.5 rounded-full ${pct >= 100 ? "bg-green-500" : "bg-blue-500"}`}
+                        className={`h-1.5 rounded-full ${pct >= 100 ? "bg-green-500" : "bg-teal-500"}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -186,7 +186,7 @@ export default function CurriculumAccordion({
                           return (
                             <li key={item.item_key} className="flex items-start gap-2">
                               <span className={`mt-0.5 shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold ${
-                                done ? "bg-indigo-500 text-white" : "border-2 border-slate-300"
+                                done ? "bg-teal-500 text-white" : "border-2 border-slate-300"
                               }`}>
                                 {done ? "✓" : ""}
                               </span>
@@ -208,7 +208,7 @@ export default function CurriculumAccordion({
 
                   <Link
                     href={`/parent/courses/${courseId}/modules/${m.id}`}
-                    className="inline-block text-xs text-indigo-600 hover:text-indigo-800 font-medium pt-1"
+                    className="inline-block text-xs text-teal-600 hover:text-teal-800 font-medium pt-1"
                   >
                     {t(lang, "viewSessionsQuizzes")}
                   </Link>
