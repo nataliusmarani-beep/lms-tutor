@@ -160,7 +160,7 @@ export default async function StudentDashboard() {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
 
         {/* Welcome banner */}
         <div className="rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-600 p-5 text-white shadow-md flex items-center gap-4">
