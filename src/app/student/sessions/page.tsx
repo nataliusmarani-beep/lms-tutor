@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { format } from "date-fns";
 import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/getLang";
+import NotesList from "@/components/NotesList";
 
 interface SessionRow {
   id: string;
@@ -10,8 +11,9 @@ interface SessionRow {
   duration_minutes: number;
   tutor_notes: string | null;
   tutor_notes_id: string | null;
-  photo_url: string | null;
   student_notes: string | null;
+  student_notes_id: string | null;
+  photo_url: string | null;
   course_module_id: string | null;
   module_id: number | null;
 }
@@ -36,7 +38,7 @@ export default async function StudentSessionsPage() {
 
   const { data: sessions } = await supabase
     .from("learning_sessions")
-    .select("id, date, duration_minutes, tutor_notes, tutor_notes_id, student_notes, photo_url, course_module_id, module_id")
+    .select("id, date, duration_minutes, tutor_notes, tutor_notes_id, student_notes, student_notes_id, photo_url, course_module_id, module_id")
     .eq("student_id", user.id)
     .order("date", { ascending: false });
 
@@ -119,16 +121,16 @@ export default async function StudentSessionsPage() {
                         <div className="text-xs text-slate-400 mt-0.5">{s.duration_minutes} min · {format(new Date(s.date), "MMM d, yyyy")}</div>
                       </div>
                     </div>
-                    {/* Tutor notes — show translated version if available and lang=id */}
-                    {(s.tutor_notes || s.tutor_notes_id) && (
-                      <p className="text-sm text-slate-600 leading-relaxed">
-                        {(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
-                      </p>
-                    )}
-                    {/* Student notes */}
-                    {s.student_notes && (
-                      <p className="text-sm text-teal-700 leading-relaxed italic">{s.student_notes}</p>
-                    )}
+                    <NotesList
+                      label={t(lang, "tutorNotes")}
+                      text={(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
+                      variant="tutor"
+                    />
+                    <NotesList
+                      label={t(lang, "studentNotes")}
+                      text={(lang === "id" && s.student_notes_id) ? s.student_notes_id : s.student_notes}
+                      variant="student"
+                    />
                     {/* Photo */}
                     {s.photo_url && (
                       <a href={s.photo_url} target="_blank" rel="noopener noreferrer">
