@@ -173,33 +173,29 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
 
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-slate-400 flex-wrap">
-          <Link href="/parent" className="hover:text-slate-600">
-            {t(lang, "dashboard").replace("← ", "")}
-          </Link>
+          <Link href="/parent" className="hover:text-slate-600">{t(lang, "dashboard").replace("← ", "")}</Link>
           <span>›</span>
-          <span className="text-slate-600">{course.icon} {course.title}</span>
+          <Link href="/parent" className="hover:text-slate-600">{t(lang, "courses")}</Link>
+          <span>›</span>
+          <span className="text-slate-600">{course.icon} {courseTitle}</span>
         </div>
 
-        {/* Course Header */}
+        {/* Course header banner */}
         <div
           className="rounded-2xl px-6 py-5 shadow-sm"
-          style={{ background: "linear-gradient(135deg, #0f1f3d 0%, #1e3a6e 60%, #2563eb 100%)" }}
+          style={{ background: "linear-gradient(135deg, #0f1f3d 0%, #1e3a6e 60%, #0d9488 100%)" }}
         >
           <div className="flex items-center gap-4">
             {(course as { icon_url?: string | null }).icon_url
               ? <div className="w-14 h-14 rounded-2xl overflow-hidden shrink-0"><img src={(course as { icon_url: string }).icon_url} alt={course.title} className="w-full h-full object-cover" /></div>
               : <span className="text-4xl">{course.icon}</span>}
             <div className="flex-1 min-w-0">
-              <p className="text-blue-200 text-sm">{student?.name}</p>
-              <h1 className="text-xl font-bold text-white">
-                {(lang === "id" && (course as {title_id?: string|null}).title_id) ? (course as {title_id: string}).title_id : course.title}
-              </h1>
-              {(course.description || (course as {description_id?: string|null}).description_id) && (
-                <p className="text-blue-200 text-sm mt-0.5">
-                  {(lang === "id" && (course as {description_id?: string|null}).description_id)
-                    ? (course as {description_id: string}).description_id
-                    : course.description}
-                </p>
+              <p className="text-teal-200 text-xs font-medium mb-0.5">
+                {lang === "id" ? `Progress ${student?.name}` : `${student?.name}'s Progress`}
+              </p>
+              <h1 className="text-xl font-bold text-white truncate">{courseTitle}</h1>
+              {courseDesc && (
+                <p className="text-blue-200 text-sm mt-0.5 line-clamp-2">{courseDesc}</p>
               )}
               {tutor && (
                 <div className="flex items-center gap-2 mt-2">
@@ -208,23 +204,21 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
                       ? <img src={tutor.avatar_url} alt={tutor.name} className="w-full h-full object-cover" />
                       : <span className="text-[10px] font-bold text-white">{tutor.name.charAt(0).toUpperCase()}</span>}
                   </div>
-                  <span className="text-xs text-white/70">Teacher:</span>
+                  <span className="text-xs text-white/70">{lang === "id" ? "Guru:" : "Teacher:"}</span>
                   <span className="text-xs font-semibold text-white">{tutor.name}</span>
                 </div>
               )}
             </div>
             <div className="text-right shrink-0">
-              <div className="text-2xl font-bold text-white">
-                {modules.length}
-              </div>
-              <div className="text-blue-200 text-xs">{t(lang, "modules")}</div>
+              <div className="text-2xl font-bold text-white">{modules.length}</div>
+              <div className="text-teal-200 text-xs">{t(lang, "modules")}</div>
             </div>
           </div>
         </div>
 
         {/* Course Overview */}
         {modules.length > 0 && (
-          <div className="rounded-2xl overflow-hidden shadow-sm" style={{ background: "linear-gradient(160deg, #0f1f3d 0%, #1a3357 50%, #0d1f3d 100%)" }}>
+          <div className="rounded-2xl overflow-hidden shadow-sm" style={{ background: "linear-gradient(160deg, #0f1f3d 0%, #1a3357 50%, #0f2a2a 100%)" }}>
             <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-lg">📋</span>
@@ -232,9 +226,9 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-24 bg-white/20 rounded-full h-2">
-                  <div className={`h-2 rounded-full transition-all ${overallPct >= 100 ? "bg-green-400" : "bg-blue-400"}`} style={{ width: `${overallPct}%` }} />
+                  <div className={`h-2 rounded-full transition-all ${overallPct >= 100 ? "bg-green-400" : "bg-teal-400"}`} style={{ width: `${overallPct}%` }} />
                 </div>
-                <span className={`text-sm font-bold ${overallPct >= 100 ? "text-green-400" : overallPct > 0 ? "text-blue-300" : "text-white/40"}`}>{overallPct}%</span>
+                <span className={`text-sm font-bold ${overallPct >= 100 ? "text-green-400" : overallPct > 0 ? "text-teal-300" : "text-white/40"}`}>{overallPct}%</span>
               </div>
             </div>
 
@@ -242,7 +236,7 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
               {/* Goal */}
               {courseDesc && (
                 <div>
-                  <p className="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-1.5">
+                  <p className="text-xs font-semibold text-teal-400 uppercase tracking-wide mb-1.5">
                     🎯 {lang === "id" ? "Tujuan Kursus" : "Course Goal"}
                   </p>
                   <p className="text-sm text-white/80 leading-relaxed">{courseDesc}</p>
@@ -289,7 +283,7 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             {mod.week_number && (
-                              <span className="text-xs font-semibold px-1.5 py-0.5 bg-blue-500/30 text-blue-300 rounded-md shrink-0">
+                              <span className="text-xs font-semibold px-1.5 py-0.5 bg-teal-500/30 text-teal-300 rounded-md shrink-0">
                                 {lang === "id" ? "Minggu" : "Wk"} {mod.week_number}
                               </span>
                             )}
@@ -299,7 +293,7 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
                         </div>
                         <div className="shrink-0 flex items-center gap-1.5">
                           <div className="w-10 bg-white/15 rounded-full h-1.5">
-                            <div className={`h-1.5 rounded-full ${mod.pct >= 100 ? "bg-green-400" : "bg-blue-400"}`} style={{ width: `${mod.pct}%` }} />
+                            <div className={`h-1.5 rounded-full ${mod.pct >= 100 ? "bg-green-400" : "bg-teal-400"}`} style={{ width: `${mod.pct}%` }} />
                           </div>
                           <span className="text-xs text-white/50 w-7 text-right">{mod.pct}%</span>
                         </div>
@@ -309,15 +303,15 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
                 </div>
               </div>
 
-              {/* Completion projection */}
+              {/* Completion status */}
               {overallPct < 100 ? (
                 <div className="bg-white/10 rounded-xl px-4 py-3 flex items-center gap-3 border border-white/10">
                   <span className="text-2xl shrink-0">🎓</span>
                   <div>
                     <p className="text-sm font-semibold text-white">
                       {lang === "id"
-                        ? `${student?.name} telah menyelesaikan ${completedModules} dari ${modules.length} modul`
-                        : `${student?.name} has completed ${completedModules} of ${modules.length} modules`}
+                        ? `${completedModules} dari ${modules.length} modul selesai`
+                        : `${completedModules} of ${modules.length} modules complete`}
                     </p>
                     <p className="text-xs text-white/60 mt-0.5">
                       {lang === "id"
@@ -345,7 +339,7 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
         {modules.length === 0 ? (
           <div className="card text-center py-10">
             <div className="text-4xl mb-3">📚</div>
-            <p className="text-slate-500">No modules in this course yet.</p>
+            <p className="text-slate-500">{t(lang, "noModulesYet")}</p>
           </div>
         ) : (
           <ParentCourseAccordion modules={moduleData} lang={lang} studentId={studentId} courseId={params.courseId} tutor={tutor} />
