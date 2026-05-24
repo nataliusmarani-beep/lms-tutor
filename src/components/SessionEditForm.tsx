@@ -15,6 +15,7 @@ interface Props {
     tutor_notes: string;
     tutor_notes_id: string;
     student_notes: string;
+    student_notes_id: string;
     photo_url: string | null;
   };
   modules: {
@@ -73,6 +74,7 @@ export default function SessionEditForm({ sessionId, studentId, initialData, mod
     tutor_notes:      initialData.tutor_notes,
     tutor_notes_id:   initialData.tutor_notes_id,
     student_notes:    initialData.student_notes,
+    student_notes_id: initialData.student_notes_id,
   });
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -127,9 +129,10 @@ export default function SessionEditForm({ sessionId, studentId, initialData, mod
       module_id:        selectedModule?.legacy_module_id ?? null,
       date:             form.date,
       duration_minutes: parseInt(form.duration_minutes),
-      tutor_notes:      form.tutor_notes     || null,
-      tutor_notes_id:   form.tutor_notes_id  || null,
-      student_notes:    form.student_notes   || null,
+      tutor_notes:      form.tutor_notes      || null,
+      tutor_notes_id:   form.tutor_notes_id   || null,
+      student_notes:    form.student_notes    || null,
+      student_notes_id: form.student_notes_id || null,
     };
     if (photo_url !== undefined) updateData.photo_url = photo_url;
 
@@ -187,10 +190,17 @@ export default function SessionEditForm({ sessionId, studentId, initialData, mod
       </div>
 
       <div>
-        <label className="label">Student Notes</label>
+        <label className="label">Student Notes (EN)</label>
         <textarea className="input resize-none" rows={2} value={form.student_notes}
           onChange={(e) => setForm({ ...form, student_notes: e.target.value })}
           placeholder="What I learned today..." />
+      </div>
+
+      <div>
+        <label className="label">Catatan Siswa (ID)</label>
+        <textarea className="input resize-none" rows={2} value={form.student_notes_id}
+          onChange={(e) => setForm({ ...form, student_notes_id: e.target.value })}
+          placeholder="Hal yang dipelajari hari ini..." />
       </div>
 
       {/* Photo documentation */}

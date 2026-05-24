@@ -78,7 +78,9 @@ export default function SessionForm({ studentId, preselectedCourseModuleId, cour
     date:             new Date().toISOString().split("T")[0],
     duration_minutes: "90",
     tutor_notes:      "",
+    tutor_notes_id:   "",
     student_notes:    "",
+    student_notes_id: "",
   });
 
   const filteredModules = modules.filter((m) => m.course_id === selectedCourseId);
@@ -136,8 +138,10 @@ export default function SessionForm({ studentId, preselectedCourseModuleId, cour
         module_id:         selectedModule?.legacy_module_id ?? null,
         date:              form.date,
         duration_minutes:  parseInt(form.duration_minutes),
-        tutor_notes:       form.tutor_notes  || null,
-        student_notes:     form.student_notes || null,
+        tutor_notes:       form.tutor_notes      || null,
+        tutor_notes_id:    form.tutor_notes_id   || null,
+        student_notes:     form.student_notes    || null,
+        student_notes_id:  form.student_notes_id || null,
         photo_url,
       })
       .select("id")
@@ -218,7 +222,7 @@ export default function SessionForm({ studentId, preselectedCourseModuleId, cour
       </div>
 
       <div>
-        <label className="label">Tutor Notes (optional)</label>
+        <label className="label">Tutor Notes (EN)</label>
         <textarea
           className="input resize-none" rows={2}
           value={form.tutor_notes}
@@ -228,12 +232,32 @@ export default function SessionForm({ studentId, preselectedCourseModuleId, cour
       </div>
 
       <div>
-        <label className="label">Student Notes (optional)</label>
+        <label className="label">Catatan Tutor (ID)</label>
+        <textarea
+          className="input resize-none" rows={2}
+          value={form.tutor_notes_id}
+          onChange={(e) => setForm({ ...form, tutor_notes_id: e.target.value })}
+          placeholder="Apa yang dipelajari, bagaimana performa siswa..."
+        />
+      </div>
+
+      <div>
+        <label className="label">Student Notes (EN)</label>
         <textarea
           className="input resize-none" rows={2}
           value={form.student_notes}
           onChange={(e) => setForm({ ...form, student_notes: e.target.value })}
           placeholder="What I learned today, questions I have..."
+        />
+      </div>
+
+      <div>
+        <label className="label">Catatan Siswa (ID)</label>
+        <textarea
+          className="input resize-none" rows={2}
+          value={form.student_notes_id}
+          onChange={(e) => setForm({ ...form, student_notes_id: e.target.value })}
+          placeholder="Hal yang dipelajari hari ini, pertanyaan yang ada..."
         />
       </div>
 
