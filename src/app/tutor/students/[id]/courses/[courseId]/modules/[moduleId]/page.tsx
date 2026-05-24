@@ -156,8 +156,8 @@ export default async function TutorCourseModuleDetailPage({
                     </p>
                   )}
                   {s.student_notes && (
-                    <p className="text-sm text-slate-600 mt-1">
-                      <span className="text-slate-400 text-xs">{t(lang, "studentLabel")}: </span>{s.student_notes}
+                    <p className="text-sm text-teal-700 mt-1">
+                      <span className="text-slate-400 text-xs font-medium">{t(lang, "studentNotes")} </span>{s.student_notes}
                     </p>
                   )}
                 </div>

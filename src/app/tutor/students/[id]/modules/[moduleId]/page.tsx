@@ -5,6 +5,8 @@ import ChecklistSection from "@/components/ChecklistSection";
 import AssignmentPanel from "@/components/AssignmentPanel";
 import { getModule } from "@/lib/course-data";
 import { format } from "date-fns";
+import { t } from "@/lib/i18n";
+import { getLang } from "@/lib/getLang";
 
 export default async function TutorModuleDetailPage({
   params,
@@ -17,6 +19,8 @@ export default async function TutorModuleDetailPage({
 
   const { data: tutor } = await supabase.from("profiles").select("*").eq("id", user.id).single();
   if (!tutor || tutor.role !== "tutor") redirect("/login");
+
+  const lang = getLang();
 
   const { data: student } = await supabase.from("profiles").select("*").eq("id", params.id).single();
   if (!student) notFound();
@@ -124,8 +128,8 @@ export default async function TutorModuleDetailPage({
                     </p>
                   )}
                   {s.student_notes && (
-                    <p className="text-sm text-slate-600 mt-1">
-                      <span className="text-slate-400 text-xs">Student: </span>{s.student_notes}
+                    <p className="text-sm text-teal-700 mt-1">
+                      <span className="text-slate-400 text-xs font-medium">{t(lang, "studentNotes")} </span>{s.student_notes}
                     </p>
                   )}
                 </div>

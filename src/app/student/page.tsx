@@ -287,6 +287,7 @@ export default async function StudentDashboard() {
                       )}
                       {(s.student_notes || s.student_notes_id) && (
                         <p className="text-xs text-teal-600 mt-0.5 line-clamp-1 italic">
+                          <span className="text-slate-400 font-medium not-italic">{t(lang, "studentNotes")} </span>
                           {(lang === "id" && s.student_notes_id) ? s.student_notes_id : s.student_notes}
                         </p>
                       )}
