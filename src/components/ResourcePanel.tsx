@@ -204,14 +204,41 @@ export default function ResourcePanel({ courseModuleId, currentUserRole }: Resou
     }
 
     // pdf, doc, link
+    const thumbColors: Record<string, { bg: string; text: string; fold: string }> = {
+      pdf:  { bg: "#3b9faa", text: "#ffffff", fold: "#2c7a84" },
+      doc:  { bg: "#5b7fe8", text: "#ffffff", fold: "#3d5ec4" },
+      link: { bg: "#64748b", text: "#ffffff", fold: "#475569" },
+    };
+    const thumb = thumbColors[resource.resource_type] ?? thumbColors.link;
+    const label = typeLabel[resource.resource_type];
+
     return (
-      <div key={resource.id} className="card flex items-start gap-3">
-        <span className="text-2xl shrink-0">{typeIcon[resource.resource_type]}</span>
+      <div key={resource.id} className="card flex items-center gap-4">
+        {/* Document thumbnail */}
+        <a href={resource.url} target="_blank" rel="noopener noreferrer" className="shrink-0">
+          <svg width="52" height="64" viewBox="0 0 52 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* Page body */}
+            <rect x="0" y="0" width="52" height="64" rx="5" fill={thumb.bg} />
+            {/* Folded corner */}
+            <path d="M36 0 L52 16 L36 16 Z" fill={thumb.fold} />
+            <path d="M36 0 L52 16 L36 16 Z" fill="rgba(0,0,0,0.15)" />
+            {/* Label text */}
+            <text
+              x="26" y="46"
+              textAnchor="middle"
+              fill={thumb.text}
+              fontSize="13"
+              fontWeight="700"
+              fontFamily="system-ui, sans-serif"
+              letterSpacing="1"
+            >
+              {label}
+            </text>
+          </svg>
+        </a>
+
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-            <span className={typeBadgeClass[resource.resource_type]}>{typeLabel[resource.resource_type]}</span>
-            <span className="font-medium text-slate-800 text-sm truncate">{resource.title}</span>
-          </div>
+          <p className="font-semibold text-slate-800 text-sm leading-tight">{resource.title}</p>
           {resource.description && (
             <p className="text-xs text-slate-500 mt-0.5">{resource.description}</p>
           )}
@@ -219,11 +246,12 @@ export default function ResourcePanel({ courseModuleId, currentUserRole }: Resou
             href={resource.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+            className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-teal-600 hover:text-teal-700 transition-colors"
           >
             Open ↗
           </a>
         </div>
+
         {isTutor && (
           <button
             onClick={() => handleRemove(resource.id)}
