@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { format } from "date-fns";
 import { t } from "@/lib/i18n";
@@ -76,6 +77,7 @@ interface Props {
   modules: ModuleData[];
   lang: Lang;
   studentId: string;
+  courseId: string;
   tutor?: TutorInfo | null;
 }
 
@@ -129,7 +131,7 @@ const TABS: { id: Tab; icon: string; labelEn: string; labelId: string }[] = [
 
 // ─── Single module panel ──────────────────────────────────────────────────────
 
-function ModulePanel({ mod, lang, studentId, defaultOpen, tutor }: { mod: ModuleData; lang: Lang; studentId: string; defaultOpen: boolean; tutor?: TutorInfo | null }) {
+function ModulePanel({ mod, lang, studentId, courseId, defaultOpen, tutor }: { mod: ModuleData; lang: Lang; studentId: string; courseId: string; defaultOpen: boolean; tutor?: TutorInfo | null }) {
   const [open, setOpen]   = useState(defaultOpen);
   const [tab, setTab]     = useState<Tab>("sessions");
   const [expandedQuiz, setExpandedQuiz] = useState<string | null>(null);
@@ -514,6 +516,16 @@ function ModulePanel({ mod, lang, studentId, defaultOpen, tutor }: { mod: Module
             )}
 
           </div>
+
+          {/* View full module detail link */}
+          <div className="px-4 pb-4">
+            <Link
+              href={`/parent/courses/${courseId}/modules/${mod.id}`}
+              className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 text-sm font-semibold transition-colors border border-blue-100"
+            >
+              {lang === "id" ? "Lihat sesi & kuis →" : "View sessions & quizzes →"}
+            </Link>
+          </div>
         </div>
       )}
     </div>
@@ -522,11 +534,11 @@ function ModulePanel({ mod, lang, studentId, defaultOpen, tutor }: { mod: Module
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 
-export default function ParentCourseAccordion({ modules, lang, studentId, tutor }: Props) {
+export default function ParentCourseAccordion({ modules, lang, studentId, courseId, tutor }: Props) {
   return (
     <div className="space-y-3">
       {modules.map((mod, i) => (
-        <ModulePanel key={mod.id} mod={mod} lang={lang} studentId={studentId} defaultOpen={i === 0} tutor={tutor} />
+        <ModulePanel key={mod.id} mod={mod} lang={lang} studentId={studentId} courseId={courseId} defaultOpen={i === 0} tutor={tutor} />
       ))}
     </div>
   );

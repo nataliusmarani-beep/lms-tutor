@@ -348,7 +348,7 @@ export default async function ParentCoursePage({ params }: { params: { courseId:
             <p className="text-slate-500">No modules in this course yet.</p>
           </div>
         ) : (
-          <ParentCourseAccordion modules={moduleData} lang={lang} studentId={studentId} tutor={tutor} />
+          <ParentCourseAccordion modules={moduleData} lang={lang} studentId={studentId} courseId={params.courseId} tutor={tutor} />
         )}
 
       </div>
