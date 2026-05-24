@@ -165,12 +165,12 @@ function ModulePanel({ mod, lang, studentId, courseId, defaultOpen, tutor }: { m
   const displayFocus = (lang === "id" && mod.focus_id) ? mod.focus_id : mod.focus;
 
   return (
-    <div className={`rounded-2xl overflow-hidden border-2 transition-colors ${open ? "border-blue-400 shadow-md" : "border-slate-200"}`}>
+    <div className={`rounded-2xl overflow-hidden border-2 transition-colors ${open ? "border-teal-400 shadow-md" : "border-slate-200"}`}>
       {/* Header row */}
       <button
         onClick={() => setOpen((v) => !v)}
         className={`w-full flex items-center gap-3 px-4 py-4 text-left transition-colors ${
-          open ? "bg-blue-50" : "bg-white hover:bg-slate-50"
+          open ? "bg-teal-50" : "bg-white hover:bg-slate-50"
         }`}
       >
         {/* Chevron */}
@@ -200,12 +200,12 @@ function ModulePanel({ mod, lang, studentId, courseId, defaultOpen, tutor }: { m
           <div className="hidden sm:flex items-center gap-1.5">
             <div className="w-20 bg-slate-200 rounded-full h-1.5">
               <div
-                className={`h-1.5 rounded-full ${mod.pct >= 100 ? "bg-green-500" : "bg-blue-500"}`}
+                className={`h-1.5 rounded-full ${mod.pct >= 100 ? "bg-green-500" : "bg-teal-500"}`}
                 style={{ width: `${mod.pct}%` }}
               />
             </div>
           </div>
-          <span className={`text-xs font-bold ${mod.pct >= 100 ? "text-green-600" : mod.pct > 0 ? "text-blue-600" : "text-slate-400"}`}>
+          <span className={`text-xs font-bold ${mod.pct >= 100 ? "text-green-600" : mod.pct > 0 ? "text-teal-600" : "text-slate-400"}`}>
             {mod.pct}%
           </span>
         </div>
@@ -216,13 +216,13 @@ function ModulePanel({ mod, lang, studentId, courseId, defaultOpen, tutor }: { m
         <div className="border-t border-slate-100">
           {/* About this module */}
           {displayFocus && (
-            <div className="px-4 py-3 bg-blue-50 border-b border-blue-100 flex items-start gap-2.5">
-              <span className="text-blue-400 shrink-0 mt-0.5">📖</span>
+            <div className="px-4 py-3 bg-teal-50 border-b border-teal-100 flex items-start gap-2.5">
+              <span className="text-teal-400 shrink-0 mt-0.5">📖</span>
               <div>
-                <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-0.5">
+                <p className="text-xs font-semibold text-teal-600 uppercase tracking-wide mb-0.5">
                   {lang === "id" ? "Tentang Modul Ini" : "About this Module"}
                 </p>
-                <p className="text-sm text-blue-800">{displayFocus}</p>
+                <p className="text-sm text-teal-800">{displayFocus}</p>
               </div>
             </div>
           )}
@@ -230,19 +230,19 @@ function ModulePanel({ mod, lang, studentId, courseId, defaultOpen, tutor }: { m
           {/* Quick stats bar */}
           <div className="grid grid-cols-4 divide-x divide-slate-100 border-b border-slate-100 bg-slate-50">
             <div className="text-center py-2">
-              <div className="text-base font-bold text-blue-600">{mod.sessions.length}</div>
+              <div className="text-base font-bold text-teal-600">{mod.sessions.length}</div>
               <div className="text-xs text-slate-400">{t(lang, "sessions")}</div>
             </div>
             <div className="text-center py-2">
-              <div className="text-base font-bold text-blue-600">{mod.studentDone}/{mod.studentItems.length}</div>
+              <div className="text-base font-bold text-teal-600">{mod.studentDone}/{mod.studentItems.length}</div>
               <div className="text-xs text-slate-400">{t(lang, "studentLabel")}</div>
             </div>
             <div className="text-center py-2">
-              <div className="text-base font-bold text-blue-600">{mod.tutorDone}/{mod.tutorItems.length}</div>
+              <div className="text-base font-bold text-teal-600">{mod.tutorDone}/{mod.tutorItems.length}</div>
               <div className="text-xs text-slate-400">{t(lang, "tutorLabel")}</div>
             </div>
             <div className="text-center py-2">
-              <div className="text-base font-bold text-blue-600">{mod.quizzes.length}</div>
+              <div className="text-base font-bold text-teal-600">{mod.quizzes.length}</div>
               <div className="text-xs text-slate-400">{t(lang, "quizzes")}</div>
             </div>
           </div>
@@ -255,7 +255,7 @@ function ModulePanel({ mod, lang, studentId, courseId, defaultOpen, tutor }: { m
                 onClick={() => setTab(t.id)}
                 className={`flex flex-col items-center gap-0.5 py-2.5 text-xs font-semibold border-b-2 transition-colors ${
                   tab === t.id
-                    ? "border-blue-500 text-blue-600 bg-blue-50"
+                    ? "border-teal-500 text-teal-600 bg-teal-50"
                     : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50"
                 }`}
               >
@@ -283,7 +283,7 @@ function ModulePanel({ mod, lang, studentId, courseId, defaultOpen, tutor }: { m
                           <span className="text-sm font-semibold text-slate-700">
                             {format(new Date(s.date), "EEEE, MMMM d, yyyy")}
                           </span>
-                          <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full shrink-0">
+                          <span className="text-xs font-bold bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full shrink-0">
                             {s.duration_minutes} {t(lang, "min")}
                           </span>
                         </div>
@@ -464,7 +464,7 @@ function ModulePanel({ mod, lang, studentId, courseId, defaultOpen, tutor }: { m
                                 </span>
                               ) : best ? (
                                 <>
-                                  <div className={`text-base font-bold ${pct! >= 80 ? "text-green-600" : pct! >= 50 ? "text-blue-600" : "text-amber-500"}`}>
+                                  <div className={`text-base font-bold ${pct! >= 80 ? "text-green-600" : pct! >= 50 ? "text-teal-600" : "text-amber-500"}`}>
                                     {best.score}/{best.max_score}
                                   </div>
                                   <div className="text-xs text-slate-400">{pct}%</div>
@@ -477,7 +477,7 @@ function ModulePanel({ mod, lang, studentId, courseId, defaultOpen, tutor }: { m
                             </div>
                             <button
                               onClick={() => setExpandedQuiz(isExpanded ? null : quiz.id)}
-                              className="text-xs text-blue-500 hover:text-blue-700 font-medium whitespace-nowrap"
+                              className="text-xs text-teal-500 hover:text-teal-700 font-medium whitespace-nowrap"
                             >
                               {isExpanded
                                 ? (lang === "id" ? "Tutup ▲" : "Hide ▲")
@@ -505,7 +505,7 @@ function ModulePanel({ mod, lang, studentId, courseId, defaultOpen, tutor }: { m
                         )}
                         {isExpanded && (
                           <div className="border-t border-slate-200 px-4 py-3">
-                            <QuizReview quizId={quiz.id} studentId={studentId} lang={lang} accentColor="blue" />
+                            <QuizReview quizId={quiz.id} studentId={studentId} lang={lang} accentColor="teal" />
                           </div>
                         )}
                       </div>
@@ -521,7 +521,7 @@ function ModulePanel({ mod, lang, studentId, courseId, defaultOpen, tutor }: { m
           <div className="px-4 pb-4">
             <Link
               href={`/parent/courses/${courseId}/modules/${mod.id}`}
-              className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 text-sm font-semibold transition-colors border border-blue-100"
+              className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-600 hover:text-teal-700 text-sm font-semibold transition-colors border border-teal-100"
             >
               {lang === "id" ? "Lihat sesi & kuis →" : "View sessions & quizzes →"}
             </Link>
