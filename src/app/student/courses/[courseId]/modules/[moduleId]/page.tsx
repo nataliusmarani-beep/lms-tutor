@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import ChecklistSection from "@/components/ChecklistSection";
 import ResourcePanel from "@/components/ResourcePanel";
 import QuizViewer from "@/components/QuizViewer";
+import NotesList from "@/components/NotesList";
 import { format } from "date-fns";
 import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/getLang";
@@ -129,18 +130,16 @@ export default async function StudentCourseModulePage({
                     </span>
                     <span className="badge-blue">{s.duration_minutes} {t(lang, "min")}</span>
                   </div>
-                  {(s.tutor_notes || s.tutor_notes_id) && (
-                    <p className="text-xs text-slate-600 mt-1">
-                      <span className="text-slate-400">{t(lang, "tutorNotes")} </span>
-                      {(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
-                    </p>
-                  )}
-                  {(s.student_notes || s.student_notes_id) && (
-                    <p className="text-xs text-slate-600 mt-1">
-                      <span className="text-slate-400">{t(lang, "studentNotes")} </span>
-                      {(lang === "id" && s.student_notes_id) ? s.student_notes_id : s.student_notes}
-                    </p>
-                  )}
+                  <NotesList
+                    label={t(lang, "tutorNotes")}
+                    text={(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
+                    variant="tutor"
+                  />
+                  <NotesList
+                    label={t(lang, "studentNotes")}
+                    text={(lang === "id" && s.student_notes_id) ? s.student_notes_id : s.student_notes}
+                    variant="student"
+                  />
                 </div>
               ))}
             </div>

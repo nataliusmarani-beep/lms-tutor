@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import ResourcePanel from "@/components/ResourcePanel";
 import QuizReview from "@/components/QuizReview";
+import NotesList from "@/components/NotesList";
 import { format } from "date-fns";
 import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/getLang";
@@ -173,18 +174,16 @@ export default async function ParentModulePage({ params }: { params: PageParams 
                       {s.duration_minutes} {t(lang, "min")}
                     </span>
                   </div>
-                  {(s.tutor_notes || s.tutor_notes_id) && (
-                    <p className="text-xs text-slate-600 mt-1">
-                      <span className="text-slate-400">{t(lang, "tutorNotes")} </span>
-                      {(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
-                    </p>
-                  )}
-                  {(s.student_notes || s.student_notes_id) && (
-                    <p className="text-xs text-teal-700 mt-0.5">
-                      <span className="text-slate-400 font-medium">{t(lang, "studentNotes")} </span>
-                      {(lang === "id" && s.student_notes_id) ? s.student_notes_id : s.student_notes}
-                    </p>
-                  )}
+                  <NotesList
+                    label={t(lang, "tutorNotes")}
+                    text={(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
+                    variant="tutor"
+                  />
+                  <NotesList
+                    label={t(lang, "studentNotes")}
+                    text={(lang === "id" && s.student_notes_id) ? s.student_notes_id : s.student_notes}
+                    variant="student"
+                  />
                 </div>
               ))}
             </div>

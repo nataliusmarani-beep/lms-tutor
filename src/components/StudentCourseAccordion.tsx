@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { format } from "date-fns";
 import { t } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n";
+import NotesList from "@/components/NotesList";
 
 interface ChecklistItem {
   item_key: string;
@@ -800,12 +801,11 @@ function ModulePanel({
                             {s.duration_minutes} {t(lang, "min")}
                           </span>
                         </div>
-                        {(s.tutor_notes || s.tutor_notes_id) && (
-                          <p className="text-xs text-slate-600">
-                            <span className="text-slate-400 font-medium">{t(lang, "tutorNotes")} </span>
-                            {(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
-                          </p>
-                        )}
+                        <NotesList
+                          label={t(lang, "tutorNotes")}
+                          text={(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
+                          variant="tutor"
+                        />
                         <SessionNoteEditor
                           sessionId={s.id}
                           initialNote={s.student_notes ?? null}

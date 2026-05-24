@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import NotesList from "@/components/NotesList";
 import { format } from "date-fns";
 import { t } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n";
@@ -286,20 +287,18 @@ function ModulePanel({ mod, lang, studentId, courseId, defaultOpen, tutor }: { m
                             {s.duration_minutes} {t(lang, "min")}
                           </span>
                         </div>
-                        {(s.tutor_notes || s.tutor_notes_id) && (
-                          <p className="text-xs text-slate-600">
-                            <span className="text-slate-400 font-medium">{t(lang, "tutorNotes")} </span>
-                            {(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
-                          </p>
-                        )}
-                        {(s.student_notes || s.student_notes_id) && (
-                          <p className="text-xs text-teal-700 leading-relaxed">
-                            <span className="text-slate-400 font-medium">{t(lang, "studentNotes")} </span>
-                            {(lang === "id" && s.student_notes_id) ? s.student_notes_id : s.student_notes}
-                          </p>
-                        )}
+                        <NotesList
+                          label={t(lang, "tutorNotes")}
+                          text={(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
+                          variant="tutor"
+                        />
+                        <NotesList
+                          label={t(lang, "studentNotes")}
+                          text={(lang === "id" && s.student_notes_id) ? s.student_notes_id : s.student_notes}
+                          variant="student"
+                        />
                         {!s.student_notes && !s.student_notes_id && (
-                          <p className="text-xs text-slate-300 italic">
+                          <p className="text-xs text-slate-300 italic mt-1">
                             {lang === "id" ? "Belum ada catatan dari siswa" : "No student notes yet"}
                           </p>
                         )}

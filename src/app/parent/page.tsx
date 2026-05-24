@@ -5,6 +5,7 @@ import ProgressRing from "@/components/ProgressRing";
 import { format } from "date-fns";
 import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/getLang";
+import NotesList from "@/components/NotesList";
 
 interface CourseModule {
   id: string;
@@ -315,17 +316,16 @@ export default async function ParentDashboard() {
                           {s.module_id ? `${t(lang, "modules")} ${s.module_id}` : t(lang, "sessions")}
                         </div>
                       )}
-                      {(s.tutor_notes || s.tutor_notes_id) && (
-                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
-                          {(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
-                        </p>
-                      )}
-                      {(s.student_notes || s.student_notes_id) && (
-                        <p className="text-xs text-teal-700 mt-0.5 line-clamp-1">
-                          <span className="text-slate-400 font-medium">{t(lang, "studentNotes")} </span>
-                          {(lang === "id" && s.student_notes_id) ? s.student_notes_id : s.student_notes}
-                        </p>
-                      )}
+                      <NotesList
+                        label={t(lang, "tutorNotes")}
+                        text={(lang === "id" && s.tutor_notes_id) ? s.tutor_notes_id : s.tutor_notes}
+                        variant="tutor"
+                      />
+                      <NotesList
+                        label={t(lang, "studentNotes")}
+                        text={(lang === "id" && s.student_notes_id) ? s.student_notes_id : s.student_notes}
+                        variant="student"
+                      />
                     </div>
                     <div className="text-right shrink-0">
                       <div className="text-sm font-medium text-slate-700">{s.duration_minutes} min</div>
