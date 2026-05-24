@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { format } from "date-fns";
 import { t } from "@/lib/i18n";
@@ -515,16 +514,6 @@ function ModulePanel({ mod, lang, studentId, courseId, defaultOpen, tutor }: { m
               )
             )}
 
-          </div>
-
-          {/* View full module detail link */}
-          <div className="px-4 pb-4">
-            <Link
-              href={`/parent/courses/${courseId}/modules/${mod.id}`}
-              className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-600 hover:text-teal-700 text-sm font-semibold transition-colors border border-teal-100"
-            >
-              {lang === "id" ? "Lihat sesi & kuis →" : "View sessions & quizzes →"}
-            </Link>
           </div>
         </div>
       )}
