@@ -245,6 +245,15 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
     toast.success(val ? `Retake limit set to ${val}` : "Retake limit removed");
   }
 
+  async function handleDeleteQuiz(quizId: string, quizTitle: string) {
+    if (!confirm(`Delete the entire quiz "${quizTitle}" and all its questions? This cannot be undone.`)) return;
+    const { error } = await supabase.from("module_quizzes").delete().eq("id", quizId);
+    if (error) { toast.error(error.message); return; }
+    setQuizzes((prev) => prev.filter((q) => q.id !== quizId));
+    setQuestionsMap((prev) => { const next = { ...prev }; delete next[quizId]; return next; });
+    toast.success("Quiz deleted");
+  }
+
   async function handleDeleteQuestion(quizId: string, qId: string) {
     const { error } = await supabase.from("quiz_questions").delete().eq("id", qId);
     if (error) { toast.error(error.message); return; }
@@ -499,6 +508,13 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
                     className="text-xs text-indigo-400 hover:text-indigo-600 transition-colors"
                   >
                     Edit title
+                  </button>
+                  <button
+                    onClick={() => handleDeleteQuiz(quiz.id, quiz.title)}
+                    className="text-xs text-red-400 hover:text-red-600 transition-colors"
+                    title="Delete this quiz"
+                  >
+                    Delete quiz
                   </button>
                   <button
                     onClick={() => setCollapsed((prev) => ({ ...prev, [quiz.id]: !isCollapsed }))}
