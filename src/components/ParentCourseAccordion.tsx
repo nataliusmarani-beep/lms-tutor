@@ -118,6 +118,33 @@ function toEmbedUrl(url: string): string {
   return m ? `https://www.youtube.com/embed/${m[1]}` : url;
 }
 
+// Coloured SVG doc thumbnail
+const thumbColors: Record<string, { bg: string; fold: string; text: string }> = {
+  pdf:   { bg: "#3b9faa", fold: "#2c7a84", text: "#ffffff" },
+  doc:   { bg: "#5b7fe8", fold: "#3d5ec4", text: "#ffffff" },
+  image: { bg: "#22c55e", fold: "#16a34a", text: "#ffffff" },
+  link:  { bg: "#64748b", fold: "#475569", text: "#ffffff" },
+};
+const thumbLabel: Record<string, string> = {
+  pdf: "PDF", doc: "DOC", image: "IMG", link: "LINK",
+};
+
+function ResourceThumb({ type }: { type: string }) {
+  const c = thumbColors[type] ?? thumbColors.link;
+  const label = thumbLabel[type] ?? type.toUpperCase().slice(0, 4);
+  return (
+    <svg width="40" height="50" viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
+      <rect x="0" y="0" width="40" height="50" rx="4" fill={c.bg} />
+      <path d="M27 0 L40 13 L27 13 Z" fill={c.fold} />
+      <path d="M27 0 L40 13 L27 13 Z" fill="rgba(0,0,0,0.12)" />
+      <text x="20" y="36" textAnchor="middle" fill={c.text} fontSize="10" fontWeight="700"
+        fontFamily="system-ui, sans-serif" letterSpacing="0.5">
+        {label}
+      </text>
+    </svg>
+  );
+}
+
 // ─── Tab types ────────────────────────────────────────────────────────────────
 
 type Tab = "sessions" | "checklist" | "resources" | "quizzes";
@@ -410,20 +437,32 @@ function ModulePanel({ mod, lang, studentId, courseId, defaultOpen, tutor }: { m
                         </div>
                       </div>
                     ) : (
-                      <div key={r.id} className="flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2.5">
-                        <span className="text-xl shrink-0">{typeIcon[r.resource_type]}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-slate-700 truncate">{r.title}</div>
-                          {r.description && <p className="text-xs text-slate-500 mt-0.5">{r.description}</p>}
-                        </div>
-                        <a
-                          href={r.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 shrink-0"
-                        >
-                          Open ↗
+                      <div key={r.id} className="flex items-center gap-4 bg-white border border-slate-100 rounded-xl px-3 py-3 hover:shadow-sm transition-shadow">
+                        <a href={r.url} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                          {r.resource_type === "image" ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={r.url}
+                              alt={r.title}
+                              className="w-10 h-[50px] object-cover rounded"
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                            />
+                          ) : (
+                            <ResourceThumb type={r.resource_type} />
+                          )}
                         </a>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-semibold text-slate-800 truncate">{r.title}</div>
+                          {r.description && <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{r.description}</p>}
+                          <a
+                            href={r.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-teal-600 hover:text-teal-700 transition-colors"
+                          >
+                            Open ↗
+                          </a>
+                        </div>
                       </div>
                     )
                   ))}
