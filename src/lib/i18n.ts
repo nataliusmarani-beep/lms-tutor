@@ -104,8 +104,8 @@ export const translations = {
     currentModule: "● Current",
     viewSessionsQuizzes: "View sessions & quizzes →",
     // Stats labels
-    studentLabel: "Student",
-    tutorLabel: "Tutor",
+    studentLabel: "My Tasks",
+    tutorLabel: "Tutor Tasks",
     // Course management
     noCourses: "No courses yet.",
     noCoursesCreate: "No courses yet. Create your first course to get started.",
@@ -252,8 +252,8 @@ export const translations = {
     currentModule: "● Dibuka",
     viewSessionsQuizzes: "Lihat detail sesi & kuis →",
     // Stats labels
-    studentLabel: "Siswa",
-    tutorLabel: "Tutor",
+    studentLabel: "Tugas Saya",
+    tutorLabel: "Tugas Tutor",
     // Course management
     noCourses: "Belum ada kursus.",
     noCoursesCreate: "Belum ada kursus. Buat kursus pertama untuk memulai.",

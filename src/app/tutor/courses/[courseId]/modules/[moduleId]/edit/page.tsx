@@ -10,6 +10,22 @@ import TranslateQuizButton from "@/components/TranslateQuizButton";
 import { t } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n";
 
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
 interface ChecklistItem {
   id: string;
   item_key: string;
@@ -23,6 +39,135 @@ interface CourseInfo {
   title: string;
 }
 
+// ─── Drag handle icon ────────────────────────────────────────────────────────
+function GripIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className="text-slate-300 group-hover:text-slate-400 transition-colors"
+    >
+      <circle cx="9"  cy="5"  r="1.5" />
+      <circle cx="15" cy="5"  r="1.5" />
+      <circle cx="9"  cy="12" r="1.5" />
+      <circle cx="15" cy="12" r="1.5" />
+      <circle cx="9"  cy="19" r="1.5" />
+      <circle cx="15" cy="19" r="1.5" />
+    </svg>
+  );
+}
+
+// ─── Single sortable checklist row ───────────────────────────────────────────
+function SortableChecklistItem({
+  item,
+  editingId,
+  editingLabel,
+  onStartEdit,
+  onEditChange,
+  onSaveEdit,
+  onCancelEdit,
+  onDelete,
+  lang,
+}: {
+  item: ChecklistItem;
+  editingId: string | null;
+  editingLabel: string;
+  onStartEdit: (id: string, label: string) => void;
+  onEditChange: (val: string) => void;
+  onSaveEdit: (id: string) => void;
+  onCancelEdit: () => void;
+  onDelete: (id: string) => void;
+  lang: Lang;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 999 : undefined,
+  };
+
+  const isEditing = editingId === item.id;
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className="group flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2 border border-transparent hover:border-slate-200 transition-colors"
+    >
+      {/* Drag handle — only shown when not editing */}
+      {!isEditing && (
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing shrink-0 p-0.5 rounded hover:bg-slate-200 transition-colors touch-none"
+          title="Drag to reorder"
+          tabIndex={-1}
+        >
+          <GripIcon />
+        </button>
+      )}
+
+      {isEditing ? (
+        <div className="flex items-center gap-2 flex-1">
+          <input
+            className="input flex-1 py-1 text-sm"
+            value={editingLabel}
+            onChange={(e) => onEditChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") { e.preventDefault(); onSaveEdit(item.id); }
+              if (e.key === "Escape") onCancelEdit();
+            }}
+            autoFocus
+          />
+          <button
+            onClick={() => onSaveEdit(item.id)}
+            className="btn-primary text-xs py-1 px-2"
+          >
+            {lang === "id" ? "Simpan" : "Save"}
+          </button>
+          <button
+            onClick={onCancelEdit}
+            className="text-slate-400 hover:text-slate-600 text-xs"
+          >
+            {t(lang, "cancel")}
+          </button>
+        </div>
+      ) : (
+        <>
+          <span className="text-sm text-slate-700 flex-1">{item.label}</span>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => onStartEdit(item.id, item.label)}
+              className="text-blue-400 hover:text-blue-600 text-xs"
+            >
+              {t(lang, "edit")}
+            </button>
+            <button
+              onClick={() => onDelete(item.id)}
+              className="text-red-400 hover:text-red-600 text-xs"
+            >
+              {t(lang, "remove")}
+            </button>
+          </div>
+        </>
+      )}
+    </li>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
 export default function EditCourseModulePage() {
   const params = useParams();
   const router = useRouter();
@@ -30,27 +175,31 @@ export default function EditCourseModulePage() {
   const moduleId = params.moduleId as string;
   const supabase = createClient();
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [course, setCourse] = useState<CourseInfo | null>(null);
-  const [lang, setLang] = useState<Lang>("en");
+  const [loading, setLoading]       = useState(true);
+  const [saving, setSaving]         = useState(false);
+  const [course, setCourse]         = useState<CourseInfo | null>(null);
+  const [lang, setLang]             = useState<Lang>("en");
+  const [title, setTitle]           = useState("");
+  const [focus, setFocus]           = useState("");
+  const [icon, setIcon]             = useState("📚");
+  const [weekNumber, setWeekNumber] = useState<number | "">("");
+  const [items, setItems]           = useState<ChecklistItem[]>([]);
+  const [newLabel, setNewLabel]     = useState("");
+  const [newType, setNewType]       = useState<"student" | "teacher">("student");
+  const [editingId, setEditingId]   = useState<string | null>(null);
+  const [editingLabel, setEditingLabel] = useState("");
+
+  // dnd-kit sensors (supports both mouse and touch)
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
+
   useEffect(() => {
     const m = document.cookie.match(/(?:^|;\s*)lang=([^;]*)/);
     setLang(m?.[1] === "id" ? "id" : "en");
   }, []);
-  const [title, setTitle] = useState("");
-  const [focus, setFocus] = useState("");
-  const [icon, setIcon] = useState("📚");
-  const [weekNumber, setWeekNumber] = useState<number | "">("");
-  const [items, setItems] = useState<ChecklistItem[]>([]);
-  const [newLabel, setNewLabel] = useState("");
-  const [newType, setNewType] = useState<"student" | "teacher">("student");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingLabel, setEditingLabel] = useState("");
 
-  useEffect(() => {
-    loadData();
-  }, [moduleId, courseId]);
+  useEffect(() => { loadData(); }, [moduleId, courseId]);
 
   async function loadData() {
     const [{ data: courseData }, { data: modData }, { data: itemsData }] = await Promise.all([
@@ -63,7 +212,6 @@ export default function EditCourseModulePage() {
         .order("item_type")
         .order("sort_order"),
     ]);
-
     if (courseData) setCourse(courseData);
     if (modData) {
       setTitle(modData.title);
@@ -92,16 +240,15 @@ export default function EditCourseModulePage() {
 
   async function handleAddItem() {
     if (!newLabel.trim()) return;
-    const maxOrder = items
-      .filter((i) => i.item_type === newType)
-      .reduce((m, i) => Math.max(m, i.sort_order), 0);
+    const typeItems = items.filter((i) => i.item_type === newType);
+    const maxOrder  = typeItems.reduce((m, i) => Math.max(m, i.sort_order), -1);
     const { data, error } = await supabase
       .from("module_checklist_items")
       .insert({
         course_module_id: moduleId,
-        item_type: newType,
-        item_key: `custom_${Date.now()}`,
-        label: newLabel.trim(),
+        item_type:  newType,
+        item_key:   `custom_${Date.now()}`,
+        label:      newLabel.trim(),
         sort_order: maxOrder + 1,
       })
       .select()
@@ -131,46 +278,76 @@ export default function EditCourseModulePage() {
     toast.success("Item removed");
   }
 
+  // ── Drag end handler ────────────────────────────────────────────────────────
+  async function handleDragEnd(event: DragEndEvent, itemType: "student" | "teacher") {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setItems((prev) => {
+      // Separate the two lists; only reorder within the same type
+      const others = prev.filter((i) => i.item_type !== itemType);
+      const typed  = prev.filter((i) => i.item_type === itemType);
+
+      const oldIndex = typed.findIndex((i) => i.id === active.id);
+      const newIndex = typed.findIndex((i) => i.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+
+      const reordered = arrayMove(typed, oldIndex, newIndex).map((item, idx) => ({
+        ...item,
+        sort_order: idx,
+      }));
+
+      // Persist to DB (fire-and-forget with toast on error)
+      Promise.all(
+        reordered.map((item) =>
+          supabase
+            .from("module_checklist_items")
+            .update({ sort_order: item.sort_order })
+            .eq("id", item.id)
+        )
+      ).then((results) => {
+        const failed = results.find((r) => r.error);
+        if (failed?.error) toast.error("Failed to save order");
+      });
+
+      return [...others, ...reordered];
+    });
+  }
+
   const studentItems = items.filter((i) => i.item_type === "student");
   const teacherItems = items.filter((i) => i.item_type === "teacher");
 
-  const renderItem = (item: ChecklistItem) => (
-    <li key={item.id} className="flex items-center justify-between gap-2 bg-slate-50 rounded-lg px-3 py-2">
-      {editingId === item.id ? (
-        <div className="flex items-center gap-2 flex-1">
-          <input
-            className="input flex-1 py-1 text-sm"
-            value={editingLabel}
-            onChange={(e) => setEditingLabel(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") { e.preventDefault(); handleUpdateItem(item.id); }
-              if (e.key === "Escape") setEditingId(null);
-            }}
-            autoFocus
-          />
-          <button onClick={() => handleUpdateItem(item.id)} className="btn-primary text-xs py-1 px-2">{lang === "id" ? "Simpan" : "Save"}</button>
-          <button onClick={() => setEditingId(null)} className="text-slate-400 text-xs">{t(lang, "cancel")}</button>
-        </div>
-      ) : (
-        <>
-          <span className="text-sm text-slate-700 flex-1">{item.label}</span>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => { setEditingId(item.id); setEditingLabel(item.label); }}
-              className="text-blue-400 hover:text-blue-600 text-xs"
-            >
-              {t(lang, "edit")}
-            </button>
-            <button
-              onClick={() => handleDeleteItem(item.id)}
-              className="text-red-400 hover:text-red-600 text-xs"
-            >
-              {t(lang, "remove")}
-            </button>
-          </div>
-        </>
-      )}
-    </li>
+  const renderChecklist = (
+    listItems: ChecklistItem[],
+    itemType: "student" | "teacher"
+  ) => (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={(e) => handleDragEnd(e, itemType)}
+    >
+      <SortableContext
+        items={listItems.map((i) => i.id)}
+        strategy={verticalListSortingStrategy}
+      >
+        <ul className="space-y-2">
+          {listItems.map((item) => (
+            <SortableChecklistItem
+              key={item.id}
+              item={item}
+              editingId={editingId}
+              editingLabel={editingLabel}
+              onStartEdit={(id, label) => { setEditingId(id); setEditingLabel(label); }}
+              onEditChange={setEditingLabel}
+              onSaveEdit={handleUpdateItem}
+              onCancelEdit={() => setEditingId(null)}
+              onDelete={handleDeleteItem}
+              lang={lang}
+            />
+          ))}
+        </ul>
+      </SortableContext>
+    </DndContext>
   );
 
   if (loading) {
@@ -190,6 +367,7 @@ export default function EditCourseModulePage() {
       </nav>
 
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+        {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-slate-400 flex-wrap">
           <Link href="/tutor" className="hover:text-slate-600">{t(lang, "dashboard").replace("← ", "")}</Link>
           <span>›</span>
@@ -202,10 +380,13 @@ export default function EditCourseModulePage() {
           <span className="text-slate-600">{t(lang, "editModule")}</span>
         </div>
 
+        {/* Page title */}
         <div className="flex items-center gap-3">
           <span className="text-3xl">{icon}</span>
           <div>
-            {weekNumber !== "" && <span className="badge-blue text-xs">{t(lang, "week")} {weekNumber}</span>}
+            {weekNumber !== "" && (
+              <span className="badge-blue text-xs">{t(lang, "week")} {weekNumber}</span>
+            )}
             <h1 className="text-xl font-bold text-slate-800 mt-1">{t(lang, "editModule")}</h1>
           </div>
         </div>
@@ -230,7 +411,9 @@ export default function EditCourseModulePage() {
                 type="number"
                 min={1}
                 value={weekNumber}
-                onChange={(e) => setWeekNumber(e.target.value === "" ? "" : parseInt(e.target.value))}
+                onChange={(e) =>
+                  setWeekNumber(e.target.value === "" ? "" : parseInt(e.target.value))
+                }
                 placeholder="1"
               />
             </div>
@@ -252,28 +435,39 @@ export default function EditCourseModulePage() {
               rows={3}
               value={focus}
               onChange={(e) => setFocus(e.target.value)}
-              placeholder={lang === "id" ? "Apa yang dicakup modul ini..." : "What this module covers..."}
+              placeholder={
+                lang === "id" ? "Apa yang dicakup modul ini..." : "What this module covers..."
+              }
             />
           </div>
           <div className="flex gap-3">
             <button type="submit" className="btn-primary" disabled={saving}>
               {saving ? t(lang, "saving") : t(lang, "saveChanges")}
             </button>
-            <Link href={`/tutor/courses/${courseId}`} className="btn-secondary">{t(lang, "cancel")}</Link>
+            <Link href={`/tutor/courses/${courseId}`} className="btn-secondary">
+              {t(lang, "cancel")}
+            </Link>
           </div>
         </form>
 
-        {/* Student Checklist Items */}
+        {/* Student Checklist */}
         <div className="card space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-slate-700">👤 {t(lang, "studentChecklist")}</h2>
-            <span className="badge-green text-xs">{studentItems.length} {t(lang, "items")}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400 italic">
+                {lang === "id" ? "Seret untuk urutkan ulang" : "Drag to reorder"}
+              </span>
+              <span className="badge-green text-xs">{studentItems.length} {t(lang, "items")}</span>
+            </div>
           </div>
-          {studentItems.length > 0 ? (
-            <ul className="space-y-2">{studentItems.map(renderItem)}</ul>
-          ) : (
-            <p className="text-sm text-slate-400 italic">{t(lang, "noStudentItemsYet")}</p>
-          )}
+
+          {studentItems.length > 0
+            ? renderChecklist(studentItems, "student")
+            : <p className="text-sm text-slate-400 italic">{t(lang, "noStudentItemsYet")}</p>
+          }
+
+          {/* Add student item */}
           <div className="flex gap-2 pt-1 border-t border-slate-100">
             <input
               className="input flex-1"
@@ -298,17 +492,24 @@ export default function EditCourseModulePage() {
           </div>
         </div>
 
-        {/* Teacher Checklist Items */}
+        {/* Teacher Checklist */}
         <div className="card space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-slate-700">👩‍🏫 {t(lang, "teacherChecklistLabel")}</h2>
-            <span className="badge-blue text-xs">{teacherItems.length} {t(lang, "items")}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400 italic">
+                {lang === "id" ? "Seret untuk urutkan ulang" : "Drag to reorder"}
+              </span>
+              <span className="badge-blue text-xs">{teacherItems.length} {t(lang, "items")}</span>
+            </div>
           </div>
-          {teacherItems.length > 0 ? (
-            <ul className="space-y-2">{teacherItems.map(renderItem)}</ul>
-          ) : (
-            <p className="text-sm text-slate-400 italic">{t(lang, "noTeacherItemsYet")}</p>
-          )}
+
+          {teacherItems.length > 0
+            ? renderChecklist(teacherItems, "teacher")
+            : <p className="text-sm text-slate-400 italic">{t(lang, "noTeacherItemsYet")}</p>
+          }
+
+          {/* Add teacher item */}
           <div className="flex gap-2 pt-1 border-t border-slate-100">
             <input
               className="input flex-1"

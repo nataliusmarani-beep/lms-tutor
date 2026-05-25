@@ -748,11 +748,11 @@ function ModulePanel({
               <div className="text-xs text-slate-400">{t(lang, "sessions")}</div>
             </div>
             <div className="text-center py-2">
-              <div className="text-base font-bold text-teal-600">{studentDone}/{mod.studentItems.length}</div>
+              <div className="text-base font-bold text-teal-600">{studentDone}/{mod.studentItems.length} ✓</div>
               <div className="text-xs text-slate-400">{t(lang, "studentLabel")}</div>
             </div>
             <div className="text-center py-2">
-              <div className="text-base font-bold text-teal-600">{tutorDone}/{mod.tutorItems.length}</div>
+              <div className="text-base font-bold text-teal-600">{tutorDone}/{mod.tutorItems.length} ✓</div>
               <div className="text-xs text-slate-400">{t(lang, "tutorLabel")}</div>
             </div>
             <div className="text-center py-2">
