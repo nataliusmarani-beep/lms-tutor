@@ -200,18 +200,48 @@ export default function ResourcePanel({ courseModuleId, currentUserRole }: Resou
               <span className="font-medium text-slate-800 text-sm">{resource.title}</span>
             </div>
             {isTutor && (
-              <button
-                onClick={() => handleRemove(resource.id)}
-                className="text-xs text-red-400 hover:text-red-600 transition-colors shrink-0"
-              >
-                Remove
-              </button>
+              <div className="flex items-center gap-3">
+                {/* Replace image button */}
+                <label className="text-xs text-blue-400 hover:text-blue-600 cursor-pointer transition-colors">
+                  Replace image
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const ext  = file.name.split(".").pop() ?? "jpg";
+                      const path = `module-resources/${courseModuleId}/${Date.now()}.${ext}`;
+                      const { error: upErr } = await supabase.storage
+                        .from("module-resources")
+                        .upload(path, file, { upsert: true });
+                      if (upErr) { toast.error("Upload failed: " + upErr.message); return; }
+                      const { data: urlData } = supabase.storage.from("module-resources").getPublicUrl(path);
+                      const newUrl = urlData.publicUrl;
+                      const { error } = await supabase
+                        .from("module_resources")
+                        .update({ url: newUrl })
+                        .eq("id", resource.id);
+                      if (error) { toast.error(error.message); return; }
+                      setResources((prev) => prev.map((r) => r.id === resource.id ? { ...r, url: newUrl } : r));
+                      toast.success("Image updated!");
+                    }}
+                  />
+                </label>
+                <button
+                  onClick={() => handleRemove(resource.id)}
+                  className="text-xs text-red-400 hover:text-red-600 transition-colors"
+                >
+                  Remove
+                </button>
+              </div>
             )}
           </div>
           {resource.description && (
             <p className="text-xs text-slate-500">{resource.description}</p>
           )}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={resource.url}
             alt={resource.title}
@@ -220,13 +250,17 @@ export default function ResourcePanel({ courseModuleId, currentUserRole }: Resou
               const el = e.currentTarget;
               el.style.display = "none";
               const placeholder = el.nextElementSibling as HTMLElement | null;
-              if (placeholder) placeholder.style.display = "flex";
+              if (placeholder) placeholder.style.removeProperty("display");
             }}
           />
+          {/* placeholder — use inline style so JS can un-hide it (Tailwind hidden uses !important) */}
           <div
-            className="hidden items-center justify-center rounded-xl w-full h-32 bg-slate-100 border border-slate-200 text-slate-400 text-sm gap-2"
+            style={{ display: "none" }}
+            className="items-center justify-center rounded-xl w-full h-40 bg-slate-100 border border-slate-200 text-slate-400 text-sm gap-2 flex-col"
           >
-            <span>🖼️</span> Image could not be loaded
+            <span className="text-3xl">🖼️</span>
+            <span>Image could not be loaded</span>
+            {isTutor && <span className="text-xs">Use "Replace image" above to upload a new one</span>}
           </div>
         </div>
       );

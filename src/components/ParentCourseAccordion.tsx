@@ -449,10 +449,10 @@ function ModulePanel({ mod, lang, studentId, courseId, defaultOpen, tutor }: { m
                               const el = e.currentTarget;
                               el.style.display = "none";
                               const fb = el.nextElementSibling as HTMLElement | null;
-                              if (fb) fb.style.display = "flex";
+                              if (fb) fb.style.removeProperty("display");
                             }}
                           />
-                          <div className="hidden items-center justify-center h-32 bg-slate-100 text-slate-400 text-sm gap-2">
+                          <div style={{ display: "none" }} className="items-center justify-center h-32 bg-slate-100 text-slate-400 text-sm gap-2">
                             <span>🖼️</span> Image could not be loaded
                           </div>
                         </a>
