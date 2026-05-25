@@ -73,6 +73,10 @@ export default function ResourcePanel({ courseModuleId, currentUserRole }: Resou
   const [addDesc, setAddDesc] = useState("");
   const [adding, setAdding] = useState(false);
 
+  // Image upload state
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
   useEffect(() => {
     loadResources();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -95,10 +99,28 @@ export default function ResourcePanel({ courseModuleId, currentUserRole }: Resou
   }
 
   async function handleAdd() {
-    if (!addTitle.trim() || !addUrl.trim()) {
-      toast.error("Title and URL are required");
-      return;
+    if (!addTitle.trim()) { toast.error("Title is required"); return; }
+
+    let finalUrl = addUrl.trim();
+
+    // ── Image: upload file to Supabase storage ───────────────────────────────
+    if (addType === "image") {
+      if (!imageFile && !finalUrl) { toast.error("Please upload an image or paste a URL"); return; }
+      if (imageFile) {
+        setAdding(true);
+        const ext  = imageFile.name.split(".").pop() ?? "jpg";
+        const path = `module-resources/${courseModuleId}/${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("module-resources")
+          .upload(path, imageFile, { upsert: true });
+        if (upErr) { toast.error("Image upload failed: " + upErr.message); setAdding(false); return; }
+        const { data: urlData } = supabase.storage.from("module-resources").getPublicUrl(path);
+        finalUrl = urlData.publicUrl;
+      }
+    } else {
+      if (!finalUrl) { toast.error("URL is required"); return; }
     }
+
     setAdding(true);
     const maxOrder = resources.reduce((m, r) => Math.max(m, r.sort_order), 0);
     const { data, error } = await supabase
@@ -107,21 +129,17 @@ export default function ResourcePanel({ courseModuleId, currentUserRole }: Resou
         course_module_id: courseModuleId,
         resource_type: addType,
         title: addTitle.trim(),
-        url: addUrl.trim(),
+        url: finalUrl,
         description: addDesc.trim() || null,
         sort_order: maxOrder + 1,
       })
       .select()
       .single();
     setAdding(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    if (error) { toast.error(error.message); return; }
     setResources((prev) => [...prev, data as Resource]);
-    setAddTitle("");
-    setAddUrl("");
-    setAddDesc("");
+    setAddTitle(""); setAddUrl(""); setAddDesc("");
+    setImageFile(null); setImagePreview(null);
     setShowAddForm(false);
     toast.success("Resource added!");
   }
@@ -193,12 +211,23 @@ export default function ResourcePanel({ courseModuleId, currentUserRole }: Resou
           {resource.description && (
             <p className="text-xs text-slate-500">{resource.description}</p>
           )}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={resource.url}
             alt={resource.title}
             className="rounded-xl w-full object-cover max-h-80 border border-slate-100"
+            onError={(e) => {
+              const el = e.currentTarget;
+              el.style.display = "none";
+              const placeholder = el.nextElementSibling as HTMLElement | null;
+              if (placeholder) placeholder.style.display = "flex";
+            }}
           />
+          <div
+            className="hidden items-center justify-center rounded-xl w-full h-32 bg-slate-100 border border-slate-200 text-slate-400 text-sm gap-2"
+          >
+            <span>🖼️</span> Image could not be loaded
+          </div>
         </div>
       );
     }
@@ -330,15 +359,62 @@ export default function ResourcePanel({ courseModuleId, currentUserRole }: Resou
             />
           </div>
 
-          <div>
-            <label className="label">URL</label>
-            <input
-              className="input"
-              value={addUrl}
-              onChange={(e) => setAddUrl(e.target.value)}
-              placeholder={urlPlaceholder[addType]}
-            />
-          </div>
+          {addType === "image" ? (
+            <div className="space-y-2">
+              <label className="label">Image</label>
+              {/* File upload */}
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:border-teal-400 hover:bg-teal-50 transition-colors relative overflow-hidden">
+                {imagePreview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={imagePreview} alt="preview" className="absolute inset-0 w-full h-full object-cover rounded-xl" />
+                ) : (
+                  <div className="flex flex-col items-center gap-1 text-slate-400">
+                    <span className="text-2xl">🖼️</span>
+                    <span className="text-xs">Click to upload image</span>
+                    <span className="text-xs text-slate-300">JPG, PNG, GIF, WebP</span>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    setImageFile(f);
+                    setImagePreview(URL.createObjectURL(f));
+                    setAddUrl(""); // clear URL if file chosen
+                  }}
+                />
+              </label>
+              {imageFile && (
+                <button
+                  type="button"
+                  onClick={() => { setImageFile(null); setImagePreview(null); }}
+                  className="text-xs text-red-400 hover:text-red-600"
+                >
+                  ✕ Remove image
+                </button>
+              )}
+              <p className="text-xs text-slate-400">— or paste a URL instead —</p>
+              <input
+                className="input"
+                value={addUrl}
+                onChange={(e) => { setAddUrl(e.target.value); if (e.target.value) { setImageFile(null); setImagePreview(null); } }}
+                placeholder="https://example.com/image.jpg"
+              />
+            </div>
+          ) : (
+            <div>
+              <label className="label">URL</label>
+              <input
+                className="input"
+                value={addUrl}
+                onChange={(e) => setAddUrl(e.target.value)}
+                placeholder={urlPlaceholder[addType]}
+              />
+            </div>
+          )}
 
           <div>
             <label className="label">Description (optional)</label>
@@ -364,9 +440,8 @@ export default function ResourcePanel({ courseModuleId, currentUserRole }: Resou
               type="button"
               onClick={() => {
                 setShowAddForm(false);
-                setAddTitle("");
-                setAddUrl("");
-                setAddDesc("");
+                setAddTitle(""); setAddUrl(""); setAddDesc("");
+                setImageFile(null); setImagePreview(null);
               }}
               className="btn-secondary text-sm"
             >
