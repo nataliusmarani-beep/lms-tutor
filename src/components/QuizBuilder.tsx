@@ -2,6 +2,9 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
+import { HOMEWORK_UPLOAD_ACCEPT, HOMEWORK_FILE_ICON, classifyHomeworkFile } from "@/lib/homeworkFile";
+
+const MAX_ATTACHMENT_DOC_SIZE = 2 * 1024 * 1024; // 2 MB
 
 interface Quiz {
   id: string;
@@ -26,7 +29,7 @@ interface QuizQuestion {
   question_type: "single_choice" | "multiple_choice" | "fill_blank" | "homework_upload" | "yes_no";
   question_text: string;
   attachment_url: string | null;
-  attachment_type: "image" | "pdf" | null;
+  attachment_type: string | null;
   sort_order: number;
   options: QuizOption[];
 }
@@ -79,7 +82,7 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
   const [fillAnswer, setFillAnswer] = useState("");
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null);
-  const [attachmentType, setAttachmentType] = useState<"image" | "pdf" | null>(null);
+  const [attachmentType, setAttachmentType] = useState<string | null>(null);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const [savingQ, setSavingQ] = useState(false);
 
@@ -116,10 +119,9 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
   async function handleAttachmentChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const isImage = file.type.startsWith("image/");
-    const isPdf   = file.type === "application/pdf";
-    if (!isImage && !isPdf) { toast.error("Only images or PDFs allowed"); return; }
-    if (isPdf && file.size > 2 * 1024 * 1024) { toast.error("PDF must be under 2 MB"); return; }
+    const { isImage, isDoc, ext } = classifyHomeworkFile(file);
+    if (!isImage && !isDoc) { toast.error("Only images, PDF, Word, Excel, or PowerPoint files allowed"); return; }
+    if (!isImage && file.size > MAX_ATTACHMENT_DOC_SIZE) { toast.error("File must be under 2 MB"); return; }
     setUploadingAttachment(true);
     try {
       if (isImage) {
@@ -132,8 +134,8 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
       } else {
         setAttachmentFile(file);
         setAttachmentPreview(null);
-        setAttachmentType("pdf");
-        toast.success(`PDF ready — ${Math.round(file.size / 1024)} KB`);
+        setAttachmentType(ext);
+        toast.success(`${ext.toUpperCase()} file ready — ${Math.round(file.size / 1024)} KB`);
       }
     } catch { toast.error("Could not process file"); }
     setUploadingAttachment(false);
@@ -337,7 +339,7 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
 
     let attachment_url: string | null = null;
     if (attachmentFile && attachmentType) {
-      const ext = attachmentType === "pdf" ? "pdf" : "jpg";
+      const ext = attachmentType === "image" ? "jpg" : attachmentType;
       const path = `${courseModuleId}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from("quiz-attachments")
@@ -551,7 +553,7 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
                                     <img src={q.attachment_url} alt="attachment" className="max-w-xs rounded-lg border border-slate-200" />
                                   ) : (
                                     <a href={q.attachment_url} target="_blank" rel="noreferrer" className="text-xs text-blue-500 underline flex items-center gap-1">
-                                      <span>📄</span> View PDF attachment
+                                      <span>{HOMEWORK_FILE_ICON[q.attachment_type ?? ""] ?? "📎"}</span> View {(q.attachment_type ?? "file").toUpperCase()} attachment
                                     </a>
                                   )}
                                 </div>
@@ -658,14 +660,14 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
                     </div>
 
                     <div>
-                      <label className="label">Question Attachment <span className="text-slate-400 font-normal">(optional — image or PDF shown to student)</span></label>
+                      <label className="label">Question Attachment <span className="text-slate-400 font-normal">(optional — image or file shown to student)</span></label>
                       {attachmentFile ? (
                         <div className="space-y-2">
                           {attachmentType === "image" && attachmentPreview ? (
                             <img src={attachmentPreview} alt="attachment" className="w-full max-w-xs rounded-xl border border-slate-200 object-cover" />
                           ) : (
                             <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
-                              <span className="text-xl">📄</span>
+                              <span className="text-xl">{HOMEWORK_FILE_ICON[attachmentType ?? ""] ?? "📎"}</span>
                               <span className="text-sm text-slate-700 flex-1 truncate">{attachmentFile.name}</span>
                               <span className="text-xs text-slate-400">{Math.round(attachmentFile.size / 1024)} KB</span>
                             </div>
@@ -675,8 +677,8 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
                       ) : (
                         <label className={`flex items-center gap-2 border-2 border-dashed border-slate-200 rounded-xl px-4 py-3 cursor-pointer hover:border-teal-400 hover:bg-teal-50 transition-colors ${uploadingAttachment ? "opacity-50" : ""}`}>
                           <span className="text-lg">{uploadingAttachment ? "⏳" : "📎"}</span>
-                          <span className="text-sm text-slate-500">{uploadingAttachment ? "Processing…" : "Click to attach image or PDF"}</span>
-                          <input type="file" accept="image/*,.pdf" className="hidden" disabled={uploadingAttachment} onChange={handleAttachmentChange} />
+                          <span className="text-sm text-slate-500">{uploadingAttachment ? "Processing…" : "Click to attach image or file"}</span>
+                          <input type="file" accept={HOMEWORK_UPLOAD_ACCEPT} className="hidden" disabled={uploadingAttachment} onChange={handleAttachmentChange} />
                         </label>
                       )}
                     </div>

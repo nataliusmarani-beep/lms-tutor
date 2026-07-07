@@ -20,7 +20,7 @@ interface QuizQuestion {
   question_text: string;
   question_text_id?: string | null;
   attachment_url: string | null;
-  attachment_type: "image" | "pdf" | null;
+  attachment_type: string | null;
   sort_order: number;
   options: QuizOption[];
 }
@@ -234,7 +234,7 @@ function QuizCard({
                       </a>
                     ) : (
                       <a href={q.attachment_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 hover:bg-slate-50 text-sm text-blue-600">
-                        <span>📄</span> Open question PDF ↗
+                        <span>{HOMEWORK_FILE_ICON[q.attachment_type ?? ""] ?? "📎"}</span> Open question {(q.attachment_type ?? "file").toUpperCase()} ↗
                       </a>
                     )
                   )}

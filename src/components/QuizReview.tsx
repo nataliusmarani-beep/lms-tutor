@@ -18,7 +18,7 @@ interface QuizQuestion {
   question_text: string;
   question_text_id: string | null;
   attachment_url: string | null;
-  attachment_type: "image" | "pdf" | null;
+  attachment_type: string | null;
   sort_order: number;
   options: QuizOption[];
 }
@@ -225,7 +225,7 @@ export default function QuizReview({ quizId, studentId, lang, accentColor = "blu
                         </a>
                       ) : (
                         <a href={q.attachment_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-blue-600 underline">
-                          <span>📄</span>{lang === "id" ? "Lihat PDF soal" : "View question PDF"}
+                          <span>{HOMEWORK_FILE_ICON[q.attachment_type ?? ""] ?? "📎"}</span>{lang === "id" ? `Lihat ${(q.attachment_type ?? "file").toUpperCase()} soal` : `View question ${(q.attachment_type ?? "file").toUpperCase()}`}
                         </a>
                       )}
                     </div>

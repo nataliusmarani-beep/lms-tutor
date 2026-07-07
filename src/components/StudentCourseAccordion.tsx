@@ -65,7 +65,7 @@ interface QuizQuestion {
   question_text: string;
   question_text_id?: string | null;
   attachment_url: string | null;
-  attachment_type: "image" | "pdf" | null;
+  attachment_type: string | null;
   sort_order: number;
   options: QuizOption[];
 }
@@ -492,7 +492,7 @@ function QuizPlayer({
           <div key={q.id} className="bg-slate-50 rounded-xl px-4 py-4 space-y-3">
             <p className="text-sm font-semibold text-slate-800">{i + 1}. {(lang === "id" && q.question_text_id) ? q.question_text_id : q.question_text}</p>
 
-            {/* Question attachment — image or PDF from tutor */}
+            {/* Question attachment — image or file from tutor */}
             {q.attachment_url && (
               q.attachment_type === "image" ? (
                 <a href={q.attachment_url} target="_blank" rel="noopener noreferrer">
@@ -509,9 +509,9 @@ function QuizPlayer({
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2.5 hover:bg-slate-50 transition-colors"
                 >
-                  <span className="text-xl">📄</span>
+                  <span className="text-xl">{HOMEWORK_FILE_ICON[q.attachment_type ?? ""] ?? "📎"}</span>
                   <span className="text-sm text-blue-600 font-medium flex-1">
-                    {lang === "id" ? "Buka PDF soal" : "Open question PDF"}
+                    {lang === "id" ? `Buka ${(q.attachment_type ?? "file").toUpperCase()} soal` : `Open question ${(q.attachment_type ?? "file").toUpperCase()}`}
                   </span>
                   <span className="text-xs text-slate-400">↗</span>
                 </a>
