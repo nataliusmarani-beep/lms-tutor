@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { t } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n";
 import NotesList from "@/components/NotesList";
+import { HOMEWORK_UPLOAD_ACCEPT, HOMEWORK_MAX_DOC_SIZE, HOMEWORK_FILE_ICON, classifyHomeworkFile, fileTypeFromUrl, isDocExt } from "@/lib/homeworkFile";
 
 interface ChecklistItem {
   item_key: string;
@@ -332,7 +333,7 @@ function QuizPlayer({
       for (const hw of (existingHw ?? []) as { question_id: string; file_url: string; file_type: string; tutor_grade: number | null; tutor_feedback: string | null }[]) {
         if (!hwSeen.has(hw.question_id)) {
           preAnswers[hw.question_id] = hw.file_url;
-          prePreviews[hw.question_id] = hw.file_type === "image" ? hw.file_url : "pdf";
+          prePreviews[hw.question_id] = hw.file_type === "image" ? hw.file_url : (isDocExt(hw.file_type) ? hw.file_type : "pdf");
           hwGrades[hw.question_id] = { grade: hw.tutor_grade ?? null, feedback: hw.tutor_feedback ?? null };
           hwSeen.add(hw.question_id);
         }
@@ -345,28 +346,26 @@ function QuizPlayer({
   }, [quiz.id, studentId]);
 
   async function handleFileUpload(questionId: string, file: File) {
-    const isImage = file.type.startsWith("image/");
-    const isPdf   = file.type === "application/pdf";
-    if (!isImage && !isPdf) { alert("Only images or PDF files are allowed."); return; }
-    if (isPdf && file.size > 500 * 1024) { alert("PDF must be under 500 KB."); return; }
+    const { isImage, isDoc, ext } = classifyHomeworkFile(file);
+    if (!isImage && !isDoc) { alert("Only images, PDF, Word, Excel, or PowerPoint files are allowed."); return; }
+    if (!isImage && file.size > HOMEWORK_MAX_DOC_SIZE) { alert("File must be under 500 KB."); return; }
 
     setUploading((p) => ({ ...p, [questionId]: true }));
     const supabase = createClient();
     try {
       let uploadFile: File | Blob = file;
-      let ext = isPdf ? "pdf" : "jpg";
+      const uploadExt = isImage ? "jpg" : ext;
       if (isImage) {
         uploadFile = await compressImage(file, 200);
-        ext = "jpg";
       }
-      const path = `${studentId}/${questionId}/${Date.now()}.${ext}`;
+      const path = `${studentId}/${questionId}/${Date.now()}.${uploadExt}`;
       const { error: upErr } = await supabase.storage
         .from("homework-submissions")
         .upload(path, uploadFile, { upsert: true });
       if (upErr) { alert("Upload failed: " + upErr.message); return; }
       const { data } = supabase.storage.from("homework-submissions").getPublicUrl(path);
       setAnswers((p) => ({ ...p, [questionId]: data.publicUrl }));
-      setUploadPreviews((p) => ({ ...p, [questionId]: isImage ? URL.createObjectURL(uploadFile as Blob) : "pdf" }));
+      setUploadPreviews((p) => ({ ...p, [questionId]: isImage ? URL.createObjectURL(uploadFile as Blob) : ext }));
     } finally {
       setUploading((p) => ({ ...p, [questionId]: false }));
     }
@@ -386,13 +385,12 @@ function QuizPlayer({
     for (const q of hwQuestions) {
       if (answers[q.id]) {
         const fileUrl = answers[q.id];
-        const isPdfUrl = fileUrl.includes(".pdf") || fileUrl.includes("%2Epdf");
         const { error: hwErr } = await supabase.from("homework_submissions").insert({
           student_id: studentId,
           question_id: q.id,
           quiz_id: quiz.id,
           file_url: fileUrl,
-          file_type: isPdfUrl ? "pdf" : "image",
+          file_type: fileTypeFromUrl(fileUrl),
         });
         if (hwErr) console.error("homework_submissions insert error:", hwErr.message);
       }
@@ -524,11 +522,11 @@ function QuizPlayer({
               <div>
                 {answers[q.id] ? (
                   <div className="space-y-2">
-                    {uploadPreviews[q.id] === "pdf" ? (
+                    {isDocExt(uploadPreviews[q.id] ?? "") ? (
                       <a href={answers[q.id]} target="_blank" rel="noopener noreferrer"
                         className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 hover:bg-slate-50">
-                        <span className="text-xl">📄</span>
-                        <span className="text-sm text-blue-600 flex-1 truncate">{lang === "id" ? "Lihat file PDF" : "View PDF file"}</span>
+                        <span className="text-xl">{HOMEWORK_FILE_ICON[uploadPreviews[q.id]] ?? "📎"}</span>
+                        <span className="text-sm text-blue-600 flex-1 truncate">{lang === "id" ? `Lihat file ${uploadPreviews[q.id].toUpperCase()}` : `View ${uploadPreviews[q.id].toUpperCase()} file`}</span>
                         <span className="text-xs text-slate-400">↗</span>
                       </a>
                     ) : (
@@ -575,12 +573,12 @@ function QuizPlayer({
                     <span className="text-sm font-medium text-slate-600">
                       {uploading[q.id]
                         ? (lang === "id" ? "Mengunggah…" : "Uploading…")
-                        : (lang === "id" ? "Klik untuk unggah PDF atau gambar" : "Click to upload PDF or image")}
+                        : (lang === "id" ? "Klik untuk unggah file" : "Click to upload a file")}
                     </span>
-                    <span className="text-xs text-slate-400">PDF ≤ 500 KB · Image auto-compressed to ≤ 200 KB</span>
+                    <span className="text-xs text-slate-400">PDF/Word/Excel/PowerPoint ≤ 500 KB · Image auto-compressed to ≤ 200 KB</span>
                     <input
                       type="file"
-                      accept="image/*,.pdf"
+                      accept={HOMEWORK_UPLOAD_ACCEPT}
                       className="hidden"
                       disabled={uploading[q.id]}
                       onChange={(e) => {

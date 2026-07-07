@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
+import { HOMEWORK_UPLOAD_ACCEPT, HOMEWORK_MAX_DOC_SIZE, HOMEWORK_FILE_ICON, classifyHomeworkFile, fileTypeFromUrl, isDocExt } from "@/lib/homeworkFile";
 
 interface QuizOption {
   id: string;
@@ -117,23 +118,22 @@ function QuizCard({
   }
 
   async function handleFileUpload(questionId: string, file: File) {
-    const isImage = file.type.startsWith("image/");
-    const isPdf   = file.type === "application/pdf";
-    if (!isImage && !isPdf) { toast.error("Only images or PDF files allowed."); return; }
-    if (isPdf && file.size > 500 * 1024) { toast.error("PDF must be under 500 KB."); return; }
+    const { isImage, isDoc, ext } = classifyHomeworkFile(file);
+    if (!isImage && !isDoc) { toast.error("Only images, PDF, Word, Excel, or PowerPoint files allowed."); return; }
+    if (!isImage && file.size > HOMEWORK_MAX_DOC_SIZE) { toast.error("File must be under 500 KB."); return; }
     setUploading((p) => ({ ...p, [questionId]: true }));
     try {
       let uploadFile: File | Blob = file;
-      const ext = isPdf ? "pdf" : "jpg";
+      const uploadExt = isImage ? "jpg" : ext;
       if (isImage) uploadFile = await compressImage(file, 200);
-      const path = `${studentId}/${questionId}/${Date.now()}.${ext}`;
+      const path = `${studentId}/${questionId}/${Date.now()}.${uploadExt}`;
       const { error: upErr } = await supabase.storage
         .from("homework-submissions")
         .upload(path, uploadFile, { upsert: true });
       if (upErr) { toast.error("Upload failed: " + upErr.message); return; }
       const { data } = supabase.storage.from("homework-submissions").getPublicUrl(path);
       setAnswers((p) => ({ ...p, [questionId]: data.publicUrl }));
-      setUploadPreviews((p) => ({ ...p, [questionId]: isImage ? URL.createObjectURL(uploadFile as Blob) : "pdf" }));
+      setUploadPreviews((p) => ({ ...p, [questionId]: isImage ? URL.createObjectURL(uploadFile as Blob) : ext }));
     } finally {
       setUploading((p) => ({ ...p, [questionId]: false }));
     }
@@ -151,11 +151,10 @@ function QuizCard({
     for (const q of questions.filter((q) => q.question_type === "homework_upload")) {
       if (answers[q.id]) {
         const fileUrl = answers[q.id];
-        const isPdfUrl = fileUrl.includes(".pdf") || fileUrl.includes("%2Epdf");
         const { error: hwErr } = await supabase.from("homework_submissions").insert({
           student_id: studentId, question_id: q.id, quiz_id: quiz.id,
           file_url: fileUrl,
-          file_type: isPdfUrl ? "pdf" : "image",
+          file_type: fileTypeFromUrl(fileUrl),
         });
         if (hwErr) console.error("homework_submissions insert error:", hwErr.message);
       }
@@ -243,9 +242,9 @@ function QuizCard({
                   {q.question_type === "homework_upload" ? (
                     answers[q.id] ? (
                       <div className="space-y-1">
-                        {uploadPreviews[q.id] === "pdf" ? (
+                        {isDocExt(uploadPreviews[q.id] ?? "") ? (
                           <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm">
-                            <span>📄</span><span className="flex-1">PDF uploaded</span>
+                            <span>{HOMEWORK_FILE_ICON[uploadPreviews[q.id]] ?? "📎"}</span><span className="flex-1">{uploadPreviews[q.id].toUpperCase()} file uploaded</span>
                             <a href={answers[q.id]} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500">View</a>
                           </div>
                         ) : (
@@ -256,9 +255,9 @@ function QuizCard({
                     ) : (
                       <label className={`flex flex-col items-center gap-2 border-2 border-dashed rounded-xl p-4 cursor-pointer transition-colors ${uploading[q.id] ? "border-slate-200 opacity-50" : "border-slate-200 hover:border-teal-400 hover:bg-teal-50"}`}>
                         <span className="text-2xl">{uploading[q.id] ? "⏳" : "📎"}</span>
-                        <span className="text-sm font-medium text-slate-600">{uploading[q.id] ? "Uploading…" : "Click to upload PDF or image"}</span>
-                        <span className="text-xs text-slate-400">PDF ≤ 500 KB · Image auto-compressed to ≤ 200 KB</span>
-                        <input type="file" accept="image/*,.pdf" className="hidden" disabled={uploading[q.id]} onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(q.id, f); }} />
+                        <span className="text-sm font-medium text-slate-600">{uploading[q.id] ? "Uploading…" : "Click to upload a file"}</span>
+                        <span className="text-xs text-slate-400">PDF/Word/Excel/PowerPoint ≤ 500 KB · Image auto-compressed to ≤ 200 KB</span>
+                        <input type="file" accept={HOMEWORK_UPLOAD_ACCEPT} className="hidden" disabled={uploading[q.id]} onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(q.id, f); }} />
                       </label>
                     )
                   ) : q.question_type === "yes_no" ? (

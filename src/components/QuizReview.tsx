@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import type { Lang } from "@/lib/i18n";
+import { HOMEWORK_FILE_ICON } from "@/lib/homeworkFile";
 
 interface QuizOption {
   id: string;
@@ -32,7 +33,7 @@ interface Attempt {
 interface HomeworkSubmission {
   question_id: string;
   file_url: string;
-  file_type: "image" | "pdf";
+  file_type: string;
   tutor_grade: number | null;
   tutor_feedback: string | null;
 }
@@ -251,7 +252,7 @@ export default function QuizReview({ quizId, studentId, lang, accentColor = "blu
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 bg-white border border-purple-200 rounded-xl px-3 py-2 hover:bg-purple-50 transition-colors"
                         >
-                          <span className="text-lg">📄</span>
+                          <span className="text-lg">{HOMEWORK_FILE_ICON[hw.file_type] ?? "📎"}</span>
                           <span className="text-sm text-purple-700 font-medium">
                             {lang === "id" ? "Lihat file jawaban" : "View submitted file"}
                           </span>

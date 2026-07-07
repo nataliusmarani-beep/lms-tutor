@@ -641,7 +641,7 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
                         <option value="single_choice">Single Choice (one correct)</option>
                         <option value="multiple_choice">Multiple Choice (many correct)</option>
                         <option value="fill_blank">Fill in the Blank</option>
-                        <option value="homework_upload">Homework Upload (PDF / Image)</option>
+                        <option value="homework_upload">Homework Upload (PDF / Image / File)</option>
                         <option value="yes_no">Yes / No (student picks Yes or No)</option>
                       </select>
                     </div>
@@ -683,7 +683,7 @@ export default function QuizBuilder({ courseModuleId }: QuizBuilderProps) {
 
                     {newQType === "homework_upload" ? (
                       <p className="text-xs text-slate-400 bg-purple-50 border border-purple-100 rounded-lg px-3 py-2">
-                        📎 Students will upload a PDF (≤500 KB) or image (auto-compressed to ≤200 KB) as their answer.
+                        📎 Students will upload a PDF, Word, Excel, or PowerPoint file (≤500 KB) or image (auto-compressed to ≤200 KB) as their answer.
                       </p>
                     ) : newQType === "yes_no" ? (
                       <div className="space-y-2">
