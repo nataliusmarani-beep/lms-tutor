@@ -42,7 +42,7 @@ export default async function StudentCoursePage({ params }: { params: { courseId
   const { data: allItems } = moduleIds.length > 0
     ? await supabase
         .from("module_checklist_items")
-        .select("course_module_id, item_key, label, label_id, item_type, sort_order")
+        .select("course_module_id, item_key, label, label_id, item_type, sort_order, video_url, practice_task, practice_task_id")
         .in("course_module_id", moduleIds)
         .order("sort_order")
     : { data: [] };

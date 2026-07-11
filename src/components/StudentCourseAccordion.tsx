@@ -13,6 +13,14 @@ interface ChecklistItem {
   label_id?: string | null;
   item_type: string;
   sort_order: number;
+  video_url?: string | null;
+  practice_task?: string | null;
+  practice_task_id?: string | null;
+}
+
+// Clips are stored as "Watched & practiced: <topic>" — strip that prefix for a clean title.
+function clipTitle(label: string): string {
+  return label.replace(/^(Watched & practiced:|Menonton & berlatih:)\s*/i, "").trim();
 }
 
 interface Session {
@@ -860,24 +868,79 @@ function ModulePanel({
                     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
                       🙋 {t(lang, "studentActivities")}
                     </p>
-                    <div className="space-y-2">
-                      {mod.studentItems.map((item) => {
+                    <div className="space-y-4">
+                      {mod.studentItems.map((item, idx) => {
                         const done = isDone(item.item_key);
+                        const hasClip = !!(item.video_url || item.practice_task || item.practice_task_id);
+                        const practice = (lang === "id" && item.practice_task_id) ? item.practice_task_id : item.practice_task;
+
+                        // Plain checklist row (no video/practice attached).
+                        if (!hasClip) {
+                          return (
+                            <label key={item.item_key} className="flex items-start gap-2.5 cursor-pointer group">
+                              <input
+                                type="checkbox"
+                                checked={done}
+                                onChange={() => toggleItem(item.item_key, item.item_type)}
+                                className="mt-0.5 w-4 h-4 rounded accent-teal-600 shrink-0 cursor-pointer"
+                              />
+                              <span className={`text-sm leading-relaxed select-none ${
+                                done ? "text-slate-400 line-through" : "text-slate-700 group-hover:text-slate-900"
+                              }`}>
+                                {(lang === "id" && item.label_id) ? item.label_id : item.label}
+                              </span>
+                              {done && <span className="text-teal-500 text-xs ml-auto shrink-0">✓</span>}
+                            </label>
+                          );
+                        }
+
+                        // Rich clip card: title + video + practice + "watched" toggle.
+                        const title = clipTitle((lang === "id" && item.label_id) ? item.label_id : item.label);
                         return (
-                          <label key={item.item_key} className="flex items-start gap-2.5 cursor-pointer group">
-                            <input
-                              type="checkbox"
-                              checked={done}
-                              onChange={() => toggleItem(item.item_key, item.item_type)}
-                              className="mt-0.5 w-4 h-4 rounded accent-teal-600 shrink-0 cursor-pointer"
-                            />
-                            <span className={`text-sm leading-relaxed select-none ${
-                              done ? "text-slate-400 line-through" : "text-slate-700 group-hover:text-slate-900"
-                            }`}>
-                              {(lang === "id" && item.label_id) ? item.label_id : item.label}
-                            </span>
-                            {done && <span className="text-teal-500 text-xs ml-auto shrink-0">✓</span>}
-                          </label>
+                          <div key={item.item_key} className={`rounded-xl border p-3 space-y-3 ${done ? "border-teal-200 bg-teal-50/40" : "border-slate-200 bg-white"}`}>
+                            <div className="flex items-start gap-2.5">
+                              <span className="shrink-0 mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-teal-100 text-teal-700 text-xs font-bold">
+                                {idx + 1}
+                              </span>
+                              <h4 className="flex-1 font-semibold text-slate-800 text-sm leading-snug">{title}</h4>
+                              {done && <span className="text-teal-500 text-sm shrink-0">✓</span>}
+                            </div>
+
+                            {item.video_url && (
+                              <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                                <iframe
+                                  src={toEmbedUrl(item.video_url)}
+                                  title={title}
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                  className="absolute inset-0 w-full h-full rounded-lg border border-slate-100"
+                                />
+                              </div>
+                            )}
+
+                            {practice && (
+                              <div className="rounded-lg bg-amber-50 border border-amber-100 p-3">
+                                <p className="text-xs font-semibold text-amber-700 mb-1">
+                                  🎯 {lang === "id" ? "Sekarang coba di Excel" : "Now try this in Excel"}
+                                </p>
+                                <p className="text-sm text-slate-700 leading-snug">{practice}</p>
+                              </div>
+                            )}
+
+                            <label className="flex items-center gap-2 cursor-pointer group pt-0.5">
+                              <input
+                                type="checkbox"
+                                checked={done}
+                                onChange={() => toggleItem(item.item_key, item.item_type)}
+                                className="w-4 h-4 rounded accent-teal-600 shrink-0 cursor-pointer"
+                              />
+                              <span className={`text-sm font-medium select-none ${done ? "text-teal-600" : "text-slate-600 group-hover:text-slate-900"}`}>
+                                {done
+                                  ? (lang === "id" ? "Sudah ditonton & dipraktikkan" : "Watched & practiced")
+                                  : (lang === "id" ? "Tandai sudah ditonton & dipraktikkan" : "Mark as watched & practiced")}
+                              </span>
+                            </label>
+                          </div>
                         );
                       })}
                     </div>
