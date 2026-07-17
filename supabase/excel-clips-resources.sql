@@ -27,7 +27,9 @@ BEGIN
        '60 short Excel tutorial clips to watch and practice',
        '60 klip tutorial Excel singkat untuk ditonton dan dipraktikkan',
        '📊',
-       (SELECT COALESCE(MAX(week_number), 0) + 1 FROM course_modules WHERE course_id = v_course_id),
+       -- No week number: this is a reference library, not a week of coursework.
+       -- A NULL week hides the "Week N" badge and keeps the course's week count honest.
+       NULL,
        (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM course_modules WHERE course_id = v_course_id));
   END IF;
 

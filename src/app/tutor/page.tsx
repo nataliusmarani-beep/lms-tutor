@@ -20,7 +20,7 @@ interface CourseRow {
 const WEEKLY_TARGET_MINUTES = 270;
 const MINUTES_PER_SESSION = 90;
 const WEEKLY_TARGET_SESSIONS = WEEKLY_TARGET_MINUTES / MINUTES_PER_SESSION; // 3
-const SEMESTER_TARGET_SESSIONS = 36; // 3/week × 12 weeks
+const SEMESTER_TARGET_SESSIONS = 24; // 3/week × 8 weeks
 
 function getWeekStart(): string {
   const now = new Date();
