@@ -138,7 +138,12 @@ export default async function TutorStudentPage({ params }: { params: { id: strin
   const totalMinutes = sessionList.reduce((a, s) => a + s.duration_minutes, 0);
   const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
 
-  const allPcts = enrolledCourses.flatMap((c) => c.modules.map((m) => moduleProgress(m.id).pct));
+  // Resource-only modules (no checklist items) can never be completed, so they
+  // are excluded from the average instead of dragging it toward 0.
+  const allPcts = enrolledCourses
+    .flatMap((c) => c.modules.map((m) => moduleProgress(m.id)))
+    .filter((p) => p.total > 0)
+    .map((p) => p.pct);
   const overallPct =
     allPcts.length > 0 ? Math.round(allPcts.reduce((a, b) => a + b, 0) / allPcts.length) : 0;
   const completedModules = allPcts.filter((p) => p === 100).length;

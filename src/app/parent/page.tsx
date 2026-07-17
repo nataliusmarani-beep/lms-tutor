@@ -167,9 +167,12 @@ export default async function ParentDashboard() {
         return c.course_module_id === m.id || (legacyId != null && c.module_id === legacyId);
       })
     ).length;
-    const completedModules = course.modules.filter((m) => moduleProgress(m.id).pct === 100).length;
+    // Resource-only modules (no checklist items) can never be completed,
+    // so they are excluded from the modules-done counter.
+    const gradableModules = course.modules.filter((m) => moduleProgress(m.id).total > 0);
+    const completedModules = gradableModules.filter((m) => moduleProgress(m.id).pct === 100).length;
     const pct = totalItems > 0 ? Math.round((doneItems / totalItems) * 100) : 0;
-    return { pct, completedModules, totalModules: course.modules.length };
+    return { pct, completedModules, totalModules: gradableModules.length };
   }
 
   // Overall stats

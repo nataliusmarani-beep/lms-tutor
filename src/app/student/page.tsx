@@ -125,14 +125,16 @@ export default async function StudentDashboard() {
   function courseProgress(course: EnrolledCourse) {
     const totalItems = course.modules.reduce((a, m) => a + (itemsByModule[m.id]?.length ?? 0), 0);
     const doneItems = checkList.filter((c) => course.modules.some((m) => m.id === c.course_module_id)).length;
-    const completedModules = course.modules.filter((m) => {
+    // Resource-only modules (no checklist items) can never be completed,
+    // so they are excluded from the modules-done counter.
+    const gradableModules = course.modules.filter((m) => (itemsByModule[m.id]?.length ?? 0) > 0);
+    const completedModules = gradableModules.filter((m) => {
       const total = itemsByModule[m.id]?.length ?? 0;
-      if (total === 0) return false;
       const done = checkList.filter((c) => c.course_module_id === m.id).length;
       return done >= total;
     }).length;
     const pct = totalItems > 0 ? Math.round((doneItems / totalItems) * 100) : 0;
-    return { pct, completedModules, totalModules: course.modules.length };
+    return { pct, completedModules, totalModules: gradableModules.length };
   }
 
   // Overall stats

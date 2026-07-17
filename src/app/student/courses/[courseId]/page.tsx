@@ -123,6 +123,9 @@ export default async function StudentCoursePage({ params }: { params: { courseId
       icon: mod.icon,
       week_number: mod.week_number,
       pct: total > 0 ? Math.round((done / total) * 100) : 0,
+      // Resource-only modules (no checklist items) can never be completed,
+      // so they stay out of the course progress math.
+      gradable: total > 0,
       sessions: modSessions,
       studentItems,
       tutorItems,
@@ -149,8 +152,9 @@ export default async function StudentCoursePage({ params }: { params: { courseId
     : course.description;
 
   const maxWeek = Math.max(0, ...modules.map((m: { week_number: number | null }) => m.week_number ?? 0));
-  const overallPct = moduleData.length > 0 ? Math.round(moduleData.reduce((sum, m) => sum + m.pct, 0) / moduleData.length) : 0;
-  const completedModules = moduleData.filter(m => m.pct >= 100).length;
+  const gradedModules = moduleData.filter(m => m.gradable);
+  const overallPct = gradedModules.length > 0 ? Math.round(gradedModules.reduce((sum, m) => sum + m.pct, 0) / gradedModules.length) : 0;
+  const completedModules = gradedModules.filter(m => m.pct >= 100).length;
   const totalQuizzes = moduleData.reduce((sum, m) => sum + m.quizzes.length, 0);
 
   return (
@@ -293,13 +297,13 @@ export default async function StudentCoursePage({ params }: { params: { courseId
                   <div>
                     <p className="text-sm font-semibold text-white">
                       {lang === "id"
-                        ? `${completedModules} dari ${modules.length} modul selesai`
-                        : `${completedModules} of ${modules.length} modules complete`}
+                        ? `${completedModules} dari ${gradedModules.length} modul selesai`
+                        : `${completedModules} of ${gradedModules.length} modules complete`}
                     </p>
                     <p className="text-xs text-white/60 mt-0.5">
                       {lang === "id"
-                        ? `${modules.length - completedModules} modul lagi untuk menyelesaikan kursus ini`
-                        : `${modules.length - completedModules} module${modules.length - completedModules !== 1 ? "s" : ""} remaining to complete this course`}
+                        ? `${gradedModules.length - completedModules} modul lagi untuk menyelesaikan kursus ini`
+                        : `${gradedModules.length - completedModules} module${gradedModules.length - completedModules !== 1 ? "s" : ""} remaining to complete this course`}
                     </p>
                   </div>
                 </div>
