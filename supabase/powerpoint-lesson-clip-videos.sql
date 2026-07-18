@@ -15,8 +15,10 @@
 -- Idempotent: plain UPDATEs, safe to re-run. Run in the Supabase SQL Editor.
 -- ============================================================
 
--- Ensure the clip columns exist (added earlier for the Excel clips)
+-- Ensure the clip columns exist (video_url_id holds the Bahasa Indonesia
+-- video, shown when the student views the module in Indonesian).
 ALTER TABLE module_checklist_items ADD COLUMN IF NOT EXISTS video_url        TEXT;
+ALTER TABLE module_checklist_items ADD COLUMN IF NOT EXISTS video_url_id     TEXT;
 ALTER TABLE module_checklist_items ADD COLUMN IF NOT EXISTS practice_task    TEXT;
 ALTER TABLE module_checklist_items ADD COLUMN IF NOT EXISTS practice_task_id TEXT;
 
@@ -38,6 +40,7 @@ BEGIN
   -- 1) Applied a consistent theme and layout to a presentation
   UPDATE module_checklist_items SET
     video_url        = 'https://www.youtube.com/watch?v=UH7Gzjd3rGA',
+    video_url_id     = 'https://www.youtube.com/watch?v=rMAFRobkb_U',
     practice_task    = 'Apply a theme, try a colour variant, and give your slides a consistent layout.',
     practice_task_id = 'Terapkan sebuah tema, coba varian warna, dan gunakan layout yang konsisten di semua slide.'
   WHERE course_module_id = v_mod_id AND item_key = 'ms_5_s_1';
@@ -45,6 +48,7 @@ BEGIN
   -- 2) Added slide transitions and animations appropriately
   UPDATE module_checklist_items SET
     video_url        = 'https://www.youtube.com/watch?v=jNxxU0tpHlQ',
+    video_url_id     = 'https://www.youtube.com/watch?v=kMCFzUVYAqM',
     practice_task    = 'Add a transition to all slides, then give a title one entrance animation.',
     practice_task_id = 'Tambahkan transisi ke semua slide, lalu beri judul satu animasi masuk.'
   WHERE course_module_id = v_mod_id AND item_key = 'ms_5_s_2';
@@ -52,6 +56,7 @@ BEGIN
   -- 3) Inserted an image and a chart into a slide
   UPDATE module_checklist_items SET
     video_url        = 'https://www.youtube.com/watch?v=DMBjDPrcWF0',
+    video_url_id     = 'https://www.youtube.com/watch?v=26JqD-uDluU',
     practice_task    = 'Insert a picture and a column chart onto one slide, then resize them neatly.',
     practice_task_id = 'Sisipkan sebuah gambar dan grafik kolom ke dalam satu slide, lalu rapikan ukurannya.'
   WHERE course_module_id = v_mod_id AND item_key = 'ms_5_s_3';
@@ -59,6 +64,7 @@ BEGIN
   -- 4) Practised presenting using Slide Show view
   UPDATE module_checklist_items SET
     video_url        = 'https://www.youtube.com/watch?v=X0gH_N2X8cQ',
+    video_url_id     = 'https://www.youtube.com/watch?v=084fXezLy2Y',
     practice_task    = 'Start the slide show in Presenter View and use the timer and next-slide preview.',
     practice_task_id = 'Jalankan slide show dengan Presenter View dan gunakan timer serta pratinjau slide berikutnya.'
   WHERE course_module_id = v_mod_id AND item_key = 'ms_5_s_4';
@@ -66,6 +72,7 @@ BEGIN
   -- 5) Exported the presentation as a PDF
   UPDATE module_checklist_items SET
     video_url        = 'https://www.youtube.com/watch?v=fg2JvYheg74',
+    video_url_id     = 'https://www.youtube.com/watch?v=Igrt_tmJubA',
     practice_task    = 'Export your finished presentation as a PDF, then open it to check the slides.',
     practice_task_id = 'Ekspor presentasimu yang sudah jadi sebagai PDF, lalu buka untuk memeriksa slide-nya.'
   WHERE course_module_id = v_mod_id AND item_key = 'ms_5_s_5';
@@ -73,9 +80,10 @@ BEGIN
   RAISE NOTICE 'Set videos + practice tasks on the 5 PowerPoint lesson clips.';
 END $$;
 
--- Verify: expect 5 rows, each with a youtube video_url and a practice task.
+-- Verify: expect 5 rows, each with an EN video, an ID video, and a task.
 SELECT i.item_key, i.label,
-       (i.video_url IS NOT NULL)     AS has_video,
+       (i.video_url IS NOT NULL)     AS has_video_en,
+       (i.video_url_id IS NOT NULL)  AS has_video_id,
        (i.practice_task IS NOT NULL) AS has_task
   FROM module_checklist_items i
   JOIN course_modules m ON m.id = i.course_module_id

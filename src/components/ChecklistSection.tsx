@@ -11,6 +11,7 @@ interface ChecklistItem {
   label: string;
   label_id?: string | null;
   video_url?: string | null;
+  video_url_id?: string | null;
   practice_task?: string | null;
   practice_task_id?: string | null;
 }
@@ -94,6 +95,7 @@ export default function ChecklistSection({
     const checked = isChecked(item.item_key);
     const title = clipTitle(lang === "id" && item.label_id ? item.label_id : item.label);
     const practice = lang === "id" && item.practice_task_id ? item.practice_task_id : item.practice_task;
+    const videoUrl = lang === "id" && item.video_url_id ? item.video_url_id : item.video_url;
     const disabled = isPending || readonly || !canCheck;
 
     return (
@@ -106,11 +108,11 @@ export default function ChecklistSection({
           {checked && <span className="shrink-0 text-green-500 text-sm">✓</span>}
         </div>
 
-        {/* Video */}
-        {item.video_url ? (
+        {/* Video (Bahasa Indonesia version when available and viewing in ID) */}
+        {videoUrl ? (
           <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
             <iframe
-              src={toEmbedUrl(item.video_url)}
+              src={toEmbedUrl(videoUrl)}
               title={title}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
