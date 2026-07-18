@@ -160,7 +160,13 @@ const TABS: { id: Tab; icon: string; labelEn: string; labelId: string }[] = [
 
 function ModulePanel({ mod, lang, studentId, courseId, defaultOpen, tutor }: { mod: ModuleData; lang: Lang; studentId: string; courseId: string; defaultOpen: boolean; tutor?: TutorInfo | null }) {
   const [open, setOpen]   = useState(defaultOpen);
-  const [tab, setTab]     = useState<Tab>("sessions");
+  // Open on the first tab with content (Lesson Clips first), not empty Sessions.
+  const initialTab: Tab =
+    (mod.studentItems.length + mod.tutorItems.length) > 0 ? "checklist"
+    : mod.sessions.length > 0 ? "sessions"
+    : mod.quizzes.length > 0 ? "quizzes"
+    : "resources";
+  const [tab, setTab]     = useState<Tab>(initialTab);
   const [expandedQuiz, setExpandedQuiz] = useState<string | null>(null);
   // quizGrades: quizId -> questionId -> { grade, feedback }
   const [quizGrades, setQuizGrades] = useState<Record<string, Record<string, { grade: number | null; feedback: string | null }>>>({});

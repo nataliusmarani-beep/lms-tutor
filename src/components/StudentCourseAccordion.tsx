@@ -657,7 +657,15 @@ function ModulePanel({
   mod: ModuleData; lang: Lang; studentId: string; defaultOpen: boolean; tutor?: TutorInfo | null;
 }) {
   const [open, setOpen] = useState(defaultOpen);
-  const [tab, setTab]   = useState<Tab>("sessions");
+  // Open on the first tab that actually has content — prioritise the Lesson
+  // Clips (videos + practice) so a student lands on something to learn, not
+  // an empty Sessions tab.
+  const initialTab: Tab =
+    (mod.studentItems.length + mod.tutorItems.length) > 0 ? "checklist"
+    : mod.sessions.length > 0 ? "sessions"
+    : mod.quizzes.length > 0 ? "quizzes"
+    : "resources";
+  const [tab, setTab]   = useState<Tab>(initialTab);
   const [completedKeys, setCompletedKeys] = useState<string[]>(mod.completedKeys);
   const [activeQuizId, setActiveQuizId]   = useState<string | null>(null);
   const [localBest, setLocalBest]         = useState<Record<string, { score: number; max_score: number }>>({});
