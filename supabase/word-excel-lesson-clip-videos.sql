@@ -20,7 +20,7 @@ BEGIN
   -- ── Module 3 · Microsoft Word ──────────────────────────────
   SELECT m.id INTO v_mod_id FROM course_modules m JOIN courses c ON c.id=m.course_id
    WHERE c.title = 'Microsoft Digital Skills for University Prep' AND m.title LIKE 'Microsoft Word%' LIMIT 1;
-  IF v_mod_id IS NULL THEN RAISE EXCEPTION 'Microsoft Word% module not found'; END IF;
+  IF v_mod_id IS NULL THEN RAISE EXCEPTION 'Word module not found in Digital Skills course'; END IF;
   UPDATE module_checklist_items SET
     video_url = 'https://www.youtube.com/watch?v=tKbXkiKSD6o', video_url_id = 'https://www.youtube.com/watch?v=Nz0Gh57rd4A',
     practice_task = 'Apply Heading 1 to your title and Heading 2 to two subheadings.', practice_task_id = 'Terapkan Heading 1 pada judul dan Heading 2 pada dua subjudul.'
@@ -45,7 +45,7 @@ BEGIN
   -- ── Module 4 · Microsoft Excel ─────────────────────────────
   SELECT m.id INTO v_mod_id FROM course_modules m JOIN courses c ON c.id=m.course_id
    WHERE c.title = 'Microsoft Digital Skills for University Prep' AND m.title LIKE 'Microsoft Excel%' LIMIT 1;
-  IF v_mod_id IS NULL THEN RAISE EXCEPTION 'Microsoft Excel% module not found'; END IF;
+  IF v_mod_id IS NULL THEN RAISE EXCEPTION 'Excel module not found in Digital Skills course'; END IF;
   UPDATE module_checklist_items SET
     video_url = 'https://www.youtube.com/watch?v=MFSvwFUirEM', video_url_id = 'https://www.youtube.com/watch?v=ctMaR7yG-Rs',
     practice_task = 'Type a small table of data and format the header row (bold, fill colour).', practice_task_id = 'Ketik tabel data kecil dan format baris judulnya (tebal, warna latar).'
