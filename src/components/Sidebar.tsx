@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
+import NotificationBell from "@/components/NotificationBell";
 
 interface SidebarProps {
   name: string;
@@ -89,10 +90,14 @@ export default function Sidebar({ name, role, avatarUrl }: SidebarProps) {
             <circle cx="50" cy="50" r="43" stroke="#7dd3f6" strokeWidth="6"/>
             <rect x="43" y="18" width="14" height="38" rx="3" fill="#7dd3f6"/>
           </svg>
-          <div className="leading-tight min-w-0">
+          <div className="leading-tight min-w-0 flex-1">
             <div className="text-white font-bold text-sm tracking-wide">IMLEARNING</div>
             <div className="text-sky-300 text-xs tracking-widest font-medium">LEARN NEVER END</div>
           </div>
+          {/* Bell notifications for students & guardians */}
+          {(role === "student" || role === "parent" || role === "guardian") && (
+            <NotificationBell role={role} lang={lang} />
+          )}
         </div>
       </div>
 
