@@ -1,3 +1,4 @@
 [{"id":"5e64ccd5-09d1-4bc7-ae37-03c93c75824b","name":"Anastasia Selitubun","role":"student","created_at":"2026-05-17T07:12:06.408444+00:00","avatar_url":"https://thruxarnygprdonirzvt.supabase.co/storage/v1/object/public/avatars/5e64ccd5-09d1-4bc7-ae37-03c93c75824b.png?t=1779008302470"}, 
  {"id":"1c551b9a-a9d1-4c84-b92a-0eaf490a8299","name":"Mr.Teis","role":"tutor","created_at":"2026-05-17T07:00:34.946408+00:00","avatar_url":"https://thruxarnygprdonirzvt.supabase.co/storage/v1/object/public/avatars/1c551b9a-a9d1-4c84-b92a-0eaf490a8299.jpg?t=1779011626843"}, 
- {"id":"2151db0d-d970-47f0-b03d-421e8fd64c96","name":"Jim Dellinger","role":"guardian","created_at":"2026-05-17T07:14:53.245364+00:00","avatar_url":null}]
+ {"id":"2151db0d-d970-47f0-b03d-421e8fd64c96","name":"Jim Dellinger","role":"guardian","created_at":"2026-05-17T07:14:53.245364+00:00","avatar_url":null}, 
+ {"id":"1491edb8-be31-431b-8b29-466f85e7785e","name":"Amy Dellinger","role":"guardian","created_at":"2026-07-19T07:30:05.081469+00:00","avatar_url":null}]
